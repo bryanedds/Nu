@@ -258,7 +258,7 @@ module CubeMap =
                 [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Single3 0|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 UniformBuffer VertexStage 1|]
+                    [|Pipeline.descriptor 0 UniformBuffer VertexAndFragmentStage 1|]
                   Pipeline.descriptorSet<Texture>
                     [|Pipeline.descriptor 0 SampledImage FragmentStage 1|]
                   Pipeline.descriptorSet<Sampler>
@@ -282,7 +282,7 @@ module CubeMap =
         (cubeMap : Texture)
         (sampler : Sampler)
         (geometry : CubeMapGeometry)
-        (resolution : int)
+        (resolution : Vector2i)
         (colorAttachment : VkImageView)
         (pipeline : CubeMapPipeline)
         (getCommandBuffer : unit -> VkCommandBuffer)
@@ -315,7 +315,7 @@ module CubeMap =
 
             // set up render
             let commandBuffer = getCommandBuffer ()
-            let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
+            let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
             Hl.withRenderingInfo [|colorAttachment|] None renderArea LoadAttachments $ fun renderingInfo ->
                 let mutable renderingInfo = renderingInfo

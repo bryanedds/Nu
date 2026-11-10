@@ -99,51 +99,33 @@ module LightMap =
         // fin
         reflectionCubeMap
 
-    let createIrradianceMap resolution (cubeMapSurface : CubeMapSurface) sampler colorFormat irradiancePipeline getCommandBuffer advanceCommandBufferWhenNeeded context =
+    /// Create an irradiance map - the spherical harmonic coefficients (bands 0 through 2) of the irradiance a cube map's
+    /// radiance casts, convolved with the cosine lobe and divided by pi, one per texel of a 9x1 texture.
+    let createIrradianceMap (cubeMapSurface : CubeMapSurface) sampler colorFormat irradiancePipeline getCommandBuffer advanceCommandBufferWhenNeeded context =
 
-        // create irradiance cube map
-        let metadata = TextureMetadata.make resolution resolution
-        let cubeMapInternal =
+        // create irradiance map
+        let resolution = v2i Constants.Render.IrradianceMapCoefficients 1
+        let metadata = TextureMetadata.make resolution.X resolution.Y
+        let irradianceMapInternal =
             TextureInternal.create
-                MipmapNone (AttachmentColor false) TextureCubeMap VkImageUsageFlags.Sampled
+                MipmapNone (AttachmentColor false) Texture2d VkImageUsageFlags.Sampled
                 colorFormat Rgba metadata context
-        let cubeMap = EagerTexture cubeMapInternal
+        let irradianceMap = EagerTexture irradianceMapInternal
 
-        // construct eye rotations
-        let eyeRotations =
-            [|(v3Right, v3Down)     // (+x)
-              (v3Left, v3Down)      // (-x)
-              (v3Up, v3Back)        // (+y)
-              (v3Down, v3Forward)   // (-y)
-              (v3Back, v3Down)      // (+z)
-              (v3Forward, v3Down)|] // (-z)
+        // compute view and projection that cover the irradiance map with the cube's faces, one fragment per coefficient
+        let view = Matrix4x4.Identity
+        let projection = Matrix4x4.CreateScale (1.0f, 1.0f, 0.25f) * Matrix4x4.CreateTranslation (0.0f, 0.0f, 0.5f)
 
-        // compute projection
-        let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)
+        // render coefficients to irradiance map
+        Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentRead ColorAttachmentWrite irradianceMap.Image (getCommandBuffer ())
+        CubeMap.drawCubeMap
+            v3Zero view projection cubeMapSurface.Flipped cubeMapSurface.CubeMap sampler
+            cubeMapSurface.Geometry resolution irradianceMap.ImageView
+            irradiancePipeline getCommandBuffer advanceCommandBufferWhenNeeded context
+        Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentWrite ColorAttachmentRead irradianceMap.Image (getCommandBuffer ())
 
-        // begin cubemap rendering
-        Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentRead ColorAttachmentWrite cubeMap.Image (getCommandBuffer ())
-
-        // render faces to irradiance cube map
-        for i in 0 .. dec 6 do
-
-            // render face
-            let eyeCenter = v3Zero // assuming output
-            let (eyeForward, eyeUp) = eyeRotations[i]
-            let view = Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)
-            CubeMap.drawCubeMap
-                eyeCenter view projection cubeMapSurface.Flipped cubeMapSurface.CubeMap sampler
-                cubeMapSurface.Geometry resolution cubeMap.SubViews[0, i]
-                irradiancePipeline getCommandBuffer advanceCommandBufferWhenNeeded context
-
-            // take a snapshot for testing
-            //Hl.saveFramebufferRgbaToBitmap resolution resolution ("Irradiance." + string cubeMapId + "." + string i + ".bmp")
-
-        // end cubemap rendering
-        Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ColorAttachmentRead cubeMap.Image (getCommandBuffer ())
-        
         // fin
-        cubeMap
+        irradianceMap
     
     /// Create an EnvironmentFilterPipeline.
     let createEnvironmentFilterPipeline shaderPath colorAttachmentFormat (context : VulkanContext) =

@@ -127,7 +127,7 @@ layout(set = 0, binding = 1) uniform Lighting3dUniform { Lighting3dStruct lighti
 layout(set = 0, binding = 2) uniform texture2D depthTexture;
 layout(set = 0, binding = 3) uniform texture2D colorTexture;
 layout(set = 0, binding = 4) uniform texture2D brdfTexture;
-layout(set = 0, binding = 5) uniform textureCube irradianceMap;
+layout(set = 0, binding = 5) uniform texture2D irradianceMap;
 layout(set = 0, binding = 6) uniform textureCube environmentFilterMap;
 
 layout(set = 1, binding = 0) uniform texture2D albedoTexture;
@@ -144,7 +144,7 @@ layout(set = 2, binding = 1) uniform LightMapsUniform { LightMapStruct lightMaps
 layout(set = 2, binding = 2) uniform Lighting3d3Uniform { Lighting3d3Struct lighting3; };
 layout(set = 2, binding = 3) uniform Light3dsUniform { Light3dStruct lights[LIGHTS_MAX]; };
 layout(set = 2, binding = 4) uniform ShadowMatricesUniform { mat4 shadowMatrices[SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS]; };
-layout(set = 2, binding = 5) uniform textureCube irradianceMaps[LIGHT_MAPS_MAX];
+layout(set = 2, binding = 5) uniform texture2D irradianceMaps[LIGHT_MAPS_MAX];
 layout(set = 2, binding = 6) uniform textureCube environmentFilterMaps[LIGHT_MAPS_MAX];
 layout(set = 2, binding = 7) uniform texture2DArray shadowTextures;
 layout(set = 2, binding = 8) uniform textureCube shadowMaps[SHADOW_MAPS_MAX];
@@ -280,6 +280,24 @@ float computeDepthRatio(vec3 minA, vec3 sizeA, vec3 minB, vec3 sizeB, vec3 posit
     vec3 intersectionSize = min(minA + sizeA, minB + sizeB) - intersectionMin;
     vec2 intersectionRatios = rayBoxIntersectionRatios(position, direction, intersectionMin, intersectionSize);
     return intersectionRatios != vec2(0.0) ? intersectionRatios.y / (intersectionRatios.y - intersectionRatios.x) : 0.5;
+}
+
+// The irradiance (divided by pi) in a direction from an irradiance map, the spherical harmonic coefficients (bands 0
+// through 2) of a light map's irradiance, one per texel.
+vec3 computeIrradiance(texture2D irradianceMap, vec3 direction)
+{
+    vec3 d = normalize(direction);
+    vec3 irradiance =
+        texelFetch(sampler2D(irradianceMap, unfilteredSampler), ivec2(0, 0), 0).rgb * 0.282095 +
+        texelFetch(sampler2D(irradianceMap, unfilteredSampler), ivec2(1, 0), 0).rgb * 0.488603 * d.y +
+        texelFetch(sampler2D(irradianceMap, unfilteredSampler), ivec2(2, 0), 0).rgb * 0.488603 * d.z +
+        texelFetch(sampler2D(irradianceMap, unfilteredSampler), ivec2(3, 0), 0).rgb * 0.488603 * d.x +
+        texelFetch(sampler2D(irradianceMap, unfilteredSampler), ivec2(4, 0), 0).rgb * 1.092548 * d.x * d.y +
+        texelFetch(sampler2D(irradianceMap, unfilteredSampler), ivec2(5, 0), 0).rgb * 1.092548 * d.y * d.z +
+        texelFetch(sampler2D(irradianceMap, unfilteredSampler), ivec2(6, 0), 0).rgb * 0.315392 * (3.0 * d.z * d.z - 1.0) +
+        texelFetch(sampler2D(irradianceMap, unfilteredSampler), ivec2(7, 0), 0).rgb * 1.092548 * d.x * d.z +
+        texelFetch(sampler2D(irradianceMap, unfilteredSampler), ivec2(8, 0), 0).rgb * 0.546274 * (d.x * d.x - d.y * d.y);
+    return max(irradiance, vec3(0.0));
 }
 
 vec3 parallaxCorrection(LightMapStruct lightMap, vec3 positionWorld, vec3 normalWorld)
@@ -1091,13 +1109,13 @@ void main()
     {
         ambientColor = lighting.lightAmbientColor;
         ambientBrightness = lighting.lightAmbientBrightness;
-        irradiance = texture(samplerCube(irradianceMap, filteredSampler), n).rgb;
+        irradiance = computeIrradiance(irradianceMap, n);
         vec3 r = reflect(-v, n);
         environmentFilter = textureLod(samplerCube(environmentFilterMap, filteredSampler), r, roughness * REFLECTION_LOD_MAX).rgb;
         float cosNvn = dot(-v, n);
         float k = 1.0 - refractiveIndex * refractiveIndex * (1.0 - cosNvn * cosNvn);
         vec3 rfr = k >= 0.0 ? refract(-v, n, refractiveIndex) : r;
-        irradianceRefracted = ssrrDesired ? textureLod(samplerCube(irradianceMap, filteredSampler), rfr, 0).rgb : vec3(1.0);
+        irradianceRefracted = ssrrDesired ? computeIrradiance(irradianceMap, rfr) : vec3(1.0);
     }
     else if (lm2 == -1)
     {
@@ -1116,8 +1134,8 @@ void main()
         ambientBrightness = exp(mix(log(ambientBrightness1), log(ambientBrightness2), ratio));
 
         // compute blended irradiance
-        vec3 irradiance1 = texture(samplerCube(irradianceMaps[lm1], filteredSampler), n).rgb;
-        vec3 irradiance2 = texture(samplerCube(irradianceMap, filteredSampler), n).rgb;
+        vec3 irradiance1 = computeIrradiance(irradianceMaps[lm1], n);
+        vec3 irradiance2 = computeIrradiance(irradianceMap, n);
         irradiance = mix(irradiance1, irradiance2, ratio);
 
         // compute blended environment filter
@@ -1133,8 +1151,8 @@ void main()
         float k = 1.0 - refractiveIndex * refractiveIndex * (1.0 - cosNvn * cosNvn);
         vec3 rfr1 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r1;
         vec3 rfr2 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r2;
-        vec3 irradianceRefracted1 = ssrrDesired ? textureLod(samplerCube(irradianceMaps[lm1], filteredSampler), rfr1, 0).rgb : vec3(1.0);
-        vec3 irradianceRefracted2 = ssrrDesired ? textureLod(samplerCube(irradianceMap, filteredSampler), rfr2, 0).rgb : vec3(1.0);
+        vec3 irradianceRefracted1 = ssrrDesired ? computeIrradiance(irradianceMaps[lm1], rfr1) : vec3(1.0);
+        vec3 irradianceRefracted2 = ssrrDesired ? computeIrradiance(irradianceMap, rfr2) : vec3(1.0);
         irradianceRefracted = mix(irradianceRefracted1, irradianceRefracted2, ratio);
     }
     else
@@ -1151,8 +1169,8 @@ void main()
         ambientBrightness = exp(mix(log(ambientBrightness1), log(ambientBrightness2), ratio));
 
         // compute blended irradiance
-        vec3 irradiance1 = texture(samplerCube(irradianceMaps[lm1], filteredSampler), n).rgb;
-        vec3 irradiance2 = texture(samplerCube(irradianceMaps[lm2], filteredSampler), n).rgb;
+        vec3 irradiance1 = computeIrradiance(irradianceMaps[lm1], n);
+        vec3 irradiance2 = computeIrradiance(irradianceMaps[lm2], n);
         irradiance = mix(irradiance1, irradiance2, ratio);
 
         // compute blended environment filter
@@ -1167,8 +1185,8 @@ void main()
         float k = 1.0 - refractiveIndex * refractiveIndex * (1.0 - cosNvn * cosNvn);
         vec3 rfr1 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r1;
         vec3 rfr2 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r2;
-        vec3 irradianceRefracted1 = ssrrDesired ? textureLod(samplerCube(irradianceMaps[lm1], filteredSampler), rfr1, 0).rgb : vec3(1.0);
-        vec3 irradianceRefracted2 = ssrrDesired ? textureLod(samplerCube(irradianceMaps[lm2], filteredSampler), rfr2, 0).rgb : vec3(1.0);
+        vec3 irradianceRefracted1 = ssrrDesired ? computeIrradiance(irradianceMaps[lm1], rfr1) : vec3(1.0);
+        vec3 irradianceRefracted2 = ssrrDesired ? computeIrradiance(irradianceMaps[lm2], rfr2) : vec3(1.0);
         irradianceRefracted = mix(irradianceRefracted1, irradianceRefracted2, ratio);
     }
 

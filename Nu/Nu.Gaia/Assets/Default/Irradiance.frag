@@ -1,45 +1,102 @@
 #version 450 core
 
 const float PI = 3.14159265359;
-const float SAMPLE_DELTA = 0.1; // NOTE: this was increased from 0.025 to prevent GPU timeouts on modern iOS devices.
+const int SAMPLE_RESOLUTION = 32; // samples along each side of each cube face, for 6 * 32 * 32 samples per coefficient
+
+struct Eye3dStruct
+{
+    vec3 center;
+    mat4 view;
+    mat4 viewInverse;
+    mat4 projection;
+    mat4 projectionInverse;
+    mat4 viewProjection;
+};
+
+layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
 
 layout(set = 1, binding = 0) uniform textureCube inputCubeMap;
 
 layout(set = 2, binding = 0) uniform sampler inputSampler;
 
-layout(location = 0) in vec3 position;
-
 layout(location = 0) out vec4 frag;
+
+// The direction through a point of a cube face, its coordinates each in [-1, 1].
+vec3 getFaceDirection(int face, vec2 uv)
+{
+    switch (face)
+    {
+        case 0: return vec3(1.0, -uv.y, -uv.x); // +x
+        case 1: return vec3(-1.0, -uv.y, uv.x); // -x
+        case 2: return vec3(uv.x, 1.0, uv.y); // +y
+        case 3: return vec3(uv.x, -1.0, -uv.y); // -y
+        case 4: return vec3(uv.x, -uv.y, 1.0); // +z
+        default: return vec3(-uv.x, -uv.y, -1.0); // -z
+    }
+}
+
+// The direction a flipped cube map holds what's in a direction - each face's image mirrored top to bottom, as when it
+// was rendered with a vulkan-flipped projection.
+vec3 getFlippedDirection(vec3 direction)
+{
+    vec3 magnitude = abs(direction);
+    if (magnitude.y >= magnitude.x && magnitude.y >= magnitude.z) return vec3(direction.x, direction.y, -direction.z);
+    return vec3(direction.x, -direction.y, direction.z);
+}
+
+// The real spherical harmonic basis function of an index (bands 0 through 2) in a direction.
+float getBasis(int index, vec3 d)
+{
+    switch (index)
+    {
+        case 0: return 0.282095;
+        case 1: return 0.488603 * d.y;
+        case 2: return 0.488603 * d.z;
+        case 3: return 0.488603 * d.x;
+        case 4: return 1.092548 * d.x * d.y;
+        case 5: return 1.092548 * d.y * d.z;
+        case 6: return 0.315392 * (3.0 * d.z * d.z - 1.0);
+        case 7: return 1.092548 * d.x * d.z;
+        default: return 0.546274 * (d.x * d.x - d.y * d.y);
+    }
+}
 
 void main()
 {
-    // compute normal
-    vec3 normal = normalize(position);
+    // the coefficient this fragment computes, and its band's share of the cosine lobe's convolution, divided by pi so
+    // that the coefficients evaluate to irradiance / pi, as the deferred and forward shaders use it
+    int index = int(gl_FragCoord.x);
+    float convolution = index == 0 ? 1.0 : index < 4 ? 2.0 / 3.0 : 0.25;
 
-    // calculate tangent space
-    vec3 up = vec3(0.0, 1.0, 0.0);
-    vec3 right = normalize(cross(up, normal));
-    up = normalize(cross(normal, right));
+    // whether the input is flipped, as signaled by its projection being flipped
+    bool flipped = eye.projection[1][1] < 0.0;
 
-    // compute irradiance
-    float sampleCount = 0.0;
-    vec3 irradiance = vec3(0.0);
-    for (float phi = 0.0; phi < 2.0 * PI; phi += SAMPLE_DELTA)
+    // project the input's radiance onto the coefficient's basis function, weighting each sample by the solid angle of
+    // the cube face texel it stands for
+    vec3 coefficient = vec3(0.0);
+    float weightTotal = 0.0;
+    for (int face = 0; face < 6; ++face)
     {
-        for (float theta = 0.0; theta < 0.5 * PI; theta += SAMPLE_DELTA)
+        for (int j = 0; j < SAMPLE_RESOLUTION; ++j)
         {
-            vec3 sampleTangent = vec3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
-            vec3 sampleVector = sampleTangent.x * right + sampleTangent.y * up + sampleTangent.z * normal;
-            vec3 sampleColor = texture(samplerCube(inputCubeMap, inputSampler), sampleVector).rgb;
-            if (!any(isnan(sampleColor))) // TODO: understand why NaN can come from this sample and try to apply a more appropriate fix.
+            for (int i = 0; i < SAMPLE_RESOLUTION; ++i)
             {
-                irradiance += sampleColor * cos(theta) * sin(theta);
-                ++sampleCount;
+                vec2 uv = (vec2(i, j) + 0.5) / float(SAMPLE_RESOLUTION) * 2.0 - 1.0;
+                vec3 direction = getFaceDirection(face, uv);
+                float weight = 1.0 / pow(dot(direction, direction), 1.5); // solid angle of the texel, up to a constant
+                direction = normalize(direction);
+                vec3 lookup = flipped ? getFlippedDirection(direction) : direction;
+                vec3 radiance = texture(samplerCube(inputCubeMap, inputSampler), lookup).rgb;
+                if (!any(isnan(radiance))) // TODO: understand why NaN can come from this sample and try to apply a more appropriate fix.
+                {
+                    coefficient += radiance * getBasis(index, direction) * weight;
+                    weightTotal += weight;
+                }
             }
         }
     }
 
-    // normalize irradiance
-    irradiance = PI * irradiance * (1.0 / sampleCount);
-    frag = vec4(irradiance, 1.0);
+    // normalize the weights to the sphere's solid angle and apply the convolution
+    coefficient *= 4.0 * PI / weightTotal * convolution;
+    frag = vec4(coefficient, 1.0);
 }

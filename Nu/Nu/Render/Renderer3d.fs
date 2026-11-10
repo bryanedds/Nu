@@ -4063,8 +4063,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     // render fallback irradiance map
                     let irradianceMap =
                         LightMap.createIrradianceMap
-                            Constants.Render.IrradianceMapResolution
-                            (CubeMapSurface.make (not fallbackFlipped) cubeMap renderer.CubeMapGeometry)
+                            (CubeMapSurface.make fallbackFlipped cubeMap renderer.CubeMapGeometry)
                             renderer.FilteredSampler
                             renderer.IrradianceMap.ImageFormat
                             renderer.IrradiancePipeline
@@ -4121,8 +4120,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         // create irradiance map
                         let irradianceMap =
                             LightMap.createIrradianceMap
-                                Constants.Render.IrradianceMapResolution
-                                (CubeMapSurface.make false reflectionMap renderer.CubeMapGeometry)
+                                (CubeMapSurface.make true reflectionMap renderer.CubeMapGeometry)
                                 renderer.FilteredSampler
                                 renderer.IrradianceMap.ImageFormat
                                 renderer.IrradiancePipeline
@@ -5730,8 +5728,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let commandBuffer = Hl.createTransientCommandBuffer context.TransientCommandPool
         let irradianceMap =
             LightMap.createIrradianceMap
-                Constants.Render.IrradianceMapResolution
-                (CubeMapSurface.make false cubeMap cubeMapGeometry)
+                (CubeMapSurface.make true cubeMap cubeMapGeometry)
                 filteredSampler
                 irradianceFormat
                 irradiancePipeline
