@@ -154,12 +154,12 @@
         <PackageReference Include="BCnEncoder.Net" Version="2.2.1" />
         <PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />
         <PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />
-        <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="15.0.0" />
+        <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="15.1.0" />
         <PackageReference Include="Pfim" Version="0.11.4" />
         <PackageReference Include="Prime" Version="11.5.5" />
-        <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />
-        <PackageReference Include="System.Drawing.Common" Version="10.0.1" />
-        <PackageReference Include="System.Formats.Nrbf" Version="10.0.1" /> <!-- we need this to AOT System.Drawing.Common for macOS/mobile when building in Release -->
+        <PackageReference Include="System.Configuration.ConfigurationManager" Version="11.0.0" />
+        <PackageReference Include="System.Drawing.Common" Version="11.0.0" />
+        <PackageReference Include="System.Formats.Nrbf" Version="11.0.0" /> <!-- we need this to AOT System.Drawing.Common for macOS/mobile when building in Release -->
         <PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />
         <PackageReference Include="ppy.SDL3-CS" Version="2026.722.0" />
         <PackageReference Include="ppy.SDL3_ttf-CS" Version="2026.722.0" />
@@ -175,7 +175,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Update="FSharp.Core" Version="10.1.204" /> <!-- if this version conflicts with Nu.Gaia's FSharp.Compiler.Service's pinned version, building Gaia will fail -->
+        <PackageReference Update="FSharp.Core" Version="11.0.101" /> <!-- if this version conflicts with Nu.Gaia's FSharp.Compiler.Service's pinned version, building Gaia will fail -->
     </ItemGroup>
 
 </Project>

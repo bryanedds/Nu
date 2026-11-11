@@ -20,7 +20,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="FSharp.Compiler.Service" Version="43.12.204" />
+	    <PackageReference Include="FSharp.Compiler.Service" Version="43.13.101" />
         <ProjectReference Include="../../Projects/*/*.fsproj" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
