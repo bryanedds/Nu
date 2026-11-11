@@ -9,10 +9,10 @@
          desktop-only projects)
 
          To opt into mobile targets, list them explicitly in your project:
-		    <TargetFrameworks>net10.0-android;net10.0</TargetFrameworks>
-            <TargetFrameworks Condition="$([System.OperatingSystem]::IsMacOS())">$(TargetFrameworks);net10.0-ios</TargetFrameworks>
+		    <TargetFrameworks>net11.0-android;net11.0</TargetFrameworks>
+            <TargetFrameworks Condition="$([System.OperatingSystem]::IsMacOS())">$(TargetFrameworks);net11.0-ios</TargetFrameworks>
          Note that desktop must NOT come first for Visual Studio tooling to show mobile debug targets correctly. iOS
-         builds will not work outside macOS. For desktop-only: <TargetFramework>net10.0</TargetFramework>
+         builds will not work outside macOS. For desktop-only: <TargetFramework>net11.0</TargetFramework>
 
          Property to set BEFORE this import:
             <TargetFramework> / <TargetFrameworks>
@@ -46,13 +46,13 @@
 
         <!-- .NET runtime settings (defaults; set earlier in your project to override) -->
         <OutputType>Exe</OutputType> <!-- except <OutputType>; it is set to Library by default - override it after this target. -->
-        <ServerGarbageCollection Condition="'$(ServerGarbageCollection)' == '' And '$(TargetPlatformIdentifier)' != 'ios'">True</ServerGarbageCollection> <!-- this property is unsupported on iOS and will fail the build -->
+        <ServerGarbageCollection Condition="'$(ServerGarbageCollection)' == ''">True</ServerGarbageCollection>
         <TieredPGO Condition="'$(TieredPGO)' == ''">True</TieredPGO>
         <DisableFastUpToDateCheck Condition="'$(DisableFastUpToDateCheck)' == ''">True</DisableFastUpToDateCheck>
         <PublishSingleFile Condition="'$(PublishSingleFile)' == '' And '$(TargetPlatformIdentifier)' == ''">true</PublishSingleFile> <!-- for desktop, embed .NET DLLs into the generated executable. However, mobile doesn't support doing this. -->
 
         <!-- Clear RuntimeIdentifiers for mobile TFMs whose RID can't possibly match the platform. MSBuild evaluates
-		     ALL TFMs during restore, so mobile TFMs (net10.0-android, net10.0-ios) are evaluated with the desktop RID
+		     ALL TFMs during restore, so mobile TFMs (net11.0-android, net11.0-ios) are evaluated with the desktop RID
 			 (e.g. linux-x64). Without clearing RuntimeIdentifiers, NuGet tries to resolve RID-specific packages for
 			 these impossible TFM+RID combinations, such as Microsoft.NETCore.App.Runtime.Mono.linux-x64, which doesn't
 			 exist for .NET 10. Without these two properties, `dotnet publish -r linux-x64 -p BuildMobile=true` will
