@@ -41,7 +41,7 @@ type MobileDispatcher () =
         // declare title screen
         let behavior = Dissolve (Constants.Dissolve.Default, None)
         World.beginScreenWithGroupFromFile Simulants.Title.Name (game.GetGameState world = Title) behavior "Assets/Gui/Title.nugroup" [] world |> ignore
-        World.beginGroup "Gui" [] world
+        World.beginGroup "Scene" [] world
         if World.doButton "Play" [] world then game.SetGameState Gameplay world
         if World.doButton "Credits" [] world then game.SetGameState Credits world
         if World.doButton "Exit" [] world && world.Unaccompanied then World.exit world
@@ -58,7 +58,7 @@ type MobileDispatcher () =
         // declare credits screen
         let behavior = Dissolve (Constants.Dissolve.Default, None)
         World.beginScreenWithGroupFromFile Simulants.Credits.Name (game.GetGameState world = Credits) behavior "Assets/Gui/Credits.nugroup" [] world |> ignore
-        World.beginGroup "Gui" [] world
+        World.beginGroup "Scene" [] world
         if World.doButton "Back" [] world then game.SetGameState Title world
         World.endGroup world
         World.endScreen world

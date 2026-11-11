@@ -33,6 +33,12 @@ type GameplayDispatcher () =
         if screen.GetSelected world then
 
             // begin scene declaration
+            // NOTE: unlike MMCC, ImSim works more smoothly by placing gui entities in the default Scene group instead
+            // of in their own separate Gui group. This is because, by default, ImSim ties simulant declaration
+            // order together with simulant processing order. While common scene content in ImSim is still saved in /
+            // loaded from a .nugroup file, you might instead consider saving / loading additive content in .nuentity
+            // files. Lastly, note that you can save multiple entities to a single .nuentity file by parenting them
+            // under a single root entity.
             World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
 
             // declare static model
