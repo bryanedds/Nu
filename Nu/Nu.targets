@@ -51,15 +51,6 @@
         <DisableFastUpToDateCheck Condition="'$(DisableFastUpToDateCheck)' == ''">True</DisableFastUpToDateCheck>
         <PublishSingleFile Condition="'$(PublishSingleFile)' == '' And '$(TargetPlatformIdentifier)' == ''">true</PublishSingleFile> <!-- for desktop, embed .NET DLLs into the generated executable. However, mobile doesn't support doing this. -->
 
-        <!-- Clear RuntimeIdentifiers for mobile TFMs whose RID can't possibly match the platform. MSBuild evaluates
-		     ALL TFMs during restore, so mobile TFMs (net11.0-android, net11.0-ios) are evaluated with the desktop RID
-			 (e.g. linux-x64). Without clearing RuntimeIdentifiers, NuGet tries to resolve RID-specific packages for
-			 these impossible TFM+RID combinations, such as Microsoft.NETCore.App.Runtime.Mono.linux-x64, which doesn't
-			 exist for .NET 10. Without these two properties, `dotnet publish -r linux-x64 -p BuildMobile=true` will
-			 fail the build on Windows/macOS. -->
-        <RuntimeIdentifiers Condition="'$(TargetPlatformIdentifier)' == 'android' And '$(RuntimeIdentifier)' != '' And !$(RuntimeIdentifier.StartsWith('android'))"></RuntimeIdentifiers>
-        <RuntimeIdentifiers Condition="'$(TargetPlatformIdentifier)' == 'ios' And '$(RuntimeIdentifier)' != '' And !$(RuntimeIdentifier.StartsWith('ios'))"></RuntimeIdentifiers>
-
         <!-- F# compiler settings -->
         <WarnOn Condition="'$(WarnOn)' == ''">FS1182</WarnOn>
         <NoWarn Condition="'$(NoWarn)' == ''">FS0009;FS0052;FS1178;FS3391;FS3536;FS3560</NoWarn>
