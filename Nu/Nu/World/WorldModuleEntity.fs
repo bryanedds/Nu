@@ -975,29 +975,47 @@ module WorldModuleEntity =
         static member internal setEntityPerimeterCenterLocal value entity world =
             let entityState = World.getEntityState entity world
             let offset = entityState.PositionLocal - entityState.PerimeterCenterLocal
-            World.setEntityPositionLocal (value + offset) entity world
+            World.setEntityPositionLocal ValueNone (value + offset) entity world
 
         static member internal setEntityPerimeterBottomLocal value entity world =
             let entityState = World.getEntityState entity world
             let offset = entityState.PositionLocal - entityState.PerimeterBottomLocal
-            World.setEntityPositionLocal (value + offset) entity world
+            World.setEntityPositionLocal ValueNone (value + offset) entity world
 
         static member internal setEntityPerimeterBottomLeftLocal value entity world =
             let entityState = World.getEntityState entity world
             let offset = entityState.PositionLocal - entityState.PerimeterBottomLeftLocal
-            World.setEntityPositionLocal (value + offset) entity world
+            World.setEntityPositionLocal ValueNone (value + offset) entity world
 
         static member internal setEntityPerimeterMinLocal value entity world =
             let entityState = World.getEntityState entity world
             let offset = entityState.PositionLocal - entityState.PerimeterMinLocal
-            World.setEntityPositionLocal (value + offset) entity world
+            World.setEntityPositionLocal ValueNone (value + offset) entity world
 
         static member internal setEntityPerimeterMaxLocal value entity world =
             let entityState = World.getEntityState entity world
             let offset = entityState.PositionLocal - entityState.PerimeterMaxLocal
-            World.setEntityPositionLocal (value + offset) entity world
+            World.setEntityPositionLocal ValueNone (value + offset) entity world
 
-        static member internal setEntityPosition value entity world =
+        static member internal tryGetEntityMount (entityState : EntityState) (entity : Entity) world =
+            match entityState.MountOpt with
+            | Some mount ->
+                let mountNames = mount.Names
+                if  mountNames.Length = 1 && mountNames.[0] = Constants.Address.ParentName &&
+                    entity.EntityAddress.Names.Length = 4 then
+                    ValueNone // OPTIMIZATION: a parent mount on an entity directly in a group can only resolve to the group.
+                else
+                    match tryResolve mount entity with
+                    | Some mount when World.getEntityExists mount world -> ValueSome mount
+                    | Some _ | None -> ValueNone
+            | None -> ValueNone
+
+        static member internal tryGetEntityMountDriving (entityState : EntityState) entity world =
+            match World.tryGetEntityMount entityState entity world with
+            | ValueSome mount when not entityState.Physical || World.getEntityAllowedToMount entity world -> ValueSome mount
+            | _ -> ValueNone
+
+        static member internal setEntityPositionUnsynced value entity world =
             let entityState = World.getEntityState entity world
             if value <> entityState.Position then
                 let mutable transform = entityState.Transform
@@ -1008,7 +1026,18 @@ module WorldModuleEntity =
                 true
             else false
 
-        static member internal setEntityPositionLocal value entity world =
+        static member internal setEntityPosition value entity world =
+            let entityState = World.getEntityState entity world
+            if value <> entityState.Position then
+                let mutable affineMatrixMountInverse = Unchecked.defaultof<Matrix4x4>
+                match World.tryGetEntityMountDriving entityState entity world with
+                | ValueSome mount when Matrix4x4.Invert (World.getEntityAffineMatrix mount world, &affineMatrixMountInverse) ->
+                    World.setEntityPositionLocal (ValueSome mount) (value.Transform affineMatrixMountInverse) entity world || // NOTE: when local position doesn't change, still set the position.
+                    World.setEntityPositionUnsynced value entity world
+                | ValueSome _ | ValueNone -> World.setEntityPositionUnsynced value entity world
+            else false
+
+        static member internal setEntityPositionLocal (mountOpt : Entity voption) value entity world =
 
             // ensure value changed
             let entityState = World.getEntityState entity world
@@ -1025,8 +1054,8 @@ module WorldModuleEntity =
                     let boundsOld = entityState.Bounds
                     entityState.PositionLocal <- value
                     let position =
-                        match Option.bind (flip tryResolve entity) entityState.MountOpt with
-                        | Some mount when World.getEntityExists mount world ->
+                        match (match mountOpt with ValueSome _ -> mountOpt | ValueNone -> World.tryGetEntityMount entityState entity world) with
+                        | ValueSome mount ->
                             let affineMatrix = World.getEntityAffineMatrix mount world
                             value.Transform affineMatrix
                         | _ -> value
@@ -1063,20 +1092,20 @@ module WorldModuleEntity =
 
                     // compute position
                     let position =
-                        match Option.bind (flip tryResolve entity) entityState.MountOpt with
-                        | Some mount when World.getEntityExists mount world ->
+                        match World.tryGetEntityMount entityState entity world with
+                        | ValueSome mount ->
                             let affineMatrix = World.getEntityAffineMatrix mount world
                             value.Transform affineMatrix
                         | _ -> value
 
                     // update property
-                    World.setEntityPosition position entity world |> ignore<bool>
+                    World.setEntityPositionUnsynced position entity world |> ignore<bool>
                     true
 
             // nothing changed
             else false
 
-        static member internal setEntityRotation value entity world =
+        static member internal setEntityRotationUnsynced value entity world =
             let entityState = World.getEntityState entity world
             if value <> entityState.Rotation then
                 let mutable transform = entityState.Transform
@@ -1087,7 +1116,18 @@ module WorldModuleEntity =
                 true
             else false
 
-        static member internal setEntityRotationLocal value entity world =
+        static member internal setEntityRotation value entity world =
+            let entityState = World.getEntityState entity world
+            if value <> entityState.Rotation then
+                match World.tryGetEntityMountDriving entityState entity world with
+                | ValueSome mount ->
+                    let rotationMount = World.getEntityRotation mount world
+                    World.setEntityRotationLocal (ValueSome mount) (Quaternion.Inverse rotationMount * value) entity world || // NOTE: when local rotation doesn't change, still set the rotation.
+                    World.setEntityRotationUnsynced value entity world
+                | ValueNone -> World.setEntityRotationUnsynced value entity world
+            else false
+
+        static member internal setEntityRotationLocal (mountOpt : Entity voption) value entity world =
 
             // ensure value changed
             let entityState = World.getEntityState entity world
@@ -1106,8 +1146,8 @@ module WorldModuleEntity =
                     entityState.RotationLocal <- value
                     entityState.AnglesLocal <- anglesLocal
                     let rotation =
-                        match Option.bind (flip tryResolve entity) entityState.MountOpt with
-                        | Some mount when World.getEntityExists mount world ->
+                        match (match mountOpt with ValueSome _ -> mountOpt | ValueNone -> World.tryGetEntityMount entityState entity world) with
+                        | ValueSome mount ->
                             let rotationLocal = World.getEntityRotation mount world
                             rotationLocal * value
                         | _ -> value
@@ -1143,20 +1183,20 @@ module WorldModuleEntity =
 
                     // compute rotation
                     let rotation =
-                        match Option.bind (flip tryResolve entity) entityState.MountOpt with
-                        | Some mount when World.getEntityExists mount world ->
+                        match World.tryGetEntityMount entityState entity world with
+                        | ValueSome mount ->
                             let rotationMount = World.getEntityRotation mount world
                             rotationMount * value
                         | _ -> value
 
                     // update property
-                    World.setEntityRotation rotation entity world |> ignore<bool>
+                    World.setEntityRotationUnsynced rotation entity world |> ignore<bool>
                     true
 
             // nothing changed
             else false
 
-        static member internal setEntityScale value entity world =
+        static member internal setEntityScaleUnsynced value entity world =
             let entityState = World.getEntityState entity world
             if value <> entityState.Scale then
                 let mutable transform = entityState.Transform
@@ -1167,7 +1207,20 @@ module WorldModuleEntity =
                 true
             else false
 
-        static member internal setEntityScaleLocal value entity world =
+        static member internal setEntityScale value entity world =
+            let entityState = World.getEntityState entity world
+            if value <> entityState.Scale then
+                match World.tryGetEntityMountDriving entityState entity world with
+                | ValueSome mount ->
+                    let scaleMount = World.getEntityScale mount world
+                    if scaleMount.X <> 0.0f && scaleMount.Y <> 0.0f && scaleMount.Z <> 0.0f then
+                        World.setEntityScaleLocal (ValueSome mount) (value / scaleMount) entity world || // NOTE: when local scale doesn't change, still set the scale.
+                        World.setEntityScaleUnsynced value entity world
+                    else World.setEntityScaleUnsynced value entity world
+                | ValueNone -> World.setEntityScaleUnsynced value entity world
+            else false
+
+        static member internal setEntityScaleLocal (mountOpt : Entity voption) value entity world =
 
             // ensure value changed
             let entityState = World.getEntityState entity world
@@ -1184,8 +1237,8 @@ module WorldModuleEntity =
                     let boundsOld = entityState.Bounds
                     entityState.ScaleLocal <- value
                     let scale =
-                        match Option.bind (flip tryResolve entity) entityState.MountOpt with
-                        | Some mount when World.getEntityExists mount world ->
+                        match (match mountOpt with ValueSome _ -> mountOpt | ValueNone -> World.tryGetEntityMount entityState entity world) with
+                        | ValueSome mount ->
                             let scale = World.getEntityScale mount world
                             value * scale
                         | _ -> value
@@ -1215,14 +1268,14 @@ module WorldModuleEntity =
 
                     // compute scale
                     let scale =
-                        match Option.bind (flip tryResolve entity) entityState.MountOpt with
-                        | Some mount when World.getEntityExists mount world ->
+                        match World.tryGetEntityMount entityState entity world with
+                        | ValueSome mount ->
                             let scale = World.getEntityScale mount world
                             value * scale
                         | _ -> value
 
                     // update property
-                    World.setEntityScale scale entity world |> ignore<bool>
+                    World.setEntityScaleUnsynced scale entity world |> ignore<bool>
                     true
 
             // nothing changed
@@ -1262,7 +1315,7 @@ module WorldModuleEntity =
                 true
             else false
 
-        static member internal setEntityAngles value entity world =
+        static member internal setEntityAnglesUnsynced value entity world =
             let entityState = World.getEntityState entity world
             if value <> entityState.Angles then
                 let mutable transform = entityState.Transform
@@ -1271,6 +1324,17 @@ module WorldModuleEntity =
                 then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
                 else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
                 true
+            else false
+
+        static member internal setEntityAngles (value : Vector3) entity world =
+            let entityState = World.getEntityState entity world
+            if value <> entityState.Angles then
+                match World.tryGetEntityMountDriving entityState entity world with
+                | ValueSome _ ->
+                    World.setEntityRotation value.RollPitchYaw entity world |> ignore<bool>
+                    World.setEntityAnglesUnsynced value entity world |> ignore<bool> // NOTE: keeps the angles as given rather than as derived from the rotation.
+                    true
+                | ValueNone -> World.setEntityAnglesUnsynced value entity world
             else false
 
         static member internal setEntityAnglesLocal value entity world =
@@ -1292,8 +1356,8 @@ module WorldModuleEntity =
                     entityState.RotationLocal <- rotationLocal
                     entityState.AnglesLocal <- value
                     let rotation =
-                        match Option.bind (flip tryResolve entity) entityState.MountOpt with
-                        | Some mount when World.getEntityExists mount world ->
+                        match World.tryGetEntityMount entityState entity world with
+                        | ValueSome mount ->
                             let rotationMount = World.getEntityRotation mount world
                             rotationMount * rotationLocal
                         | _ -> rotationLocal
@@ -1327,14 +1391,14 @@ module WorldModuleEntity =
                     let entityState = World.getEntityState entity world
 
                     // update rotation property if mounting, otherwise update angles property
-                    match Option.bind (flip tryResolve entity) entityState.MountOpt with
-                    | Some mount when World.getEntityExists mount world ->
+                    match World.tryGetEntityMount entityState entity world with
+                    | ValueSome mount ->
                         let rotationMount = World.getEntityRotation mount world
                         let rotation = rotationMount * rotationLocal
-                        World.setEntityRotation rotation entity world |> ignore<bool>
+                        World.setEntityRotationUnsynced rotation entity world |> ignore<bool>
                         true
                     | _ ->
-                        World.setEntityAngles value entity world |> ignore<bool>
+                        World.setEntityAnglesUnsynced value entity world |> ignore<bool>
                         true
 
             // nothing changed
@@ -1353,19 +1417,19 @@ module WorldModuleEntity =
             if  World.getEntityElevationLocal mounter world < 1.0f &&
                 Array.exists (fun facet -> getType facet = LayoutFacetType) (World.getEntityFacets mount world) &&
                 Array.exists (fun facet -> getType facet = LayoutFacetType) (World.getEntityFacets mounter world) then
-                World.setEntityElevationLocal 1.0f mounter world |> ignore<bool>
+                World.setEntityElevationLocal ValueNone 1.0f mounter world |> ignore<bool>
 
             // propagate elevation
             let elevationMount = World.getEntityElevation mount world
             let elevationLocal = World.getEntityElevationLocal mounter world
             let elevation = elevationMount + elevationLocal
-            World.setEntityElevation elevation mounter world |> ignore<bool>
+            World.setEntityElevationUnsynced elevation mounter world |> ignore<bool>
             World.traverseEntityMounters World.propagateEntityElevation3 mounter world
 
         static member internal propagateEntityElevation entity world =
             World.traverseEntityMounters World.propagateEntityElevation3 entity world
 
-        static member internal setEntityElevation value entity world =
+        static member internal setEntityElevationUnsynced value entity world =
             let entityState = World.getEntityState entity world
             if value <> entityState.Transform.Elevation then
                 let mutable transform = entityState.Transform
@@ -1377,7 +1441,18 @@ module WorldModuleEntity =
                 true
             else false
 
-        static member internal setEntityElevationLocal value entity world =
+        static member internal setEntityElevation value entity world =
+            let entityState = World.getEntityState entity world
+            if value <> entityState.Transform.Elevation then
+                match World.tryGetEntityMount entityState entity world with
+                | ValueSome mount ->
+                    let elevationMount = World.getEntityElevation mount world
+                    World.setEntityElevationLocal (ValueSome mount) (value - elevationMount) entity world || // NOTE: when local elevation doesn't change, still set the elevation.
+                    World.setEntityElevationUnsynced value entity world
+                | _ -> World.setEntityElevationUnsynced value entity world
+            else false
+
+        static member internal setEntityElevationLocal (mountOpt : Entity voption) value entity world =
 
             // ensure value changed
             let entityState = World.getEntityState entity world
@@ -1387,8 +1462,8 @@ module WorldModuleEntity =
                 if entityState.Optimized world.Imperative then
                     entityState.ElevationLocal <- value
                     let elevationMount =
-                        match Option.bind (flip tryResolve entity) entityState.MountOpt with
-                        | Some mount when World.getEntityExists mount world -> World.getEntityElevation mount world
+                        match (match mountOpt with ValueSome _ -> mountOpt | ValueNone -> World.tryGetEntityMount entityState entity world) with
+                        | ValueSome mount -> World.getEntityElevation mount world
                         | _ -> 0.0f
                     entityState.Transform.Elevation <- elevationMount + value
                     if entityState.Mounted then World.propagateEntityElevation entity world
@@ -1411,12 +1486,12 @@ module WorldModuleEntity =
 
                     // compute mount elevation
                     let elevationMount =
-                        match Option.bind (flip tryResolve entity) (World.getEntityMountOpt entity world) with
-                        | Some mount when World.getEntityExists mount world -> World.getEntityElevation mount world
+                        match World.tryGetEntityMount (World.getEntityState entity world) entity world with
+                        | ValueSome mount -> World.getEntityElevation mount world
                         | _ -> 0.0f
 
                     // update property
-                    World.setEntityElevation (elevationMount + value) entity world |> ignore<bool>
+                    World.setEntityElevationUnsynced (elevationMount + value) entity world |> ignore<bool>
                     true
 
             // nothing changed
@@ -1595,10 +1670,9 @@ module WorldModuleEntity =
             if value <> entityState.PerimeterUnscaled then
                 let mutable transform = entityState.Transform
                 transform.PerimeterUnscaled <- value
-                if entityState.Optimized world.Imperative
-                then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
-                else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
-                true
+                let sizeChanged = World.setEntitySize transform.Size entity world
+                let positionChanged = World.setEntityPosition transform.Position entity world
+                sizeChanged || positionChanged
             else false
 
         static member internal getEntityPerimeter entity world =
@@ -1609,10 +1683,10 @@ module WorldModuleEntity =
             if value <> entityState.Perimeter then
                 let mutable transform = entityState.Transform
                 transform.Perimeter <- value
-                if entityState.Optimized world.Imperative
-                then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
-                else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
-                true
+                let sizeChanged = World.setEntitySize transform.Size entity world
+                let scaleChanged = World.setEntityScale transform.Scale entity world
+                let positionChanged = World.setEntityPosition transform.Position entity world
+                sizeChanged || scaleChanged || positionChanged
             else false
 
         static member internal getEntityBounds entity world =
@@ -2856,13 +2930,12 @@ module WorldModuleEntity =
     let private initSetters () =
         let entitySetters =
             dictPlus StringComparer.Ordinal
-                [("Transform", fun property entity world -> let mutable transform = property.PropertyValue :?> Transform in World.setEntityTransformByRef (&transform, World.getEntityState entity world, entity, world))
-                 ("Position", fun property entity world -> World.setEntityPosition (property.PropertyValue :?> Vector3) entity world)
-                 ("PositionLocal", fun property entity world -> World.setEntityPositionLocal (property.PropertyValue :?> Vector3) entity world)
+                [("Position", fun property entity world -> World.setEntityPosition (property.PropertyValue :?> Vector3) entity world)
+                 ("PositionLocal", fun property entity world -> World.setEntityPositionLocal ValueNone (property.PropertyValue :?> Vector3) entity world)
                  ("Rotation", fun property entity world -> World.setEntityRotation (property.PropertyValue :?> Quaternion) entity world)
-                 ("RotationLocal", fun property entity world -> World.setEntityRotationLocal (property.PropertyValue :?> Quaternion) entity world)
+                 ("RotationLocal", fun property entity world -> World.setEntityRotationLocal ValueNone (property.PropertyValue :?> Quaternion) entity world)
                  ("Scale", fun property entity world -> World.setEntityScale (property.PropertyValue :?> Vector3) entity world)
-                 ("ScaleLocal", fun property entity world -> World.setEntityScaleLocal (property.PropertyValue :?> Vector3) entity world)
+                 ("ScaleLocal", fun property entity world -> World.setEntityScaleLocal ValueNone (property.PropertyValue :?> Vector3) entity world)
                  ("Offset", fun property entity world -> World.setEntityOffset (property.PropertyValue :?> Vector3) entity world)
                  ("Angles", fun property entity world -> World.setEntityAngles (property.PropertyValue :?> Vector3) entity world)
                  ("AnglesLocal", fun property entity world -> World.setEntityAnglesLocal (property.PropertyValue :?> Vector3) entity world)
@@ -2870,7 +2943,7 @@ module WorldModuleEntity =
                  ("DegreesLocal", fun property entity world -> World.setEntityDegreesLocal (property.PropertyValue :?> Vector3) entity world)
                  ("Size", fun property entity world -> World.setEntitySize (property.PropertyValue :?> Vector3) entity world)
                  ("Elevation", fun property entity world -> World.setEntityElevation (property.PropertyValue :?> single) entity world)
-                 ("ElevationLocal", fun property entity world -> World.setEntityElevationLocal (property.PropertyValue :?> single) entity world)
+                 ("ElevationLocal", fun property entity world -> World.setEntityElevationLocal ValueNone (property.PropertyValue :?> single) entity world)
                  ("Overflow", fun property entity world -> World.setEntityOverflow (property.PropertyValue :?> single) entity world)
                  ("PerimeterUnscaled", fun property entity world -> World.setEntityPerimeterUnscaled (property.PropertyValue :?> Box3) entity world)
                  ("Perimeter", fun property entity world -> World.setEntityPerimeter (property.PropertyValue :?> Box3) entity world)
