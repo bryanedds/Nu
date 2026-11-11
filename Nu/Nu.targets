@@ -458,8 +458,8 @@
         <AndroidPackageFormat>aab</AndroidPackageFormat>
         <AndroidBundleToolExtraArgs>--local-testing</AndroidBundleToolExtraArgs>
 
-        <!-- Google Play Asset Delivery requires at least Android 6.0 (API version 23) -->
-        <SupportedOSPlatformVersion Condition="'$(SupportedOSPlatformVersion)' == ''">23</SupportedOSPlatformVersion>
+        <!-- Google Play Asset Delivery requires at least Android 6.0 (API version 24) -->
+        <SupportedOSPlatformVersion Condition="'$(SupportedOSPlatformVersion)' == ''">24</SupportedOSPlatformVersion>
 
     </PropertyGroup>
 
