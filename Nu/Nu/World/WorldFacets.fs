@@ -1946,7 +1946,7 @@ type TileMapFacet () =
                 let mutable transform = entity.GetTransform world
                 transform.Size <- attributes.SizeInferred
                 transform.Offset <- attributes.OffsetInferred
-                entity.SetTransformWithoutEvent transform world
+                World.setEntityTransformByRefWithoutEvent (&transform, World.getEntityState entity world, entity, world)
                 entity.PropagatePhysics world
             Cascade)
             (entity.ChangeEvent (nameof entity.TileMap))
@@ -2066,7 +2066,7 @@ type TmxMapFacet () =
                 let mutable transform = entity.GetTransform world
                 transform.Size <- attributes.SizeInferred
                 transform.Offset <- attributes.OffsetInferred
-                entity.SetTransformWithoutEvent transform world
+                World.setEntityTransformByRefWithoutEvent (&transform, World.getEntityState entity world, entity, world)
                 entity.PropagatePhysics world
             Cascade)
             (entity.ChangeEvent (nameof entity.TmxMap))
@@ -4160,14 +4160,8 @@ type EditVolumeFacet () =
                 match manipulationResult with
                 | ImGuiEditActive started ->
                     if started then viewportOverlay.EditContext.Snapshot (ChangeProperty (None, nameof Entity.Bounds)) world
-                    match entity.TryGetMountee world with
-                    | Some mountee ->
-                        let positionMountee = mountee.GetPosition world
-                        entity.SetPositionLocal (positionMountee - bounds.Center) world
-                        entity.SetSize (bounds.Size / entity.GetScale world) world
-                    | None ->
-                        entity.SetPosition bounds.Center world
-                        entity.SetSize (bounds.Size / entity.GetScale world) world
+                    entity.SetPosition bounds.Center world
+                    entity.SetSize (bounds.Size / entity.GetScale world) world
                 | ImGuiEditInactive -> ()
             else
                 // TODO: P1: see if we can implement this properly instead of punting.
