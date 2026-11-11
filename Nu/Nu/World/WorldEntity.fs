@@ -91,25 +91,24 @@ module WorldEntityModule =
         member this.GetFacets world = World.getEntityFacets this world
         member this.Facets = if notNull (this :> obj) then lensReadOnly (nameof this.Facets) this this.GetFacets else Cached.Facets
         member this.GetTransform world = World.getEntityTransform this world
-        member this.SetTransform value world = let mutable value = value in World.setEntityTransformByRef (&value, World.getEntityState this world, this, world) |> ignore<bool>
-        member this.Transform = if notNull (this :> obj) then lens (nameof this.Transform) this this.GetTransform this.SetTransform else Cached.Transform
+        member this.Transform = if notNull (this :> obj) then lensReadOnly (nameof this.Transform) this this.GetTransform else Cached.Transform
         member this.GetPosition world = World.getEntityPosition this world
         member this.SetPosition value world = World.setEntityPosition value this world |> ignore<bool>
         member this.Position = if notNull (this :> obj) then lens (nameof this.Position) this this.GetPosition this.SetPosition else Cached.Position
         member this.GetPositionLocal world = World.getEntityPositionLocal this world
-        member this.SetPositionLocal value world = World.setEntityPositionLocal value this world |> ignore<bool>
+        member this.SetPositionLocal value world = World.setEntityPositionLocal ValueNone value this world |> ignore<bool>
         member this.PositionLocal = if notNull (this :> obj) then lens (nameof this.PositionLocal) this this.GetPositionLocal this.SetPositionLocal else Cached.PositionLocal
         member this.GetRotation world = World.getEntityRotation this world
         member this.SetRotation value world = World.setEntityRotation value this world |> ignore<bool>
         member this.Rotation = if notNull (this :> obj) then lens (nameof this.Rotation) this this.GetRotation this.SetRotation else Cached.Rotation
         member this.GetRotationLocal world = World.getEntityRotationLocal this world
-        member this.SetRotationLocal value world = World.setEntityRotationLocal value this world |> ignore<bool>
+        member this.SetRotationLocal value world = World.setEntityRotationLocal ValueNone value this world |> ignore<bool>
         member this.RotationLocal = if notNull (this :> obj) then lens (nameof this.RotationLocal) this this.GetRotationLocal this.SetRotationLocal else Cached.RotationLocal
         member this.GetScale world = World.getEntityScale this world
         member this.SetScale value world = World.setEntityScale value this world |> ignore<bool>
         member this.Scale = if notNull (this :> obj) then lens (nameof this.Scale) this this.GetScale this.SetScale else Cached.Scale
         member this.GetScaleLocal world = World.getEntityScaleLocal this world
-        member this.SetScaleLocal value world = World.setEntityScaleLocal value this world |> ignore<bool>
+        member this.SetScaleLocal value world = World.setEntityScaleLocal ValueNone value this world |> ignore<bool>
         member this.ScaleLocal = if notNull (this :> obj) then lens (nameof this.ScaleLocal) this this.GetScaleLocal this.SetScaleLocal else Cached.ScaleLocal
         member this.GetOffset world = World.getEntityOffset this world
         member this.SetOffset value world = World.setEntityOffset value this world |> ignore<bool>
@@ -133,7 +132,7 @@ module WorldEntityModule =
         member this.SetElevation value world = World.setEntityElevation value this world |> ignore<bool>
         member this.Elevation = if notNull (this :> obj) then lens (nameof this.Elevation) this this.GetElevation this.SetElevation else Cached.Elevation
         member this.GetElevationLocal world = World.getEntityElevationLocal this world
-        member this.SetElevationLocal value world = World.setEntityElevationLocal value this world |> ignore<bool>
+        member this.SetElevationLocal value world = World.setEntityElevationLocal ValueNone value this world |> ignore<bool>
         member this.ElevationLocal = if notNull (this :> obj) then lens (nameof this.ElevationLocal) this this.GetElevationLocal this.SetElevationLocal else Cached.ElevationLocal
         member this.GetOverflow world = World.getEntityOverflow this world
         member this.SetOverflow value world = World.setEntityOverflow value this world |> ignore<bool>
@@ -259,7 +258,7 @@ module WorldEntityModule =
         static member internal init () =
             Cached.Dispatcher <- lensReadOnly (nameof Cached.Dispatcher) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Facets <- lensReadOnly (nameof Cached.Facets) Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.Transform <- lens (nameof Cached.Transform) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Transform <- lensReadOnly (nameof Cached.Transform) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Position <- lens (nameof Cached.Position) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.PositionLocal <- lens (nameof Cached.PositionLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Rotation <- lens (nameof Cached.Rotation) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
@@ -334,24 +333,6 @@ module WorldEntityModule =
         /// Get the optional presence override.
         member this.GetPresenceOverride world =
             World.getEntityPresenceOverride this world
-
-        /// Set the transform of an entity.
-        member this.SetTransformByRef (value : Transform byref, world) =
-            World.setEntityTransformByRef (&value, World.getEntityState this world, this, world)
-
-        /// Set the transform of an entity without generating any change events.
-        member this.SetTransformByRefWithoutEvent (value : Transform inref, world) =
-            World.setEntityTransformByRefWithoutEvent (&value, World.getEntityState this world, this, world)
-
-        /// Set the transform of an entity without generating any change events.
-        member this.SetTransformWithoutEvent value world =
-            World.setEntityTransformByRefWithoutEvent (&value, World.getEntityState this world, this, world)
-
-        /// Set the transform of an entity snapped to the give position and rotation snaps.
-        member this.SetTransformPositionSnapped positionSnap (value : Transform) world =
-            let mutable transform = value
-            Transform.snapPosition (positionSnap, &transform)
-            this.SetTransform transform world
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world =
@@ -543,13 +524,13 @@ module WorldEntityModule =
                     transformOld.Rotation <> rotation then
                     transformNew.PerimeterCenter <- center
                     transformNew.Rotation <- rotation
-                    this.SetTransformByRefWithoutEvent (&transformNew, world)
+                    World.setEntityTransformByRefWithoutEvent (&transformNew, World.getEntityState this world, this, world)
             else
                 if  transformOld.Position <> center ||
                     transformOld.Rotation <> rotation then
                     transformNew.Position <- center
                     transformNew.Rotation <- rotation
-                    this.SetTransformByRefWithoutEvent (&transformNew, world)
+                    World.setEntityTransformByRefWithoutEvent (&transformNew, World.getEntityState this world, this, world)
             this.SetXtensionPropertyWithoutEvent "LinearVelocity" linearVelocity world
             this.SetXtensionPropertyWithoutEvent "AngularVelocity" angularVelocity world
             let dispatcher = this.GetDispatcher world
@@ -912,7 +893,7 @@ module WorldEntityModule =
             let mutable transform = entity.GetTransform world
             transform.Position <- position
             match positionSnapOpt with Some positionSnap -> Transform.snapPosition (positionSnap, &transform) | None -> ()
-            entity.SetTransform transform world
+            entity.SetPosition transform.Position world
             if not cut then
                 match entity.GetPropagationSourceOpt world with
                 | None -> if entitySource.GetExists world then entity.SetPropagationSourceOpt (Some entitySource) world

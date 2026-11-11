@@ -858,9 +858,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             if not attributes.Unimportant then
                 entityTransform.Size <- attributes.SizeInferred
                 entityTransform.Offset <- attributes.OffsetInferred
-            if Snaps2dSelected && ImGui.IsCtrlUp ()
-            then entity.SetTransformPositionSnapped positionSnap entityTransform world
-            else entity.SetTransform entityTransform world
+            if Snaps2dSelected && ImGui.IsCtrlUp () then Transform.snapPosition (positionSnap, &entityTransform)
         else
             let eyeCenter = world.Eye3dCenter
             let eyeRotation = world.Eye3dRotation
@@ -877,9 +875,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             if not attributes.Unimportant then
                 entityTransform.Size <- attributes.SizeInferred
                 entityTransform.Offset <- attributes.OffsetInferred
-            if not Snaps2dSelected && ImGui.IsCtrlUp ()
-            then entity.SetTransformPositionSnapped positionSnap entityTransform world
-            else entity.SetTransform entityTransform world
+            if not Snaps2dSelected && ImGui.IsCtrlUp () then Transform.snapPosition (positionSnap, &entityTransform)
+        entity.SetPosition entityTransform.Position world
+        entity.SetElevation entityTransform.Elevation world
+        entity.SetSize entityTransform.Size world
+        entity.SetOffset entityTransform.Offset world
         if entity.Surnames.Length > 1 then
             if World.getEntityAllowedToMount entity world then
                 entity.SetMountOptWithAdjustment true (Some Address.parent) world
@@ -968,10 +968,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     if entity.GetExists world then
                         snapshot LoadEntity world
                         let order = entity.GetOrder world
+                        let mountOpt = entity.GetMountOpt world
                         let position = entity.GetPosition world
                         let rotation = entity.GetRotation world
                         let elevation = entity.GetElevation world
                         let propagatedDescriptorOpt = entity.GetPropagatedDescriptorOpt world
+                        let entityProperties = Map.add Constants.Engine.MountOptPropertyName (valueToSymbol mountOpt) entityDescriptor.EntityProperties // NOTE: keeping the existing entity's mount rather than reading it from the file.
+                        let entityDescriptor = { entityDescriptor with EntityProperties = entityProperties }
                         World.destroyEntityImmediate entity world
                         let entity = World.readEntity false true entityDescriptor (Some entity.Name) entity.Parent world
                         entity.SetOrder order world
@@ -1582,11 +1585,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     let entityPosition = entity.GetPosition world
                     let entityPositionDelta = entityPositionSnapped - entityPosition
                     let entityPositionConstrained = entityPosition + entityPositionDelta
-                    match Option.bind (flip tryResolve entity) (entity.GetMountOpt world) with
-                    | Some parent ->
-                        let entityPositionLocal = entityPositionConstrained.Transform (parent.GetAffineMatrix world).Inverted
-                        entity.SetPositionLocal entityPositionLocal world
-                    | None -> entity.SetPosition entityPositionConstrained world
+                    entity.SetPosition entityPositionConstrained world
                     if  Option.isSome (entity.TryGetProperty "LinearVelocity" world) &&
                         Option.isSome (entity.TryGetProperty "AngularVelocity" world) then
                         entity.SetLinearVelocity v3Zero world
@@ -2369,33 +2368,26 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                         snapshot snapshotType world
                                         entity
                                     else entity
-                            match Option.bind (flip tryResolve entity) (entity.GetMountOpt world) with
-                            | Some mount ->
-                                let mountAffineMatrixInverse = (mount.GetAffineMatrix world).Inverted
-                                let positionLocal = position.Transform mountAffineMatrixInverse
-                                let mountRotationInverse = (mount.GetRotation world).Inverted
-                                let rotationLocal = mountRotationInverse * rotation
-                                let rollPitchYawLocal = rotationLocal.RollPitchYaw
-                                let mutable degreesLocal = v3Zero
-                                degreesLocal.X <- radToDegF rollPitchYawLocal.X
-                                degreesLocal.Y <- radToDegF rollPitchYawLocal.Y
-                                degreesLocal.Z <- radToDegF rollPitchYawLocal.Z
-                                degreesLocal <- if degreesLocal.X = 180.0f && degreesLocal.Z = 180.0f then v3 0.0f (180.0f - degreesLocal.Y) 0.0f else degreesLocal
-                                degreesLocal <- v3 degreesLocal.X (if degreesLocal.Y > 180.0f then degreesLocal.Y - 360.0f else degreesLocal.Y) degreesLocal.Z
-                                degreesLocal <- v3 degreesLocal.X (if degreesLocal.Y < -180.0f then degreesLocal.Y + 360.0f else degreesLocal.Y) degreesLocal.Z
-                                let mountScaleInverse = v3One / mount.GetScale world
-                                let scaleLocal = mountScaleInverse * scale
-                                match ManipulationOperation with
-                                | OPERATION.TRANSLATE -> entity.SetPositionLocal positionLocal world
-                                | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> entity.SetDegreesLocal degreesLocal world
-                                | OPERATION.SCALE -> entity.SetScaleLocal scaleLocal world
-                                | _ -> () // nothing to do
-                            | None ->
-                                match ManipulationOperation with
-                                | OPERATION.TRANSLATE -> entity.SetPosition position world
-                                | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> entity.SetDegrees degrees world
-                                | OPERATION.SCALE -> entity.SetScale scale world
-                                | _ -> () // nothing to do
+                            match ManipulationOperation with
+                            | OPERATION.TRANSLATE -> entity.SetPosition position world
+                            | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z ->
+                                match Option.bind (flip tryResolve entity) (entity.GetMountOpt world) with
+                                | Some mount ->
+                                    // NOTE: setting local degrees directly so they're normalized the same way as world degrees.
+                                    let mountRotationInverse = (mount.GetRotation world).Inverted
+                                    let rotationLocal = mountRotationInverse * rotation
+                                    let rollPitchYawLocal = rotationLocal.RollPitchYaw
+                                    let mutable degreesLocal = v3Zero
+                                    degreesLocal.X <- radToDegF rollPitchYawLocal.X
+                                    degreesLocal.Y <- radToDegF rollPitchYawLocal.Y
+                                    degreesLocal.Z <- radToDegF rollPitchYawLocal.Z
+                                    degreesLocal <- if degreesLocal.X = 180.0f && degreesLocal.Z = 180.0f then v3 0.0f (180.0f - degreesLocal.Y) 0.0f else degreesLocal
+                                    degreesLocal <- v3 degreesLocal.X (if degreesLocal.Y > 180.0f then degreesLocal.Y - 360.0f else degreesLocal.Y) degreesLocal.Z
+                                    degreesLocal <- v3 degreesLocal.X (if degreesLocal.Y < -180.0f then degreesLocal.Y + 360.0f else degreesLocal.Y) degreesLocal.Z
+                                    entity.SetDegreesLocal degreesLocal world
+                                | None -> entity.SetDegrees degrees world
+                            | OPERATION.SCALE -> entity.SetScale scale world
+                            | _ -> () // nothing to do
                             if world.TimeAdvancing then
                                 match entity.TryGetProperty (nameof entity.LinearVelocity) world with
                                 | Some property when property.PropertyType = typeof<Vector3> -> entity.SetLinearVelocity v3Zero world
