@@ -14,9 +14,22 @@ type [<Struct>] Handling =
     | Resolve
     | Cascade
 
+/// The data of a subscription callback that is found by name on the subscriber's dispatcher or facet.
+type [<ReferenceEquality>] NamedCallbackData =
+    { HandlerName : string
+      FacetNameOpt : string voption
+      Bind : Type -> obj
+      mutable OwnerType : Type
+      mutable Handler : obj }
+
+/// A subscription callback, either as a lambda or as found by name on the subscriber's dispatcher or facet.
+type [<Struct>] SubscriptionCallback =
+    | LambdaCallback of Lambda : obj
+    | NamedCallback of Named : NamedCallbackData
+
 /// An entry in the subscription map.
 type [<ReferenceEquality>] SubscriptionEntry =
-    { SubscriptionCallback : obj
+    { SubscriptionCallback : SubscriptionCallback
       SubscriptionSubscriber : Simulant }
 
 /// Abstracts over a subscription sorting procedure.

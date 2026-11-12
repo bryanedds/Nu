@@ -17,10 +17,6 @@ module Content =
 
     let private ContentsCached = Dictionary<string, struct (obj * obj)> StringComparer.Ordinal
 
-    /// Helps to track when content bound to event handlers needs to be updated due to LateBindings changing, such as
-    /// via code reloading.
-    let mutable internal UpdateLateBindingsCount = 0
-
     // NOTE: extracted from Content.synchronizeEventHandlers to shorten stack trace.
     let [<DebuggerHidden>] private signalHandler signalObj origin =
         fun (_ : Event) world ->
@@ -60,8 +56,8 @@ module Content =
                 // subscribe to added events
                 for ((eventAddress : obj Address, signalObj), subscriptionId) in eventSignalsAdded do
                     let eventAddress = if eventAddress.Anonymous then eventAddress --> itoa simulant.SimulantAddress else eventAddress
-                    let unsubscribe = World.subscribePlus subscriptionId (signalHandler signalObj origin) eventAddress origin world
-                    World.monitor
+                    let unsubscribe = World.subscribeLambdaPlus subscriptionId (signalHandler signalObj origin) eventAddress origin world
+                    World.monitorLambda
                         (fun _ world -> unsubscribe world; Cascade)
                         (Events.UnregisteringEvent --> itoa simulant.SimulantAddress)
                         simulant
@@ -99,8 +95,8 @@ module Content =
                 // subscribe to added handlers
                 for ((_, eventAddress : obj Address), (subscriptionId, handler)) in eventHandlersAdded do
                     let eventAddress = if eventAddress.Anonymous then eventAddress --> itoa simulant.SimulantAddress else eventAddress
-                    let unsubscribe = World.subscribePlus subscriptionId (signalHandlerHandler handler origin) eventAddress origin world
-                    World.monitor
+                    let unsubscribe = World.subscribeLambdaPlus subscriptionId (signalHandlerHandler handler origin) eventAddress origin world
+                    World.monitorLambda
                         (fun _ world -> unsubscribe world; Cascade)
                         (Events.UnregisteringEvent --> itoa simulant.SimulantAddress)
                         simulant
@@ -341,7 +337,7 @@ module Content =
         for definition in definitions do
             match definition with
             | EventSignalContent (addr, value) -> (if isNull eventSignalContentsOpt then eventSignalContentsOpt <- OrderedDictionary HashIdentity.Structural); eventSignalContentsOpt.Add ((addr, value), Gen.id64)
-            | EventHandlerContent ehf -> (if isNull eventHandlerContentsOpt then eventHandlerContentsOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerContentsOpt.Add ((UpdateLateBindingsCount, ehf.Equatable), (Gen.id64, ehf.Nonequatable))
+            | EventHandlerContent ehf -> (if isNull eventHandlerContentsOpt then eventHandlerContentsOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerContentsOpt.Add ((WorldModuleInternal.UpdateLateBindingsCount, ehf.Equatable), (Gen.id64, ehf.Nonequatable))
             | PropertyContent pc -> (if isNull propertyContentsOpt then propertyContentsOpt <- List ()); propertyContentsOpt.Add pc
         for entity in entities do
             if isNull entityContentsOpt then entityContentsOpt <- OrderedDictionary StringComparer.Ordinal
@@ -704,7 +700,7 @@ module Content =
         for definition in definitions do
             match definition with
             | EventSignalContent (addr, value) -> (if isNull eventSignalContentsOpt then eventSignalContentsOpt <- OrderedDictionary HashIdentity.Structural); eventSignalContentsOpt.Add ((addr, value), Gen.id64)
-            | EventHandlerContent ehf -> (if isNull eventHandlerContentsOpt then eventHandlerContentsOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerContentsOpt.Add ((UpdateLateBindingsCount, ehf.Equatable), (Gen.id64, ehf.Nonequatable))
+            | EventHandlerContent ehf -> (if isNull eventHandlerContentsOpt then eventHandlerContentsOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerContentsOpt.Add ((WorldModuleInternal.UpdateLateBindingsCount, ehf.Equatable), (Gen.id64, ehf.Nonequatable))
             | PropertyContent pc -> (if isNull propertyContentsOpt then propertyContentsOpt <- List ()); propertyContentsOpt.Add pc
         for entity in entities do
             if isNull entityContentsOpt then entityContentsOpt <- OrderedDictionary StringComparer.Ordinal
@@ -735,7 +731,7 @@ module Content =
         for definition in definitions do
             match definition with
             | EventSignalContent (addr, value) -> (if isNull eventSignalContentsOpt then eventSignalContentsOpt <- OrderedDictionary HashIdentity.Structural); eventSignalContentsOpt.Add ((addr, value), Gen.id64)
-            | EventHandlerContent ehf -> (if isNull eventHandlerContentsOpt then eventHandlerContentsOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerContentsOpt.Add ((UpdateLateBindingsCount, ehf.Equatable), (Gen.id64, ehf.Nonequatable))
+            | EventHandlerContent ehf -> (if isNull eventHandlerContentsOpt then eventHandlerContentsOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerContentsOpt.Add ((WorldModuleInternal.UpdateLateBindingsCount, ehf.Equatable), (Gen.id64, ehf.Nonequatable))
             | PropertyContent pc -> (if isNull propertyContentsOpt then propertyContentsOpt <- List ()); propertyContentsOpt.Add pc
         for group in groups do
             groupContents.Add (group.GroupName, group)
@@ -765,7 +761,7 @@ module Content =
         for definition in definitions do
             match definition with
             | EventSignalContent (addr, value) -> (if isNull eventSignalContentsOpt then eventSignalContentsOpt <- OrderedDictionary HashIdentity.Structural); eventSignalContentsOpt.Add ((addr, value), Gen.id64)
-            | EventHandlerContent ehf -> (if isNull eventHandlerContentsOpt then eventHandlerContentsOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerContentsOpt.Add ((UpdateLateBindingsCount, ehf.Equatable), (Gen.id64, ehf.Nonequatable))
+            | EventHandlerContent ehf -> (if isNull eventHandlerContentsOpt then eventHandlerContentsOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerContentsOpt.Add ((WorldModuleInternal.UpdateLateBindingsCount, ehf.Equatable), (Gen.id64, ehf.Nonequatable))
             | PropertyContent pc -> (if isNull propertyContentsOpt then propertyContentsOpt <- List ()); propertyContentsOpt.Add pc
         for screen in screens do
             screenContents.Add (screen.ScreenName, screen)

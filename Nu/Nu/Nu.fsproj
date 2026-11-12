@@ -114,8 +114,6 @@
         <Compile Include="World\WorldGame.fs" />
         <Compile Include="World\WorldSimulant.fs" />
         <Compile Include="World\WorldInput.fs" />
-        <Compile Include="World\WorldStream.fs" />
-        <Compile Include="World\WorldChain.fs" />
         <Compile Include="World\WorldPhysics.fs" />
         <Compile Include="World\WorldRender.fs" />
         <Compile Include="World\WorldAudio.fs" />

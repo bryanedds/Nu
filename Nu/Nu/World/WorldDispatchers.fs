@@ -220,7 +220,7 @@ type FpsDispatcher () =
 type PanelDispatcher () =
     inherit GuiDispatcher ()
 
-    static let handlePanelLeftDown evt world =
+    static let handlePanelLeftDown (evt : Event<MouseButtonData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         if entity.GetVisible world then
             let mutable transform = entity.GetTransform world
@@ -238,7 +238,7 @@ type PanelDispatcher () =
          define Entity.BackdropImageOpt (Some Assets.Default.Panel)]
 
     override this.Register (entity, world) =
-        World.monitor handlePanelLeftDown Nu.Game.Handle.MouseLeftDownEvent entity world
+        World.monitor (nameof handlePanelLeftDown) Nu.Game.Handle.MouseLeftDownEvent entity world
 
 [<AutoOpen>]
 module CursorDispatcherExtensions =
@@ -584,7 +584,7 @@ type AnimatedModelDispatcher () =
 type SensorModelDispatcher () =
     inherit Entity3dDispatcher (true, false, false)
 
-    static let updateBodyShape evt world =
+    static let updateBodyShape (evt : Event<ChangeData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         let bodyShape = entity.GetBodyShape world
         let staticModel = entity.GetStaticModel world
@@ -611,14 +611,14 @@ type SensorModelDispatcher () =
          define Entity.NavShape EmptyNavShape]
 
     override this.Register (entity, world) =
-        World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
-        World.monitor updateBodyShape entity.BodyShape.ChangeEvent entity world
+        World.monitor (nameof updateBodyShape) entity.StaticModel.ChangeEvent entity world
+        World.monitor (nameof updateBodyShape) entity.BodyShape.ChangeEvent entity world
 
 /// Gives an entity the base behavior of physics-driven rigid model.
 type RigidModelDispatcher () =
     inherit Entity3dDispatcher (true, false, false)
 
-    static let updateBodyShape evt world =
+    static let updateBodyShape (evt : Event<ChangeData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         let bodyShape = entity.GetBodyShape world
         let staticModel = entity.GetStaticModel world
@@ -634,7 +634,7 @@ type RigidModelDispatcher () =
         | _ -> ()
         Cascade
 
-    static let updateNavShape evt world =
+    static let updateNavShape (evt : Event<ChangeData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         match entity.GetBodyType world with
         | Static -> entity.SetNavShape BoundsNavShape world
@@ -651,9 +651,9 @@ type RigidModelDispatcher () =
          define Entity.NavShape ContourNavShape]
 
     override this.Register (entity, world) =
-        World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
-        World.monitor updateBodyShape entity.BodyShape.ChangeEvent entity world
-        World.monitor updateNavShape entity.BodyType.ChangeEvent entity world
+        World.monitor (nameof updateBodyShape) entity.StaticModel.ChangeEvent entity world
+        World.monitor (nameof updateBodyShape) entity.BodyShape.ChangeEvent entity world
+        World.monitor (nameof updateNavShape) entity.BodyType.ChangeEvent entity world
 
 /// Gives an entity the base behavior of an indexed static model.
 type StaticModelSurfaceDispatcher () =
@@ -666,7 +666,7 @@ type StaticModelSurfaceDispatcher () =
 type SensorModelSurfaceDispatcher () =
     inherit Entity3dDispatcher (true, false, false)
 
-    static let updateBodyShape evt world =
+    static let updateBodyShape (evt : Event<ChangeData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         let bodyShape = entity.GetBodyShape world
         let staticModel = entity.GetStaticModel world
@@ -695,14 +695,14 @@ type SensorModelSurfaceDispatcher () =
          define Entity.NavShape EmptyNavShape]
 
     override this.Register (entity, world) =
-        World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
-        World.monitor updateBodyShape entity.SurfaceIndex.ChangeEvent entity world
+        World.monitor (nameof updateBodyShape) entity.StaticModel.ChangeEvent entity world
+        World.monitor (nameof updateBodyShape) entity.SurfaceIndex.ChangeEvent entity world
 
 /// Gives an entity the base behavior of an indexed, physics-driven rigid model.
 type RigidModelSurfaceDispatcher () =
     inherit Entity3dDispatcher (true, false, false)
 
-    static let updateBodyShape evt world =
+    static let updateBodyShape (evt : Event<ChangeData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         let bodyShape = entity.GetBodyShape world
         let staticModel = entity.GetStaticModel world
@@ -730,9 +730,9 @@ type RigidModelSurfaceDispatcher () =
          define Entity.NavShape ContourNavShape]
 
     override this.Register (entity, world) =
-        World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
-        World.monitor updateBodyShape entity.SurfaceIndex.ChangeEvent entity world
-        World.monitor updateBodyShape entity.BodyShape.ChangeEvent entity world
+        World.monitor (nameof updateBodyShape) entity.StaticModel.ChangeEvent entity world
+        World.monitor (nameof updateBodyShape) entity.SurfaceIndex.ChangeEvent entity world
+        World.monitor (nameof updateBodyShape) entity.BodyShape.ChangeEvent entity world
 
 /// Gives an entity the base behavior of basic static billboard emitter.
 type BasicStaticBillboardEmitterDispatcher () =
@@ -882,11 +882,15 @@ type Nav3dConfigDispatcher () =
         let config = entity.GetNav3dConfig world
         World.setNav3dConfig config entity.Screen world
 
+    static let handleNav3dConfigChange (evt : Event<ChangeData, Entity>) (world : World) =
+        propagateNav3dConfig evt.Subscriber world
+        Cascade
+
     static member Properties =
         [define Entity.Nav3dConfig Nav3dConfig.defaultConfig]
 
     override this.Register (entity, world) =
-        World.monitor (fun _ world -> propagateNav3dConfig entity world; Cascade) (entity.ChangeEvent (nameof entity.Nav3dConfig)) entity world
+        World.monitor (nameof handleNav3dConfigChange) (entity.ChangeEvent (nameof entity.Nav3dConfig)) entity world
 
     override this.Edit (op, entity, world) =
         match op with
