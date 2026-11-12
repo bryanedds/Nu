@@ -128,12 +128,12 @@ module WorldModule2 =
         static member private setScreenTransitionStatePlus (state : TransitionState) (screen : Screen) world =
             match state with
             | IncomingState _ | OutgoingState _ ->
-                World.subscribePlus WorldModuleInternal2.ScreenTransitionMouseLeftId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Left/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
-                World.subscribePlus WorldModuleInternal2.ScreenTransitionMouseMiddleId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Middle/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
-                World.subscribePlus WorldModuleInternal2.ScreenTransitionMouseRightId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Right/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
-                World.subscribePlus WorldModuleInternal2.ScreenTransitionMouseX1Id World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/X1/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
-                World.subscribePlus WorldModuleInternal2.ScreenTransitionMouseX2Id World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/X2/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
-                World.subscribePlus WorldModuleInternal2.ScreenTransitionKeyboardKeyId World.handleAsSwallow (stoa<KeyboardKeyData> ("KeyboardKey/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
+                World.subscribeLambdaPlus WorldModuleInternal2.ScreenTransitionMouseLeftId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Left/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
+                World.subscribeLambdaPlus WorldModuleInternal2.ScreenTransitionMouseMiddleId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Middle/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
+                World.subscribeLambdaPlus WorldModuleInternal2.ScreenTransitionMouseRightId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Right/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
+                World.subscribeLambdaPlus WorldModuleInternal2.ScreenTransitionMouseX1Id World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/X1/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
+                World.subscribeLambdaPlus WorldModuleInternal2.ScreenTransitionMouseX2Id World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/X2/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
+                World.subscribeLambdaPlus WorldModuleInternal2.ScreenTransitionKeyboardKeyId World.handleAsSwallow (stoa<KeyboardKeyData> ("KeyboardKey/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> ignore
             | IdlingState _ -> ()
             screen.SetTransitionState state world
             match screen.GetTransitionState world with
@@ -342,12 +342,12 @@ module WorldModule2 =
                             let (screenResult, userResult) = simulantJournal.Result :?> SelectionEventData FQueue * 'r
                             simulantJournal.Result <- (mapper screenResult, userResult)
                         | (false, _) -> ()
-                    World.monitor (fun _ world -> updateFstResult (FQueue.conj Select) world; Cascade) screen.SelectEvent screen world
-                    World.monitor (fun _ world -> updateFstResult (FQueue.conj IncomingStart) world; Cascade) screen.IncomingStartEvent screen world
-                    World.monitor (fun _ world -> updateFstResult (FQueue.conj IncomingFinish) world; Cascade) screen.IncomingFinishEvent screen world
-                    World.monitor (fun _ world -> updateFstResult (FQueue.conj OutgoingStart) world; Cascade) screen.OutgoingStartEvent screen world
-                    World.monitor (fun _ world -> updateFstResult (FQueue.conj OutgoingFinish) world; Cascade) screen.OutgoingFinishEvent screen world
-                    World.monitor (fun _ world -> updateFstResult (FQueue.conj Deselecting) world; Cascade) screen.DeselectingEvent screen world
+                    World.monitorLambda (fun _ world -> updateFstResult (FQueue.conj Select) world; Cascade) screen.SelectEvent screen world
+                    World.monitorLambda (fun _ world -> updateFstResult (FQueue.conj IncomingStart) world; Cascade) screen.IncomingStartEvent screen world
+                    World.monitorLambda (fun _ world -> updateFstResult (FQueue.conj IncomingFinish) world; Cascade) screen.IncomingFinishEvent screen world
+                    World.monitorLambda (fun _ world -> updateFstResult (FQueue.conj OutgoingStart) world; Cascade) screen.OutgoingStartEvent screen world
+                    World.monitorLambda (fun _ world -> updateFstResult (FQueue.conj OutgoingFinish) world; Cascade) screen.OutgoingFinishEvent screen world
+                    World.monitorLambda (fun _ world -> updateFstResult (FQueue.conj Deselecting) world; Cascade) screen.DeselectingEvent screen world
                     let updateSndResult (mapper : 'r -> 'r) (world : World) =
                         match world.SimulantJournals.TryGetValue screen.ScreenAddress with
                         | (true, simulantJournal) ->
@@ -3330,6 +3330,7 @@ module WorldModule3 =
                         World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                         World.updateEntityPresenceOverride entity world
                         World.attachEntityMissingProperties entity world
+                        World.refreshEntityComputedProperties entity world
                     | None -> ()
                 | :? EntityDispatcher as dispatcher ->
                     if getTypeName entityState.Dispatcher = getTypeName dispatcher then
@@ -3352,6 +3353,7 @@ module WorldModule3 =
                         let _ = World.tryRemoveFacets intrinsicFacetNamesRemoved entityState (Some entity) world |> Either.getRight
                         World.updateEntityPresenceOverride entity world
                         World.attachEntityMissingProperties entity world
+                        World.refreshEntityComputedProperties entity world
                 | _ -> ()
             | :? Group as group ->
                 let groupState = World.getGroupState group world
@@ -3360,6 +3362,7 @@ module WorldModule3 =
                     if getTypeName groupState.Dispatcher = getTypeName dispatcher then
                         groupState.Dispatcher <- dispatcher
                         World.attachGroupMissingProperties group world
+                        World.refreshGroupComputedProperties group world
                 | _ -> ()
             | :? Screen as screen ->
                 let screenState = World.getScreenState screen world
@@ -3368,6 +3371,7 @@ module WorldModule3 =
                     if getTypeName screenState.Dispatcher = getTypeName dispatcher then
                         screenState.Dispatcher <- dispatcher
                         World.attachScreenMissingProperties screen world
+                        World.refreshScreenComputedProperties screen world
                 | _ -> ()
             | :? Game as game ->
                 let gameState = World.getGameState game world
@@ -3376,5 +3380,6 @@ module WorldModule3 =
                     if getTypeName gameState.Dispatcher = getTypeName dispatcher then
                         gameState.Dispatcher <- dispatcher
                         World.attachGameMissingProperties game world
+                        World.refreshGameComputedProperties game world
                 | _ -> ()
             | _ -> failwithumf ()

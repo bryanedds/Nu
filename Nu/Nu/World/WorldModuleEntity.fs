@@ -1845,6 +1845,20 @@ module WorldModuleEntity =
                     let property = { PropertyType = propertyDefinition.PropertyType; PropertyValue = propertyValue }
                     EntityState.attachProperty propertyName property entityState
 
+        static member internal refreshEntityComputedProperties entity world =
+            let entityState = World.getEntityState entity world
+            let definitions = Reflection.getReflectivePropertyDefinitions entityState
+            for definition in definitions do
+                let propertyName = definition.Key
+                let propertyDefinition = definition.Value
+                let mutable property = Unchecked.defaultof<_>
+                let computedOld = EntityState.tryGetProperty (propertyName, entityState, &property) && property.PropertyValue :? ComputedProperty
+                let computedNew = match propertyDefinition.PropertyExpr with ComputedExpr _ -> true | _ -> false
+                if computedOld || computedNew then
+                    let propertyValue = PropertyExpr.eval propertyDefinition.PropertyExpr world
+                    let property = { PropertyType = propertyDefinition.PropertyType; PropertyValue = propertyValue }
+                    EntityState.attachProperty propertyName property entityState
+
         static member internal getEntityDefaultOverlayName dispatcherName world =
             match World.tryGetRoutedOverlayNameOpt dispatcherName world with
             | Some _ as opt -> opt

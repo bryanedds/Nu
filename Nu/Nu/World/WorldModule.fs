@@ -33,6 +33,10 @@ module WorldModuleOperators =
 [<RequireQualifiedAccess>]
 module internal WorldModuleInternal =
 
+    /// Helps to track when content bound to event handlers and ImSim subscriptions need to be updated due to
+    /// LateBindings changing, such as via code reloading.
+    let mutable internal UpdateLateBindingsCount = 0
+
     /// Track if we're in the portion of the frame simulants are being updated.
     /// TODO: P1: make this an AmbientState flag.
     let mutable internal UpdatingSimulants = false
@@ -44,6 +48,12 @@ module internal WorldModuleInternal =
     /// F# reach function for checking that a simulant is selected.
     let mutable internal getSelected : Simulant -> World -> bool =
         Unchecked.defaultof<_>
+
+    /// The callbacks of named subscriptions, found by owner type, handler name, and event type.
+    let internal NamedCallbacks = Dictionary<struct (Type * string * Type), obj> HashIdentity.Structural
+
+    /// The callback of a named subscription whose owner or handler could not be found.
+    let internal CascadeCallback = box (fun (_ : Event<obj, Simulant>) (_ : World) -> Cascade)
 
     /// F# reach function for sorting subscriptions by elevation.
     let mutable internal sortSubscriptionsByElevation : KeyValuePair<uint64, SubscriptionEntry> array -> obj -> KeyValuePair<uint64, SubscriptionEntry> array =
@@ -363,6 +373,8 @@ module WorldModule =
             AmbientState.setCoroutines coroutines world.AmbientState
 
         /// Launch a coroutine to be processed by the engine.
+        /// NOTE: the coroutine is kept as a closure until it completes, so if a code reload happens before then, it
+        /// runs the code it was created from rather than the reloaded code.
         static member launchCoroutine timeScaled pred coroutine (world : World) =
             let gameTime = if timeScaled then world.ScaledTime else world.UnscaledTime
             AmbientState.addCoroutine (gameTime, timeScaled, pred, coroutine) world.AmbientState
@@ -380,12 +392,16 @@ module WorldModule =
             AmbientState.restoreTasklets tasklets world.AmbientState
 
         /// Add a tasklet to be executed by the engine at the scheduled time.
+        /// NOTE: the tasklet's operation is kept as a closure until it runs, so if a code reload happens before then,
+        /// it runs the code it was created from rather than the reloaded code.
         static member addTasklet (simulant : Simulant) tasklet world =
             AmbientState.addTasklet simulant tasklet world.AmbientState
 
         /// Schedule an operation to be executed by the engine with the given delay.
         /// When called in an ImSim Process context, will provide the ImSim simulant context and declared values from
         /// World that were active in that Process context as well as time and advancement state.
+        /// NOTE: the operation is kept as a closure until it runs, so if a code reload happens before then, it runs the
+        /// code it was created from rather than the reloaded code.
         static member schedule timeScaled delay operation (simulant : Simulant) (world : World) =
 
             // compute time at which to schedule the operation
@@ -419,6 +435,8 @@ module WorldModule =
         /// scaled.
         /// When called in an ImSim Process context, will provide the ImSim simulant context and declared values from
         /// World that were active in that Process context as well as time and advancement state.
+        /// NOTE: the operation is kept as a closure until it runs, so if a code reload happens before then, it runs the
+        /// code it was created from rather than the reloaded code.
         static member defer operation (simulant : Simulant) (world : World) =
             let gameTime = if WorldModuleInternal.EndFrameProcessingStarted && world.TimeAdvancing then GameTime.epsilon else GameTime.zero
             World.schedule false gameTime operation simulant world
@@ -604,6 +622,122 @@ module WorldModule =
                 callback evt world
             boxableCallback
 
+        static member private tryGetNamedHandlerMethod (ownerType : Type) (handlerName : string) (parameterTypes : Type array) : MethodInfo =
+            match ownerType with
+            | null -> null
+            | _ ->
+                match ownerType.GetMethod (handlerName, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.DeclaredOnly, parameterTypes) with
+                | null -> World.tryGetNamedHandlerMethod ownerType.BaseType handlerName parameterTypes
+                | methodInfo -> methodInfo
+
+        static member private getNamedHandlerMethods (ownerType : Type) (handlerName : string) : MethodInfo list =
+            match ownerType with
+            | null -> []
+            | _ ->
+                let methods =
+                    ownerType.GetMethods (BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.DeclaredOnly)
+                    |> Array.filter (fun methodInfo -> methodInfo.Name = handlerName)
+                    |> List.ofArray
+                methods @ World.getNamedHandlerMethods ownerType.BaseType handlerName
+
+        static member private describeMissingNamedHandler<'a, 's when 's :> Simulant> (ownerType : Type) (handlerName : string) =
+            let signature = "static " + handlerName + " : Event<" + typeof<'a>.Name + ", " + typeof<'s>.Name + "> -> World -> Handling"
+            match World.getNamedHandlerMethods ownerType handlerName with
+            | [] ->
+                "Could not find named handler '" + handlerName + "' on type '" + ownerType.Name + "' or its base types. " +
+                "Expected a method of the form '" + signature + "'."
+            | methods when methods |> List.exists (fun methodInfo -> methodInfo.IsGenericMethodDefinition) ->
+                "Named handler '" + handlerName + "' on type '" + ownerType.Name + "' is generic, so it cannot be found by name. " +
+                "Give it concrete parameter types of the form '" + signature + "'."
+            | _ ->
+                "Named handler '" + handlerName + "' on type '" + ownerType.Name + "' does not have the expected signature '" + signature + "'."
+
+        static member internal bindNamedCallback<'a, 's when 's :> Simulant> (handlerName : string) (ownerType : Type) : obj =
+            let key = struct (ownerType, handlerName, typeof<Event<'a, 's>>)
+            match WorldModuleInternal.NamedCallbacks.TryGetValue key with
+            | (true, callback) -> callback
+            | (false, _) ->
+                let callback =
+                    match World.tryGetNamedHandlerMethod ownerType handlerName [|typeof<Event<'a, 's>>; typeof<World>|] with
+                    | null ->
+                        Log.errorOnce (World.describeMissingNamedHandler<'a, 's> ownerType handlerName)
+                        WorldModuleInternal.CascadeCallback
+                    | methodInfo when methodInfo.ReturnType = typeof<Handling> ->
+                        let handler = methodInfo.CreateDelegate<Func<Event<'a, 's>, World, Handling>> ()
+                        let boxableCallback = fun (evt : Event<obj, Simulant>) (world : World) ->
+                            let evt = { Data = evt.Data :?> 'a; Subscriber = evt.Subscriber :?> 's; Publisher = evt.Publisher; Address = Address.specialize<'a> evt.Address; Trace = evt.Trace }
+                            handler.Invoke (evt, world)
+                        box boxableCallback
+                    | _ ->
+                        Log.errorOnce (World.describeMissingNamedHandler<'a, 's> ownerType handlerName)
+                        WorldModuleInternal.CascadeCallback
+                WorldModuleInternal.NamedCallbacks[key] <- callback
+                callback
+
+        static member private tryGetFacetOrDispatcherType (ownerType : Type) (facetName : string) (entityState : EntityState) : Type =
+            let dispatcherType = entityState.Dispatcher.GetType ()
+            if obj.ReferenceEquals (dispatcherType, ownerType) then dispatcherType
+            else
+                let facets = entityState.Facets
+                let mutable result = null
+                let mutable i = 0
+                while isNull result && i < facets.Length do
+                    let facetType = facets[i].GetType ()
+                    if obj.ReferenceEquals (facetType, ownerType) then result <- facetType
+                    i <- inc i
+                i <- 0
+                while isNull result && i < facets.Length do
+                    let facetType = facets[i].GetType ()
+                    if facetType.Name = facetName then result <- facetType
+                    i <- inc i
+                if isNull result && dispatcherType.Name = facetName then result <- dispatcherType
+                result
+
+        static member private tryGetNamedCallbackOwnerType (named : NamedCallbackData) (subscriber : Simulant) (world : World) : Type =
+            let namesLength = subscriber.SimulantAddress.Names.Length
+            if namesLength >= 4 then
+                let entity = subscriber :?> Entity
+                let mutable entityState = entity.EntityStateOpt
+                if isNull (entityState :> obj) || entityState.Invalidated then
+                    entityState <- Unchecked.defaultof<EntityState>
+                    world.EntityStates.TryGetValue (entity, &entityState) |> ignore<bool>
+                if notNull (entityState :> obj) then
+                    match named.FacetNameOpt with
+                    | ValueNone -> entityState.Dispatcher.GetType ()
+                    | ValueSome facetName -> World.tryGetFacetOrDispatcherType named.OwnerType facetName entityState
+                else null
+            else
+                match namesLength with
+                | 1 ->
+                    match subscriber with
+                    | :? Game -> world.GameState.Dispatcher.GetType ()
+                    | _ -> null
+                | 2 ->
+                    let mutable screenState = Unchecked.defaultof<ScreenState>
+                    if world.ScreenStates.TryGetValue (subscriber :?> Screen, &screenState)
+                    then screenState.Dispatcher.GetType ()
+                    else null
+                | 3 ->
+                    let mutable groupState = Unchecked.defaultof<GroupState>
+                    if world.GroupStates.TryGetValue (subscriber :?> Group, &groupState)
+                    then groupState.Dispatcher.GetType ()
+                    else null
+                | _ -> null
+
+        static member internal getNamedCallback (named : NamedCallbackData) (subscriber : Simulant) (world : World) : obj =
+            let ownerType = World.tryGetNamedCallbackOwnerType named subscriber world
+            if notNull ownerType then
+                if not (obj.ReferenceEquals (ownerType, named.OwnerType)) then
+                    named.Handler <- named.Bind ownerType
+                    named.OwnerType <- ownerType
+                named.Handler
+            else WorldModuleInternal.CascadeCallback
+
+        static member internal makeNamedCallback<'a, 's when 's :> Simulant> (handlerName : string) (facetNameOpt : string voption) (subscriber : 's) world =
+            let named = { HandlerName = handlerName; FacetNameOpt = facetNameOpt; Bind = World.bindNamedCallback<'a, 's> handlerName; OwnerType = null; Handler = null }
+            World.getNamedCallback named subscriber world |> ignore<obj> // NOTE: binding eagerly so that a missing handler is reported upon subscription.
+            NamedCallback named
+
         static member internal getGlobalSimulantGeneralized world =
             EventGraph.getGlobalSimulantGeneralized (World.getEventGraph world)
 
@@ -681,20 +815,24 @@ module WorldModule =
                     if (match handling with Cascade -> true | Resolve -> false) && world.Alive then
                         let subscriber = subscriptionEntry.SubscriptionSubscriber
                         if not selectedOnly || WorldModuleInternal.getSelected subscriber world then
+                            let callback =
+                                match subscriptionEntry.SubscriptionCallback with
+                                | LambdaCallback lambda -> lambda
+                                | NamedCallback named -> World.getNamedCallback named subscriber world
                             let result =
                                 let namesLength = subscriber.SimulantAddress.Names.Length
                                 if namesLength >= 4 then
                                     // OPTIMIZATION: handling common case explicitly first.
-                                    EventGraph.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
+                                    EventGraph.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace callback world
                                 else
                                     match namesLength with
                                     | 1 ->
                                         match subscriber with
-                                        | :? Game -> EventGraph.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
-                                        | :? GlobalSimulantGeneralized -> EventGraph.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
+                                        | :? Game -> EventGraph.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace callback world
+                                        | :? GlobalSimulantGeneralized -> EventGraph.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace callback world
                                         | _ -> Log.errorOnce ("Event publish operation failed. Cannot publish event '" + scstring eventAddress + "' to a subscriber with 1 name that is neither a Game or a GlobalSimulantGeneralized."); Cascade
-                                    | 2 -> EventGraph.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
-                                    | 3 -> EventGraph.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
+                                    | 2 -> EventGraph.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace callback world
+                                    | 3 -> EventGraph.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace callback world
                                     | _ -> Log.errorOnce ("Event publish operation failed. Cannot publish event '" + scstring eventAddress + "' to a subscriber with no names."); Cascade
                             handling <- result
                     else going <- false
@@ -724,10 +862,9 @@ module WorldModule =
                 | (false, _) -> ()
             | (false, _) -> ()
 
-        /// Subscribe to an event using the given subscriptionId and be provided with an unsubscription callback.
-        static member subscribePlus<'a, 's when 's :> Simulant>
+        static member internal subscribeCallback<'a, 's when 's :> Simulant>
             (subscriptionId : uint64)
-            (callback : Event<'a, 's> -> World -> Handling)
+            (callback : SubscriptionCallback)
             (eventAddress : 'a Address)
             (subscriber : 's)
             (world : World) =
@@ -738,13 +875,13 @@ module WorldModule =
                 | (true, subscriptionEntries) ->
                     let mutable subscriptionEntry = Unchecked.defaultof<SubscriptionEntry>
                     if subscriptionEntries.TryGetValue (subscriptionId, &subscriptionEntry) then
-                        let subscriptionEntry = { subscriptionEntry with SubscriptionCallback = World.boxCallback callback }
+                        let subscriptionEntry = { subscriptionEntry with SubscriptionCallback = callback }
                         subscriptionEntries[subscriptionId] <- subscriptionEntry
                     else
-                        let subscriptionEntry = { SubscriptionCallback = World.boxCallback callback; SubscriptionSubscriber = subscriber }
+                        let subscriptionEntry = { SubscriptionCallback = callback; SubscriptionSubscriber = subscriber }
                         subscriptionEntries[subscriptionId] <- subscriptionEntry
                 | (false, _) ->
-                    let subscriptionEntry = { SubscriptionCallback = World.boxCallback callback; SubscriptionSubscriber = subscriber }
+                    let subscriptionEntry = { SubscriptionCallback = callback; SubscriptionSubscriber = subscriber }
                     let subscriptionEntries = OrderedDictionary HashIdentity.Structural
                     subscriptionEntries[subscriptionId] <- subscriptionEntry
                     subscriptions[eventAddressObj] <- subscriptionEntries
@@ -753,36 +890,63 @@ module WorldModule =
                 World.unsubscribe subscriptionId
             else failwith "Event name cannot be empty."
 
-        /// Subscribe to an event.
-        static member subscribe<'a, 's when 's :> Simulant>
-            (callback : Event<'a, 's> -> World -> Handling) (eventAddress : 'a Address) (subscriber : 's) world =
-            World.subscribePlus Gen.id64 callback eventAddress subscriber world
-
-        /// Keep active a subscription for the life span of a simulant.
-        static member monitorPlus<'a, 's when 's :> Simulant>
+        /// Subscribe to an event using the given subscriptionId and be provided with an unsubscription callback.
+        /// NOTE: the callback is kept as a closure for the life of the subscription, so after a code reload it keeps
+        /// running the code it was created from rather than the reloaded code. Prefer World.subscribePlus, which finds
+        /// its handler by name when the event is handled.
+        static member subscribeLambdaPlus<'a, 's when 's :> Simulant>
+            (subscriptionId : uint64)
             (callback : Event<'a, 's> -> World -> Handling)
+            (eventAddress : 'a Address)
+            (subscriber : 's)
+            (world : World) =
+            World.subscribeCallback<'a, 's> subscriptionId (LambdaCallback (World.boxCallback callback)) eventAddress subscriber world
+
+        /// Subscribe to an event.
+        /// NOTE: the callback is kept as a closure for the life of the subscription, so after a code reload it keeps
+        /// running the code it was created from rather than the reloaded code. Prefer World.subscribe, which finds its
+        /// handler by name when the event is handled.
+        static member subscribeLambda<'a, 's when 's :> Simulant>
+            (callback : Event<'a, 's> -> World -> Handling) (eventAddress : 'a Address) (subscriber : 's) world =
+            World.subscribeLambdaPlus Gen.id64 callback eventAddress subscriber world
+
+        static member internal monitorCallback<'a, 's when 's :> Simulant>
+            (callback : SubscriptionCallback)
             (eventAddress : 'a Address)
             (subscriber : 's)
             (world : World) =
             let removalId = Gen.id64
             let monitorId = Gen.id64
-            World.subscribePlus<'a, 's> monitorId callback eventAddress subscriber world |> ignore
+            World.subscribeCallback<'a, 's> monitorId callback eventAddress subscriber world |> ignore
             let unsubscribe = fun (world : World) ->
                 World.unsubscribe removalId world
                 World.unsubscribe monitorId world
             let callback' = fun _ world -> unsubscribe world; Cascade
             let unregisteringEventAddress = rtoa<unit> [|"Unregistering"; "Event"|] --> itoa subscriber.SimulantAddress
-            World.subscribePlus<unit, Simulant> removalId callback' unregisteringEventAddress subscriber world |> ignore
+            World.subscribeLambdaPlus<unit, Simulant> removalId callback' unregisteringEventAddress subscriber world |> ignore
             unsubscribe
 
         /// Keep active a subscription for the life span of a simulant.
-        static member monitor<'a, 's when 's :> Simulant>
-            (callback : Event<'a, 's> -> World -> Handling) (eventAddress : 'a Address) (subscriber : 's) (world : World) =
-            World.monitorPlus<'a, 's> callback eventAddress subscriber world |> ignore
+        /// NOTE: the callback is kept as a closure for the life of the subscription, so after a code reload it keeps
+        /// running the code it was created from rather than the reloaded code. Prefer World.monitorPlus, which finds
+        /// its handler by name when the event is handled.
+        static member monitorLambdaPlus<'a, 's when 's :> Simulant>
+            (callback : Event<'a, 's> -> World -> Handling)
+            (eventAddress : 'a Address)
+            (subscriber : 's)
+            (world : World) =
+            World.monitorCallback<'a, 's> (LambdaCallback (World.boxCallback callback)) eventAddress subscriber world
 
-        /// Keep active a subscription for the life span of an entity and a given facet.
-        static member sensePlus<'a>
-            (callback : Event<'a, Entity> -> World -> Handling)
+        /// Keep active a subscription for the life span of a simulant.
+        /// NOTE: the callback is kept as a closure for the life of the subscription, so after a code reload it keeps
+        /// running the code it was created from rather than the reloaded code. Prefer World.monitor, which finds its
+        /// handler by name when the event is handled.
+        static member monitorLambda<'a, 's when 's :> Simulant>
+            (callback : Event<'a, 's> -> World -> Handling) (eventAddress : 'a Address) (subscriber : 's) (world : World) =
+            World.monitorLambdaPlus<'a, 's> callback eventAddress subscriber world |> ignore
+
+        static member internal senseCallback<'a>
+            (callback : SubscriptionCallback)
             (eventAddress : 'a Address)
             (entity : Entity)
             (facetName : string)
@@ -790,7 +954,7 @@ module WorldModule =
             let removalId = Gen.id64
             let fastenId = Gen.id64
             let senseId = Gen.id64
-            World.subscribePlus<'a, Entity> senseId callback eventAddress entity world |> ignore
+            World.subscribeCallback<'a, Entity> senseId callback eventAddress entity world |> ignore
             let unsubscribe = fun (world : World) ->
                 World.unsubscribe removalId world
                 World.unsubscribe fastenId world
@@ -804,14 +968,114 @@ module WorldModule =
                 else Cascade
             let unregisteringEventAddress = rtoa<unit> [|"Unregistering"; "Event"|] --> entity.EntityAddress
             let changeFacetNamesEventAddress = rtoa<ChangeData> [|"Change"; "FacetNames"; "Event"|] --> entity.EntityAddress
-            World.subscribePlus<unit, Simulant> removalId callback' unregisteringEventAddress entity world |> ignore
-            World.subscribePlus<ChangeData, Simulant> fastenId callback'' changeFacetNamesEventAddress entity world |> ignore
+            World.subscribeLambdaPlus<unit, Simulant> removalId callback' unregisteringEventAddress entity world |> ignore
+            World.subscribeLambdaPlus<ChangeData, Simulant> fastenId callback'' changeFacetNamesEventAddress entity world |> ignore
             unsubscribe
 
         /// Keep active a subscription for the life span of an entity and a given facet.
-        static member sense<'a>
+        /// NOTE: the callback is kept as a closure for the life of the subscription, so after a code reload it keeps
+        /// running the code it was created from rather than the reloaded code. Prefer World.sensePlus, which finds its
+        /// handler by name when the event is handled.
+        static member senseLambdaPlus<'a>
+            (callback : Event<'a, Entity> -> World -> Handling)
+            (eventAddress : 'a Address)
+            (entity : Entity)
+            (facetName : string)
+            (world : World) =
+            World.senseCallback<'a> (LambdaCallback (World.boxCallback callback)) eventAddress entity facetName world
+
+        /// Keep active a subscription for the life span of an entity and a given facet.
+        /// NOTE: the callback is kept as a closure for the life of the subscription, so after a code reload it keeps
+        /// running the code it was created from rather than the reloaded code. Prefer World.sense, which finds its
+        /// handler by name when the event is handled.
+        static member senseLambda<'a>
             (callback : Event<'a, Entity> -> World -> Handling) (eventAddress : 'a Address) (subscriber : Entity) (facetName : string) (world : World) =
-            World.sensePlus callback eventAddress subscriber facetName world |> ignore
+            World.senseLambdaPlus callback eventAddress subscriber facetName world |> ignore
+
+        /// Subscribe to an event using the given subscriptionId and be provided with an unsubscription callback. The
+        /// handler is the static method of the given name on the subscriber's dispatcher (or one of its base types),
+        /// of the form Event<'a, 's> -> World -> Handling, found when the event is handled so that it follows the
+        /// subscriber's dispatcher across code reloads.
+        static member subscribePlus<'a, 's when 's :> Simulant>
+            (subscriptionId : uint64)
+            (handlerName : string)
+            (eventAddress : 'a Address)
+            (subscriber : 's)
+            (world : World) =
+            let callback = World.makeNamedCallback<'a, 's> handlerName ValueNone subscriber world
+            World.subscribeCallback<'a, 's> subscriptionId callback eventAddress subscriber world
+
+        /// Unsubscribe the given subscriber's subscriptions to the given event address whose handler is found by the
+        /// given name.
+        static member unsubscribe4<'a> (handlerName : string) (eventAddress : 'a Address) (subscriber : Simulant) (world : World) =
+            match (World.getSubscriptions world).TryGetValue (atooa eventAddress) with
+            | (true, subscriptionEntries) ->
+                let subscriptionIds =
+                    [for subscriptionEntry in subscriptionEntries do
+                        match subscriptionEntry.Value.SubscriptionCallback with
+                        | NamedCallback named when named.HandlerName = handlerName && subscriptionEntry.Value.SubscriptionSubscriber = subscriber -> subscriptionEntry.Key
+                        | _ -> ()]
+                for subscriptionId in subscriptionIds do
+                    World.unsubscribe subscriptionId world
+            | (false, _) -> ()
+
+        static member internal subscribeFacetPlus<'a>
+            (subscriptionId : uint64)
+            (handlerName : string)
+            (eventAddress : 'a Address)
+            (entity : Entity)
+            (facetName : string)
+            (world : World) =
+            let callback = World.makeNamedCallback<'a, Entity> handlerName (ValueSome facetName) entity world
+            World.subscribeCallback<'a, Entity> subscriptionId callback eventAddress entity world
+
+        /// Subscribe to an event. The handler is the static method of the given name on the subscriber's dispatcher
+        /// (or one of its base types), of the form Event<'a, 's> -> World -> Handling, found when the event is handled
+        /// so that it follows the subscriber's dispatcher across code reloads.
+        static member subscribe<'a, 's when 's :> Simulant>
+            (handlerName : string) (eventAddress : 'a Address) (subscriber : 's) world =
+            World.subscribePlus<'a, 's> Gen.id64 handlerName eventAddress subscriber world
+
+        /// Keep active a subscription for the life span of a simulant. The handler is the static method of the given
+        /// name on the subscriber's dispatcher (or one of its base types), of the form Event<'a, 's> -> World ->
+        /// Handling, found when the event is handled so that it follows the subscriber's dispatcher across code
+        /// reloads.
+        static member monitorPlus<'a, 's when 's :> Simulant>
+            (handlerName : string)
+            (eventAddress : 'a Address)
+            (subscriber : 's)
+            (world : World) =
+            let callback = World.makeNamedCallback<'a, 's> handlerName ValueNone subscriber world
+            World.monitorCallback<'a, 's> callback eventAddress subscriber world
+
+        /// Keep active a subscription for the life span of a simulant. The handler is the static method of the given
+        /// name on the subscriber's dispatcher (or one of its base types), of the form Event<'a, 's> -> World ->
+        /// Handling, found when the event is handled so that it follows the subscriber's dispatcher across code
+        /// reloads.
+        static member monitor<'a, 's when 's :> Simulant>
+            (handlerName : string) (eventAddress : 'a Address) (subscriber : 's) (world : World) =
+            World.monitorPlus<'a, 's> handlerName eventAddress subscriber world |> ignore
+
+        /// Keep active a subscription for the life span of an entity and a given facet. The handler is the static
+        /// method of the given name on the named facet (or on the entity's dispatcher when its type has that name), or
+        /// one of its base types, of the form Event<'a, Entity> -> World -> Handling, found when the event is handled
+        /// so that it follows the facet across code reloads.
+        static member sensePlus<'a>
+            (handlerName : string)
+            (eventAddress : 'a Address)
+            (entity : Entity)
+            (facetName : string)
+            (world : World) =
+            let callback = World.makeNamedCallback<'a, Entity> handlerName (ValueSome facetName) entity world
+            World.senseCallback<'a> callback eventAddress entity facetName world
+
+        /// Keep active a subscription for the life span of an entity and a given facet. The handler is the static
+        /// method of the given name on the named facet (or on the entity's dispatcher when its type has that name), or
+        /// one of its base types, of the form Event<'a, Entity> -> World -> Handling, found when the event is handled
+        /// so that it follows the facet across code reloads.
+        static member sense<'a>
+            (handlerName : string) (eventAddress : 'a Address) (subscriber : Entity) (facetName : string) (world : World) =
+            World.sensePlus<'a> handlerName eventAddress subscriber facetName world |> ignore
 
     type World with // KeyValueStore (tho part of AmbientState, must come after EventGraph definitions since it publishes)
 

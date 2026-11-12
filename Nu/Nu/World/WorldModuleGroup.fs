@@ -385,6 +385,18 @@ module WorldModuleGroup =
                     let property = { PropertyType = propertyDefinition.PropertyType; PropertyValue = propertyValue }
                     GroupState.attachProperty propertyName property groupState
 
+        static member internal refreshGroupComputedProperties group world =
+            let groupState = World.getGroupState group world
+            let definitions = Reflection.getReflectivePropertyDefinitions groupState
+            for (propertyName, propertyDefinition : PropertyDefinition) in definitions.Pairs do
+                let mutable property = Unchecked.defaultof<_>
+                let computedOld = GroupState.tryGetProperty (propertyName, groupState, &property) && property.PropertyValue :? ComputedProperty
+                let computedNew = match propertyDefinition.PropertyExpr with ComputedExpr _ -> true | _ -> false
+                if computedOld || computedNew then
+                    let propertyValue = PropertyExpr.eval propertyDefinition.PropertyExpr world
+                    let property = { PropertyType = propertyDefinition.PropertyType; PropertyValue = propertyValue }
+                    GroupState.attachProperty propertyName property groupState
+
         static member internal registerGroup group world =
             let dispatcher = World.getGroupDispatcher group world
             dispatcher.Register (group, world)

@@ -20,6 +20,29 @@ module LineSegmentsExtensions =
 type LineSegmentsDispatcher () =
     inherit Entity2dDispatcher (true, false, false)
 
+    static let handleLineSegmentsChange (event : Event<ChangeData, Entity>) (world : World) =
+        let lineSegments = event.Subscriber : Entity
+        let segments = event.Data.Value :?> Vector2 array
+        if Array.notEmpty segments && lineSegments.GetEnabled world then
+            let box = Box2.Enclose segments
+            let lineWidth = lineSegments.GetLineWidth world
+            let size = v2 (box.Width + lineWidth) (box.Height + lineWidth)
+            let segments = segments |> Array.map (fun p -> ((p - box.Center) / size).V3)
+            lineSegments.SetPosition box.Center.V3 world
+            lineSegments.SetSize size.V3 world
+            lineSegments.SetBodyShape (
+                BodyShapes [
+                    // NOTE: One contour only collides with the right hand side of its links.
+                    // For two-sided collisions, we create two contours with opposite winding orders.
+                    for segments in [segments; Array.rev segments] do
+                        ContourShape
+                            { Links = [|Array.head segments; yield! segments; Array.last segments|] // the first and last links provide no collision.
+                              Closed = false
+                              TransformOpt = None
+                              PropertiesOpt = None }
+                ]) world
+        Cascade
+
     static member Facets =
         [typeof<RigidBodyFacet>]
 
@@ -29,28 +52,7 @@ type LineSegmentsDispatcher () =
          define Entity.Color colorOne]
 
     override this.Register (lineSegments, world) =
-        World.monitor (fun event world ->
-            let lineSegments = event.Subscriber : Entity
-            let segments = event.Data.Value :?> Vector2 array
-            if Array.notEmpty segments && lineSegments.GetEnabled world then
-                let box = Box2.Enclose segments
-                let lineWidth = lineSegments.GetLineWidth world
-                let size = v2 (box.Width + lineWidth) (box.Height + lineWidth)
-                let segments = segments |> Array.map (fun p -> ((p - box.Center) / size).V3)
-                lineSegments.SetPosition box.Center.V3 world
-                lineSegments.SetSize size.V3 world
-                lineSegments.SetBodyShape (
-                    BodyShapes [
-                        // NOTE: One contour only collides with the right hand side of its links.
-                        // For two-sided collisions, we create two contours with opposite winding orders.
-                        for segments in [segments; Array.rev segments] do
-                            ContourShape
-                                { Links = [|Array.head segments; yield! segments; Array.last segments|] // the first and last links provide no collision.
-                                  Closed = false
-                                  TransformOpt = None
-                                  PropertiesOpt = None }
-                    ]) world
-            Cascade) lineSegments.LineSegments.ChangeEvent lineSegments world
+        World.monitor (nameof handleLineSegmentsChange) lineSegments.LineSegments.ChangeEvent lineSegments world
 
     override this.Render (_, lineSegments, world) =
         let staticImage = Assets.Default.White

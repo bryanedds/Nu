@@ -433,6 +433,18 @@ module WorldModuleScreen =
                     let property = { PropertyType = propertyDefinition.PropertyType; PropertyValue = propertyValue }
                     ScreenState.attachProperty propertyName property screenState
 
+        static member internal refreshScreenComputedProperties screen world =
+            let screenState = World.getScreenState screen world
+            let definitions = Reflection.getReflectivePropertyDefinitions screenState
+            for (propertyName, propertyDefinition : PropertyDefinition) in definitions.Pairs do
+                let mutable property = Unchecked.defaultof<_>
+                let computedOld = ScreenState.tryGetProperty (propertyName, screenState, &property) && property.PropertyValue :? ComputedProperty
+                let computedNew = match propertyDefinition.PropertyExpr with ComputedExpr _ -> true | _ -> false
+                if computedOld || computedNew then
+                    let propertyValue = PropertyExpr.eval propertyDefinition.PropertyExpr world
+                    let property = { PropertyType = propertyDefinition.PropertyType; PropertyValue = propertyValue }
+                    ScreenState.attachProperty propertyName property screenState
+
         static member internal registerScreen screen world =
             let dispatcher = World.getScreenDispatcher screen world
             dispatcher.Register (screen, world)

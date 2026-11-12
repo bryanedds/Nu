@@ -294,58 +294,58 @@ type BasicStaticSpriteEmitterFacet () =
         | Particles.OutputEmitter (name, emitter) -> mapParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
         | Particles.Outputs outputs -> for output in outputs do processOutput output entity world
 
-    static let handleEmitterBlendChange evt world =
+    static let handleEmitterBlendChange (evt : Event<ChangeData, Entity>) (world : World) =
         let emitterBlend = evt.Data.Value :?> Blend
         mapEmitter (fun emitter -> if emitter.Blend <> emitterBlend then { emitter with Blend = emitterBlend } else emitter) evt.Subscriber world
         Cascade
 
-    static let handleEmitterClipOptChange evt world =
+    static let handleEmitterClipOptChange (evt : Event<ChangeData, Entity>) (world : World) =
         let emitterClipOpt = evt.Data.Value :?> Box2 option
         mapEmitter (fun emitter -> if emitter.ClipOpt <> emitterClipOpt then { emitter with ClipOpt = emitterClipOpt } else emitter) evt.Subscriber world
         Cascade
 
-    static let handleEmitterImageChange evt world =
+    static let handleEmitterImageChange (evt : Event<ChangeData, Entity>) (world : World) =
         let emitterImage = evt.Data.Value :?> Image AssetTag
         mapEmitter (fun emitter -> if emitter.Image <> emitterImage then { emitter with Image = emitterImage } else emitter) evt.Subscriber world
         Cascade
 
-    static let handleEmitterLifeTimeOptChange evt world =
+    static let handleEmitterLifeTimeOptChange (evt : Event<ChangeData, Entity>) (world : World) =
         let emitterLifeTimeOpt = evt.Data.Value :?> GameTime
         mapEmitter (fun emitter -> if emitter.Life.LifeTimeOpt <> emitterLifeTimeOpt then { emitter with Life = { emitter.Life with LifeTimeOpt = emitterLifeTimeOpt }} else emitter) evt.Subscriber world
         Cascade
 
-    static let handleParticleLifeTimeMaxOptChange evt world =
+    static let handleParticleLifeTimeMaxOptChange (evt : Event<ChangeData, Entity>) (world : World) =
         let particleLifeTimeMaxOpt = evt.Data.Value :?> GameTime
         mapEmitter (fun emitter -> if emitter.ParticleLifeTimeMaxOpt <> particleLifeTimeMaxOpt then { emitter with ParticleLifeTimeMaxOpt = particleLifeTimeMaxOpt } else emitter) evt.Subscriber world
         Cascade
 
-    static let handleParticleRateChange evt world =
+    static let handleParticleRateChange (evt : Event<ChangeData, Entity>) (world : World) =
         let particleRate = evt.Data.Value :?> single
         mapEmitter (fun emitter -> if emitter.ParticleRate <> particleRate then { emitter with ParticleRate = particleRate } else emitter) evt.Subscriber world
         Cascade
 
-    static let handleParticleMaxChange evt world =
+    static let handleParticleMaxChange (evt : Event<ChangeData, Entity>) (world : World) =
         let particleMax = evt.Data.Value :?> int
         mapEmitter (fun emitter -> if emitter.ParticleRing.Length <> particleMax then Particles.BasicStaticSpriteEmitter.resize particleMax emitter else emitter) evt.Subscriber world
         Cascade
 
-    static let handleBasicParticleSeedChange evt world =
+    static let handleBasicParticleSeedChange (evt : Event<ChangeData, Entity>) (world : World) =
         let particleSeed = evt.Data.Value :?> Particles.BasicParticle
         mapEmitter (fun emitter -> if emitter.ParticleSeed <> particleSeed then { emitter with ParticleSeed = particleSeed } else emitter) evt.Subscriber world
         Cascade
 
-    static let handleEmitterConstraintChange evt world =
+    static let handleEmitterConstraintChange (evt : Event<ChangeData, Entity>) (world : World) =
         let emitterConstraint = evt.Data.Value :?> Particles.Constraint
         mapEmitter (fun emitter -> if emitter.Constraint <> emitterConstraint then { emitter with Constraint = emitterConstraint } else emitter) evt.Subscriber world
         Cascade
 
-    static let handleEmitterStyleChange evt world =
+    static let handleEmitterStyleChange (evt : Event<ChangeData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         let emitter = makeEmitter entity world
         mapEmitter (constant emitter) entity world
         Cascade
 
-    static let handlePositionChange evt world =
+    static let handlePositionChange (evt : Event<ChangeData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         let particleSystem = entity.GetParticleSystem world
         let particleSystem =
@@ -361,7 +361,7 @@ type BasicStaticSpriteEmitterFacet () =
         entity.SetParticleSystem particleSystem world
         Cascade
 
-    static let handleRotationChange evt world =
+    static let handleRotationChange (evt : Event<ChangeData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         let particleSystem = entity.GetParticleSystem world
         let particleSystem =
@@ -396,18 +396,18 @@ type BasicStaticSpriteEmitterFacet () =
         let particleSystem = entity.GetParticleSystem world
         let particleSystem = { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticSpriteEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
         entity.SetParticleSystem particleSystem world
-        World.sense handlePositionChange entity.Position.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
-        World.sense handleRotationChange entity.Rotation.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
-        World.sense handleEmitterBlendChange entity.EmitterBlend.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
-        World.sense handleEmitterClipOptChange entity.EmitterClipOpt.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
-        World.sense handleEmitterImageChange entity.EmitterImage.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
-        World.sense handleEmitterLifeTimeOptChange entity.EmitterLifeTimeOpt.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
-        World.sense handleParticleLifeTimeMaxOptChange entity.ParticleLifeTimeMaxOpt.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
-        World.sense handleParticleRateChange entity.ParticleRate.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
-        World.sense handleParticleMaxChange entity.ParticleMax.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
-        World.sense handleBasicParticleSeedChange entity.BasicParticleSeed.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
-        World.sense handleEmitterConstraintChange entity.EmitterConstraint.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
-        World.sense handleEmitterStyleChange entity.EmitterStyle.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense (nameof handlePositionChange) entity.Position.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense (nameof handleRotationChange) entity.Rotation.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense (nameof handleEmitterBlendChange) entity.EmitterBlend.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense (nameof handleEmitterClipOptChange) entity.EmitterClipOpt.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense (nameof handleEmitterImageChange) entity.EmitterImage.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense (nameof handleEmitterLifeTimeOptChange) entity.EmitterLifeTimeOpt.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense (nameof handleParticleLifeTimeMaxOptChange) entity.ParticleLifeTimeMaxOpt.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense (nameof handleParticleRateChange) entity.ParticleRate.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense (nameof handleParticleMaxChange) entity.ParticleMax.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense (nameof handleBasicParticleSeedChange) entity.BasicParticleSeed.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense (nameof handleEmitterConstraintChange) entity.EmitterConstraint.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
+        World.sense (nameof handleEmitterStyleChange) entity.EmitterStyle.ChangeEvent entity (nameof BasicStaticSpriteEmitterFacet) world
 
     override this.Unregister (entity, world) =
         let particleSystem = entity.GetParticleSystem world
@@ -596,7 +596,7 @@ module ButtonFacetExtensions =
 type ButtonFacet () =
     inherit Facet (false, false, false)
 
-    static let handleMouseLeftDown evt world =
+    static let handleMouseLeftDown (evt : Event<MouseButtonData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         if entity.GetVisible world then
             let mutable transform = entity.GetTransform world
@@ -613,7 +613,7 @@ type ButtonFacet () =
             else Cascade
         else Cascade
 
-    static let handleMouseLeftUp evt world =
+    static let handleMouseLeftUp (evt : Event<MouseButtonData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         let wasDown = entity.GetDown world
         entity.SetDown false world
@@ -649,8 +649,8 @@ type ButtonFacet () =
          define Entity.ClickSoundVolume Constants.Audio.SoundVolumeDefault]
 
     override this.Register (entity, world) =
-        World.sense handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity (nameof ButtonFacet) world
-        World.sense handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity (nameof ButtonFacet) world
+        World.sense (nameof handleMouseLeftDown) Nu.Game.Handle.MouseLeftDownEvent entity (nameof ButtonFacet) world
+        World.sense (nameof handleMouseLeftUp) Nu.Game.Handle.MouseLeftUpEvent entity (nameof ButtonFacet) world
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
@@ -701,7 +701,7 @@ module ToggleButtonFacetExtensions =
 type ToggleButtonFacet () =
     inherit Facet (false, false, false)
     
-    static let handleMouseLeftDown evt world =
+    static let handleMouseLeftDown (evt : Event<MouseButtonData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         if entity.GetVisible world then
             let mutable transform = entity.GetTransform world
@@ -715,7 +715,7 @@ type ToggleButtonFacet () =
             else Cascade
         else Cascade
 
-    static let handleMouseLeftUp evt world =
+    static let handleMouseLeftUp (evt : Event<MouseButtonData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         let wasPushed = entity.GetPushed world
         if wasPushed then entity.SetPushed false world
@@ -755,8 +755,8 @@ type ToggleButtonFacet () =
          define Entity.ToggleSoundVolume Constants.Audio.SoundVolumeDefault]
 
     override this.Register (entity, world) =
-        World.sense handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity (nameof ToggleButtonFacet) world
-        World.sense handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity (nameof ToggleButtonFacet) world
+        World.sense (nameof handleMouseLeftDown) Nu.Game.Handle.MouseLeftDownEvent entity (nameof ToggleButtonFacet) world
+        World.sense (nameof handleMouseLeftUp) Nu.Game.Handle.MouseLeftUpEvent entity (nameof ToggleButtonFacet) world
 
     override this.Update (entity, world) =
         let textOffset =
@@ -811,7 +811,7 @@ module RadioButtonFacetExtensions =
 type RadioButtonFacet () =
     inherit Facet (false, false, false)
 
-    static let handleMouseLeftDown evt world =
+    static let handleMouseLeftDown (evt : Event<MouseButtonData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         if entity.GetVisible world then
             let mutable transform = entity.GetTransform world
@@ -825,7 +825,7 @@ type RadioButtonFacet () =
             else Cascade
         else Cascade
 
-    static let handleMouseLeftUp evt world =
+    static let handleMouseLeftUp (evt : Event<MouseButtonData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         let wasPushed = entity.GetPushed world
         if wasPushed then entity.SetPushed false world
@@ -866,8 +866,8 @@ type RadioButtonFacet () =
          define Entity.DialSoundVolume Constants.Audio.SoundVolumeDefault]
 
     override this.Register (entity, world) =
-        World.sense handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity (nameof RadioButtonFacet) world
-        World.sense handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity (nameof RadioButtonFacet) world
+        World.sense (nameof handleMouseLeftDown) Nu.Game.Handle.MouseLeftDownEvent entity (nameof RadioButtonFacet) world
+        World.sense (nameof handleMouseLeftUp) Nu.Game.Handle.MouseLeftUpEvent entity (nameof RadioButtonFacet) world
 
     override this.Update (entity, world) =
         let textOffset =
@@ -976,7 +976,7 @@ module FeelerFacetExtensions =
 type FeelerFacet () =
     inherit Facet (false, false, false)
 
-    static let handleMouseLeftDown evt world =
+    static let handleMouseLeftDown (evt : Event<MouseButtonData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         let data = evt.Data : MouseButtonData
         if entity.GetVisible world then
@@ -993,7 +993,7 @@ type FeelerFacet () =
             else Cascade
         else Cascade
 
-    static let handleMouseLeftUp evt world =
+    static let handleMouseLeftUp (evt : Event<MouseButtonData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         let data = evt.Data : MouseButtonData
         let wasTouched = entity.GetTouched world
@@ -1006,7 +1006,7 @@ type FeelerFacet () =
             else Cascade
         else Cascade
 
-    static let handleIncoming evt world =
+    static let handleIncoming (evt : Event<unit, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         if  World.isMouseButtonDown MouseLeft world &&
             entity.GetVisible world &&
@@ -1018,7 +1018,7 @@ type FeelerFacet () =
             Resolve
         else Cascade
 
-    static let handleOutgoing evt world =
+    static let handleOutgoing (evt : Event<unit, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         entity.SetTouched false world
         Cascade
@@ -1027,10 +1027,10 @@ type FeelerFacet () =
         [define Entity.Touched false]
 
     override this.Register (entity, world) =
-        World.sense handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity (nameof FeelerFacet) world
-        World.sense handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity (nameof FeelerFacet) world
-        World.sense handleIncoming entity.Screen.IncomingFinishEvent entity (nameof FeelerFacet) world
-        World.sense handleOutgoing entity.Screen.OutgoingStartEvent entity (nameof FeelerFacet) world
+        World.sense (nameof handleMouseLeftDown) Nu.Game.Handle.MouseLeftDownEvent entity (nameof FeelerFacet) world
+        World.sense (nameof handleMouseLeftUp) Nu.Game.Handle.MouseLeftUpEvent entity (nameof FeelerFacet) world
+        World.sense (nameof handleIncoming) entity.Screen.IncomingFinishEvent entity (nameof FeelerFacet) world
+        World.sense (nameof handleOutgoing) entity.Screen.OutgoingStartEvent entity (nameof FeelerFacet) world
 
     override this.Update (entity, world) =
         if entity.GetEnabled world then
@@ -1061,7 +1061,7 @@ module TextBoxFacetExtensions =
 type TextBoxFacet () =
     inherit Facet (false, false, false)
 
-    static let handleMouseLeftDown evt (world : World) =
+    static let handleMouseLeftDown (evt : Event<MouseButtonData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         if world.TimeAdvancing && entity.GetVisible world then
             let mutable transform = entity.GetTransform world
@@ -1076,7 +1076,7 @@ type TextBoxFacet () =
             else Cascade
         else Cascade
 
-    static let handleKeyboardKeyChange evt (world : World) =
+    static let handleKeyboardKeyChange (evt : Event<KeyboardKeyData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         let data = evt.Data : KeyboardKeyData
         let caret = entity.GetCaret world
@@ -1126,7 +1126,7 @@ type TextBoxFacet () =
             Resolve
         else Cascade
 
-    static let handleTextInput evt (world : World) =
+    static let handleTextInput (evt : Event<TextInputData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         let caret = entity.GetCaret world
         let text = entity.GetText world
@@ -1162,9 +1162,9 @@ type TextBoxFacet () =
          nonPersistent Entity.Caret 0]
 
     override this.Register (entity, world) =
-        World.sense handleMouseLeftDown Game.MouseLeftDownEvent entity (nameof TextBoxFacet) world
-        World.sense handleKeyboardKeyChange Game.KeyboardKeyChangeEvent entity (nameof TextBoxFacet) world
-        World.sense handleTextInput Game.TextInputEvent entity (nameof TextBoxFacet) world
+        World.sense (nameof handleMouseLeftDown) Game.MouseLeftDownEvent entity (nameof TextBoxFacet) world
+        World.sense (nameof handleKeyboardKeyChange) Game.KeyboardKeyChangeEvent entity (nameof TextBoxFacet) world
+        World.sense (nameof handleTextInput) Game.TextInputEvent entity (nameof TextBoxFacet) world
         entity.SetCaret (entity.GetText world).Length world
 
     override this.Render (_, entity, world) =
@@ -1281,7 +1281,7 @@ type EffectFacet () =
         if not alive && entity.GetSelfDestruct world then
             World.destroyEntity entity world
 
-    static let handleEffectDescriptorChange evt world =
+    static let handleEffectDescriptorChange (evt : Event<ChangeData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         if entity.GetEnabled world then
             match entity.GetRunMode world with
@@ -1289,17 +1289,17 @@ type EffectFacet () =
             | _ -> ()
         Cascade
 
-    static let handleEffectsChange evt world =
+    static let handleEffectsChange (evt : Event<ChangeData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         setEffect (entity.GetEffectSymbolOpt world) entity world
         Cascade
 
-    static let handleAssetsReload evt world =
+    static let handleAssetsReload (evt : Event<unit, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         setEffect (entity.GetEffectSymbolOpt world) entity world
         Cascade
 
-    static let handlePreUpdate evt world =
+    static let handlePreUpdate (evt : Event<unit, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         if entity.GetEnabled world then
             match entity.GetRunMode world with
@@ -1307,7 +1307,7 @@ type EffectFacet () =
             | _ -> ()
         Cascade
 
-    static let handlePostUpdate evt world =
+    static let handlePostUpdate (evt : Event<unit, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         if entity.GetEnabled world then
             match entity.GetRunMode world with
@@ -1337,11 +1337,11 @@ type EffectFacet () =
         let gameTime = if entity.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
         let effectStartTime = Option.defaultValue gameTime (entity.GetEffectStartTimeOpt world)
         entity.SetEffectStartTimeOpt (Some effectStartTime) world
-        World.sense handleEffectDescriptorChange entity.EffectDescriptor.ChangeEvent entity (nameof EffectFacet) world
-        World.sense handleEffectsChange entity.EffectSymbolOpt.ChangeEvent entity (nameof EffectFacet) world
-        World.sense handleAssetsReload Nu.Game.Handle.AssetsReloadEvent entity (nameof EffectFacet) world
-        World.sense handlePreUpdate entity.Group.PreUpdateEvent entity (nameof EffectFacet) world
-        World.sense handlePostUpdate entity.Group.PostUpdateEvent entity (nameof EffectFacet) world
+        World.sense (nameof handleEffectDescriptorChange) entity.EffectDescriptor.ChangeEvent entity (nameof EffectFacet) world
+        World.sense (nameof handleEffectsChange) entity.EffectSymbolOpt.ChangeEvent entity (nameof EffectFacet) world
+        World.sense (nameof handleAssetsReload) Nu.Game.Handle.AssetsReloadEvent entity (nameof EffectFacet) world
+        World.sense (nameof handlePreUpdate) entity.Group.PreUpdateEvent entity (nameof EffectFacet) world
+        World.sense (nameof handlePostUpdate) entity.Group.PostUpdateEvent entity (nameof EffectFacet) world
 
     override this.Render (renderPass, entity, world) =
 
@@ -1480,7 +1480,8 @@ type RigidBodyFacet () =
         then World.localizePrimitiveBodyShape scalar bodyShape
         else bodyShape // NOTE: localization does not apply to 3D bodies.
 
-    static let propagatePhysicsCenter (entity : Entity) (_ : Event<ChangeData, Entity>) world =
+    static let propagatePhysicsCenter (evt : Event<ChangeData, Entity>) (world : World) =
+        let entity = evt.Subscriber
         if entity.GetPhysicsMotion world <> ManualMotion then
             let bodyId = entity.GetBodyId world
             let center = if entity.GetIs2d world then entity.GetPerimeterCenter world else entity.GetPosition world
@@ -1488,7 +1489,8 @@ type RigidBodyFacet () =
             Cascade
         else Cascade
 
-    static let propagatePhysicsRotation (entity : Entity) (evt : Event<ChangeData, Entity>) world =
+    static let propagatePhysicsRotation (evt : Event<ChangeData, Entity>) (world : World) =
+        let entity = evt.Subscriber
         if entity.GetPhysicsMotion world <> ManualMotion then
             let bodyId = entity.GetBodyId world
             let rotation = evt.Data.Value :?> Quaternion
@@ -1496,7 +1498,8 @@ type RigidBodyFacet () =
             Cascade
         else Cascade
 
-    static let propagatePhysicsLinearVelocity (entity : Entity) (evt : Event<ChangeData, Entity>) world =
+    static let propagatePhysicsLinearVelocity (evt : Event<ChangeData, Entity>) (world : World) =
+        let entity = evt.Subscriber
         if entity.GetPhysicsMotion world <> ManualMotion then
             let bodyId = entity.GetBodyId world
             let linearVelocity = evt.Data.Value :?> Vector3
@@ -1504,7 +1507,8 @@ type RigidBodyFacet () =
             Cascade
         else Cascade
 
-    static let propagatePhysicsAngularVelocity (entity : Entity) (evt : Event<ChangeData, Entity>) world =
+    static let propagatePhysicsAngularVelocity (evt : Event<ChangeData, Entity>) (world : World) =
+        let entity = evt.Subscriber
         if entity.GetPhysicsMotion world <> ManualMotion then
             let bodyId = entity.GetBodyId world
             let angularVelocity = evt.Data.Value :?> Vector3
@@ -1512,9 +1516,27 @@ type RigidBodyFacet () =
             Cascade
         else Cascade
 
-    static let propagatePhysicsAffected (entity : Entity) (evt : Event<ChangeData, Entity>) world =
+    static let propagatePhysicsAffected (evt : Event<ChangeData, Entity>) (world : World) =
+        let entity = evt.Subscriber
         if evt.Data.Name = nameof Entity.BodyType && not (evt.Data.Value :?> BodyType).IsStatic then entity.SetStatic false world
         entity.PropagatePhysics world
+        Cascade
+
+    static let unsubscribePhysicsPropagation (entity : Entity) world =
+        World.unsubscribe4 (nameof propagatePhysicsCenter) (entity.ChangeEvent (nameof entity.Transform)) entity world
+        World.unsubscribe4 (nameof propagatePhysicsRotation) (entity.ChangeEvent (nameof entity.Rotation)) entity world
+        World.unsubscribe4 (nameof propagatePhysicsLinearVelocity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world
+        World.unsubscribe4 (nameof propagatePhysicsAngularVelocity) (entity.ChangeEvent (nameof entity.AngularVelocity)) entity world
+        World.unsubscribe4 (nameof propagatePhysicsAffected) (entity.ChangeEvent "BodyPropertiesAffecting") entity world
+
+    static let handleFacetNamesChange (evt : Event<ChangeData, Entity>) (world : World) =
+        if  Set.contains (nameof RigidBodyFacet) (evt.Data.Previous :?> string Set) &&
+            not (Set.contains (nameof RigidBodyFacet) (evt.Data.Value :?> string Set)) then
+            unsubscribePhysicsPropagation evt.Subscriber world
+        Cascade
+
+    static let handleUnregistering (evt : Event<unit, Entity>) (world : World) =
+        unsubscribePhysicsPropagation evt.Subscriber world
         Cascade
 
     static let createVehiclePropertiesBox2D () =
@@ -1593,28 +1615,14 @@ type RigidBodyFacet () =
     override this.Register (entity, world) =
 
         // OPTIMIZATION: using manual unsubscription in order to use less live objects for subscriptions.
-        // OPTIMIZATION: share lambdas to reduce live object count.
         // OPTIMIZATION: using special BodyPropertiesAffecting change event to reduce subscription count.
-        let subIds = Array.init 5 (fun _ -> Gen.id64)
-        World.subscribePlus subIds[0] (propagatePhysicsCenter entity) (entity.ChangeEvent (nameof entity.Transform)) entity world |> ignore
-        World.subscribePlus subIds[1] (propagatePhysicsRotation entity) (entity.ChangeEvent (nameof entity.Rotation)) entity world |> ignore
-        World.subscribePlus subIds[2] (propagatePhysicsLinearVelocity entity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world |> ignore
-        World.subscribePlus subIds[3] (propagatePhysicsAngularVelocity entity) (entity.ChangeEvent (nameof entity.AngularVelocity)) entity world |> ignore
-        World.subscribePlus subIds[4] (propagatePhysicsAffected entity) (entity.ChangeEvent "BodyPropertiesAffecting") entity world |> ignore
-        let unsubscribe = fun world ->
-            for subId in subIds do
-                World.unsubscribe subId world
-        let callback = fun evt world ->
-            if  Set.contains (nameof RigidBodyFacet) (evt.Data.Previous :?> string Set) &&
-                not (Set.contains (nameof RigidBodyFacet) (evt.Data.Value :?> string Set)) then
-                unsubscribe world
-                Cascade
-            else Cascade
-        let callback2 = fun _ world ->
-            unsubscribe world
-            Cascade
-        World.sense callback entity.FacetNames.ChangeEvent entity (nameof RigidBodyFacet) world
-        World.sense callback2 entity.UnregisteringEvent entity (nameof RigidBodyFacet) world
+        World.subscribeFacetPlus Gen.id64 (nameof propagatePhysicsCenter) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof RigidBodyFacet) world |> ignore
+        World.subscribeFacetPlus Gen.id64 (nameof propagatePhysicsRotation) (entity.ChangeEvent (nameof entity.Rotation)) entity (nameof RigidBodyFacet) world |> ignore
+        World.subscribeFacetPlus Gen.id64 (nameof propagatePhysicsLinearVelocity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity (nameof RigidBodyFacet) world |> ignore
+        World.subscribeFacetPlus Gen.id64 (nameof propagatePhysicsAngularVelocity) (entity.ChangeEvent (nameof entity.AngularVelocity)) entity (nameof RigidBodyFacet) world |> ignore
+        World.subscribeFacetPlus Gen.id64 (nameof propagatePhysicsAffected) (entity.ChangeEvent "BodyPropertiesAffecting") entity (nameof RigidBodyFacet) world |> ignore
+        World.sense (nameof handleFacetNamesChange) entity.FacetNames.ChangeEvent entity (nameof RigidBodyFacet) world
+        World.sense (nameof handleUnregistering) entity.UnregisteringEvent entity (nameof RigidBodyFacet) world
         entity.SetAwakeTimeStamp world.UpdateTime world
 
     override this.RegisterPhysics (entity, world) =
@@ -1716,6 +1724,10 @@ type BodyJointFacet () =
             Some (targetId, target2Id)
         | _ -> None
 
+    static let handlePropagatePhysics (evt : Event<ChangeData, Entity>) (world : World) =
+        evt.Subscriber.PropagatePhysics world
+        Cascade
+
     static member Properties =
         [define Entity.BodyJoint EmptyJoint
          define Entity.BodyJointTarget Address.parent
@@ -1727,13 +1739,13 @@ type BodyJointFacet () =
          computed Entity.BodyJointId (fun (entity : Entity) _ -> { BodyJointSource = entity; BodyJointIndex = Constants.Physics.InternalIndex }) None]
 
     override this.Register (entity, world) =
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyJoint)) entity (nameof BodyJointFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyJointTarget)) entity (nameof BodyJointFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyJointTarget2)) entity (nameof BodyJointFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyJointEnabled)) entity (nameof BodyJointFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BreakingPointOpt)) entity (nameof BodyJointFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Broken)) entity (nameof BodyJointFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollideConnected)) entity (nameof BodyJointFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.BodyJoint)) entity (nameof BodyJointFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.BodyJointTarget)) entity (nameof BodyJointFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.BodyJointTarget2)) entity (nameof BodyJointFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.BodyJointEnabled)) entity (nameof BodyJointFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.BreakingPointOpt)) entity (nameof BodyJointFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.Broken)) entity (nameof BodyJointFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.CollideConnected)) entity (nameof BodyJointFacet) world
 
     override this.RegisterPhysics (entity, world) =
         match tryGetBodyTargetIds entity world with
@@ -1802,12 +1814,18 @@ type FluidEmitter2dFacet () =
                     Gravity = entity.GetGravity world }
         | _ -> failwithumf ()
 
-    static let updateCallback (event : Event<_, Entity>) (world : World) =
+    static let handleDescriptorChange (event : Event<ChangeData, Entity>) (world : World) =
         let updateEmitter =
             UpdateFluidEmitterMessage
                 { FluidEmitterId = event.Subscriber.GetFluidEmitterId world
                   FluidEmitterDescriptor = makeFluidEmitterDescriptor event.Subscriber world }
         World.handlePhysicsMessage2d updateEmitter world
+        Cascade
+
+    static let handleFluidParticlesChange (event : Event<ChangeData, Entity>) (world : World) =
+        let fluidParticles = event.Subscriber.GetFluidParticles world
+        let fluidEmitterId = event.Subscriber.GetFluidEmitterId world
+        World.setFluidParticles fluidParticles fluidEmitterId world
         Cascade
 
     static member Properties =
@@ -1829,16 +1847,10 @@ type FluidEmitter2dFacet () =
              emitter.FluidCellSize.ChangeEvent
              emitter.Bounds.ChangeEvent
              emitter.Gravity.ChangeEvent] do
-            World.sense updateCallback event emitter (nameof FluidEmitter2dFacet) world
+            World.sense (nameof handleDescriptorChange) event emitter (nameof FluidEmitter2dFacet) world
 
         // set particles upon change
-        World.sense
-            (fun (event : Event<_, Entity>) world ->
-                let fluidParticles = event.Subscriber.GetFluidParticles world
-                let fluidEmitterId = event.Subscriber.GetFluidEmitterId world
-                World.setFluidParticles fluidParticles fluidEmitterId world
-                Cascade)
-            emitter.FluidParticles.ChangeEvent emitter (nameof FluidEmitter2dFacet) world
+        World.sense (nameof handleFluidParticlesChange) emitter.FluidParticles.ChangeEvent emitter (nameof FluidEmitter2dFacet) world
 
     override this.RegisterPhysics (emitter, world) =
         let createMessage =
@@ -1875,6 +1887,21 @@ module TileMapFacetExtensions =
 type TileMapFacet () =
     inherit Facet (true, false, false)
 
+    static let handlePropagatePhysics (evt : Event<ChangeData, Entity>) (world : World) =
+        evt.Subscriber.PropagatePhysics world
+        Cascade
+
+    static let handleTileMapChange (evt : Event<ChangeData, Entity>) (world : World) =
+        let entity = evt.Subscriber
+        let attributes = entity.GetAttributesInferred world
+        if not attributes.Unimportant then
+            let mutable transform = entity.GetTransform world
+            transform.Size <- attributes.SizeInferred
+            transform.Offset <- attributes.OffsetInferred
+            World.setEntityTransformByRefWithoutEvent (&transform, World.getEntityState entity world, entity, world)
+            entity.PropagatePhysics world
+        Cascade
+
     static member Properties =
         [define Entity.BodyEnabled true
          define Entity.Friction 0.0f
@@ -1899,28 +1926,16 @@ type TileMapFacet () =
 
     override this.Register (entity, world) =
         entity.AutoBounds world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity (nameof TileMapFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof TileMapFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Friction)) entity (nameof TileMapFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Restitution)) entity (nameof TileMapFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionDetection)) entity (nameof TileMapFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity (nameof TileMapFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionMask)) entity (nameof TileMapFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.TileSizeDivisor)) entity (nameof TileMapFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.TileMap)) entity (nameof TileMapFacet) world
-        World.sense (fun _ world ->
-            let attributes = entity.GetAttributesInferred world
-            if not attributes.Unimportant then
-                let mutable transform = entity.GetTransform world
-                transform.Size <- attributes.SizeInferred
-                transform.Offset <- attributes.OffsetInferred
-                World.setEntityTransformByRefWithoutEvent (&transform, World.getEntityState entity world, entity, world)
-                entity.PropagatePhysics world
-            Cascade)
-            (entity.ChangeEvent (nameof entity.TileMap))
-            entity
-            (nameof TileMapFacet)
-            world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity (nameof TileMapFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof TileMapFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.Friction)) entity (nameof TileMapFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.Restitution)) entity (nameof TileMapFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.CollisionDetection)) entity (nameof TileMapFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity (nameof TileMapFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.CollisionMask)) entity (nameof TileMapFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.TileSizeDivisor)) entity (nameof TileMapFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.TileMap)) entity (nameof TileMapFacet) world
+        World.sense (nameof handleTileMapChange) (entity.ChangeEvent (nameof entity.TileMap)) entity (nameof TileMapFacet) world
 
     override this.RegisterPhysics (entity, world) =
         match TmxMap.tryGetTileMap (entity.GetTileMap world) with
@@ -1995,6 +2010,21 @@ module TmxMapFacetExtensions =
 type TmxMapFacet () =
     inherit Facet (true, false, false)
 
+    static let handlePropagatePhysics (evt : Event<ChangeData, Entity>) (world : World) =
+        evt.Subscriber.PropagatePhysics world
+        Cascade
+
+    static let handleTmxMapChange (evt : Event<ChangeData, Entity>) (world : World) =
+        let entity = evt.Subscriber
+        let attributes = entity.GetAttributesInferred world
+        if not attributes.Unimportant then
+            let mutable transform = entity.GetTransform world
+            transform.Size <- attributes.SizeInferred
+            transform.Offset <- attributes.OffsetInferred
+            World.setEntityTransformByRefWithoutEvent (&transform, World.getEntityState entity world, entity, world)
+            entity.PropagatePhysics world
+        Cascade
+
     static member Properties =
         [define Entity.BodyEnabled true
          define Entity.Friction 0.0f
@@ -2019,28 +2049,16 @@ type TmxMapFacet () =
 
     override this.Register (entity, world) =
         entity.AutoBounds world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity (nameof TmxMapFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof TmxMapFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Friction)) entity (nameof TmxMapFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Restitution)) entity (nameof TmxMapFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionDetection)) entity (nameof TmxMapFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity (nameof TmxMapFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionMask)) entity (nameof TmxMapFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.TileSizeDivisor)) entity (nameof TmxMapFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.TmxMap)) entity (nameof TmxMapFacet) world
-        World.sense (fun _ world ->
-            let attributes = entity.GetAttributesInferred world
-            if not attributes.Unimportant then
-                let mutable transform = entity.GetTransform world
-                transform.Size <- attributes.SizeInferred
-                transform.Offset <- attributes.OffsetInferred
-                World.setEntityTransformByRefWithoutEvent (&transform, World.getEntityState entity world, entity, world)
-                entity.PropagatePhysics world
-            Cascade)
-            (entity.ChangeEvent (nameof entity.TmxMap))
-            entity
-            (nameof TmxMapFacet)
-            world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity (nameof TmxMapFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof TmxMapFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.Friction)) entity (nameof TmxMapFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.Restitution)) entity (nameof TmxMapFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.CollisionDetection)) entity (nameof TmxMapFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity (nameof TmxMapFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.CollisionMask)) entity (nameof TmxMapFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.TileSizeDivisor)) entity (nameof TmxMapFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.TmxMap)) entity (nameof TmxMapFacet) world
+        World.sense (nameof handleTmxMapChange) (entity.ChangeEvent (nameof entity.TmxMap)) entity (nameof TmxMapFacet) world
 
     override this.RegisterPhysics (entity, world) =
         let mutable transform = entity.GetTransform world
@@ -2133,6 +2151,9 @@ type CircleContour2dFacet () =
         entity.SetOverflow (entity.GetStrokeThickness world) world
         Cascade
 
+    static let handleOverflowChange (evt : Event<ChangeData, Entity>) (world : World) =
+        updateOverflow evt.Subscriber world
+
     static member Properties =
         [define Entity.OverflowAbsolute true
          define Entity.ClipOpt None
@@ -2143,7 +2164,7 @@ type CircleContour2dFacet () =
 
     override this.Register (entity, world) =
         for propertyName in [nameof Entity.Size; nameof Entity.Scale; nameof Entity.StrokeThickness] do
-            World.sense (constant $ updateOverflow entity) (entity.ChangeEvent propertyName) entity (nameof CircleContour2dFacet) world
+            World.sense (nameof handleOverflowChange) (entity.ChangeEvent propertyName) entity (nameof CircleContour2dFacet) world
         updateOverflow entity world |> ignore<Handling>
 
     override this.Render (_, entity, world) =
@@ -2170,6 +2191,9 @@ type RectangleContour2dFacet () =
         entity.SetOverflow (entity.GetStrokeThickness world) world
         Cascade
 
+    static let handleOverflowChange (evt : Event<ChangeData, Entity>) (world : World) =
+        updateOverflow evt.Subscriber world
+
     static member Properties =
         [define Entity.OverflowAbsolute true
          define Entity.ClipOpt None
@@ -2180,7 +2204,7 @@ type RectangleContour2dFacet () =
 
     override this.Register (entity, world) =
         for propertyName in [nameof Entity.Size; nameof Entity.Scale; nameof Entity.StrokeThickness] do
-            World.sense (constant $ updateOverflow entity) (entity.ChangeEvent propertyName) entity (nameof RectangleContour2dFacet) world
+            World.sense (nameof handleOverflowChange) (entity.ChangeEvent propertyName) entity (nameof RectangleContour2dFacet) world
         updateOverflow entity world |> ignore<Handling>
 
     override this.Render (_, entity, world) =
@@ -2245,6 +2269,9 @@ type SpiralContour2dFacet () =
         entity.SetOverflow (entity.GetStrokeThickness world) world
         Cascade
 
+    static let handleOverflowChange (evt : Event<ChangeData, Entity>) (world : World) =
+        updateOverflow evt.Subscriber world
+
     static member Properties =
         [define Entity.OverflowAbsolute true
          define Entity.ClipOpt None
@@ -2261,7 +2288,7 @@ type SpiralContour2dFacet () =
             [nameof Entity.Size; nameof Entity.Scale
              nameof Entity.StrokeThickness
              nameof Entity.Turns; nameof Entity.Spacing; nameof Entity.PointsPerTurn] do
-            World.sense (constant $ updateOverflow entity) (entity.ChangeEvent propertyName) entity (nameof SpiralContour2dFacet) world
+            World.sense (nameof handleOverflowChange) (entity.ChangeEvent propertyName) entity (nameof SpiralContour2dFacet) world
         updateOverflow entity world |> ignore<Handling>
 
     override this.Render (_, entity, world) =
@@ -2355,6 +2382,9 @@ type WedgeContour2dFacet () =
         entity.SetOverflow (entity.GetStrokeThickness world) world
         Cascade
 
+    static let handleOverflowChange (evt : Event<ChangeData, Entity>) (world : World) =
+        updateOverflow evt.Subscriber world
+
     static member Properties =
         [define Entity.OverflowAbsolute true
          define Entity.ClipOpt None
@@ -2367,7 +2397,7 @@ type WedgeContour2dFacet () =
 
     override this.Register (entity, world) =
         for propertyName in [nameof Entity.Size; nameof Entity.Scale; nameof Entity.StrokeThickness] do
-            World.sense (constant $ updateOverflow entity) (entity.ChangeEvent propertyName) entity (nameof WedgeContour2dFacet) world
+            World.sense (nameof handleOverflowChange) (entity.ChangeEvent propertyName) entity (nameof WedgeContour2dFacet) world
         updateOverflow entity world |> ignore<Handling>
 
     override this.Render (_, entity, world) =
@@ -2430,6 +2460,9 @@ type RectangleRoundedContour2dFacet () =
         entity.SetOverflow (entity.GetStrokeThickness world) world
         Cascade
 
+    static let handleOverflowChange (evt : Event<ChangeData, Entity>) (world : World) =
+        updateOverflow evt.Subscriber world
+
     static member Properties =
         [define Entity.OverflowAbsolute true
          define Entity.ClipOpt None
@@ -2441,7 +2474,7 @@ type RectangleRoundedContour2dFacet () =
 
     override this.Register (entity, world) =
         for propertyName in [nameof Entity.Size; nameof Entity.Scale; nameof Entity.CornerRadius; nameof Entity.StrokeThickness] do
-            World.sense (constant $ updateOverflow entity) (entity.ChangeEvent propertyName) entity (nameof RectangleRoundedContour2dFacet) world
+            World.sense (nameof handleOverflowChange) (entity.ChangeEvent propertyName) entity (nameof RectangleRoundedContour2dFacet) world
         updateOverflow entity world |> ignore<Handling>
 
     override this.Render (_, entity, world) =
@@ -2667,44 +2700,55 @@ type LayoutFacet () =
             | None -> climbing <- false
         if not climbed then performLayout entity world
 
-    static let handleLayout evt world =
+    static let handleLayout (evt : Event<ChangeData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         performLayout entity world
         Cascade
 
-    static let handleLayoutPlus evt world =
+    static let handleLayoutPlus (evt : Event<ChangeData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         performLayoutPlus entity world
         Cascade
 
-    static let handleMount evt world =
+    static let unsubscribeMounterChanges (entity : Entity) (mounter : Entity) world =
+        World.unsubscribe4 (nameof handleLayout) (Entity.Order.ChangeEvent --> mounter) entity world
+        World.unsubscribe4 (nameof handleLayout) (Entity.LayoutOrder.ChangeEvent --> mounter) entity world
+        World.unsubscribe4 (nameof handleLayout) (Entity.DockType.ChangeEvent --> mounter) entity world
+        World.unsubscribe4 (nameof handleLayout) (Entity.GridPosition.ChangeEvent --> mounter) entity world
+
+    static let unsubscribeMountersChanges (entity : Entity) world =
+        for mounter in World.getEntityMounters entity world do
+            unsubscribeMounterChanges entity mounter world
+
+    static let handleMount (evt : Event<MountData, Entity>) (world : World) =
 
         // re-perform layout whenever the mounter's place in it changes - these subscriptions must be made now, applied
         // to the world, so they're in effect from the mounting on, and undone on unmounting
-        let entity = evt.Subscriber : Entity
+        let entity = evt.Subscriber
         let mounter = evt.Data.Mounter
-        let orderChangeUnsub = World.sensePlus (fun _ world -> performLayout entity world; Cascade) (Entity.Order.ChangeEvent --> mounter) entity (nameof LayoutFacet) world
-        let layoutOrderChangeUnsub = World.sensePlus (fun _ world -> performLayout entity world; Cascade) (Entity.LayoutOrder.ChangeEvent --> mounter) entity (nameof LayoutFacet) world
-        let dockTypeChangeUnsub = World.sensePlus (fun _ world -> performLayout entity world; Cascade) (Entity.DockType.ChangeEvent --> mounter) entity (nameof LayoutFacet) world
-        let gridPositionChangeUnsub = World.sensePlus (fun _ world -> performLayout entity world; Cascade) (Entity.GridPosition.ChangeEvent --> mounter) entity (nameof LayoutFacet) world
-
-        // on the mounter's unmounting, undo all of that, this subscription included, so none pile up on the layout
-        let unmountUnsub = ref ignore<World>
-        unmountUnsub.Value <-
-            World.sensePlus (fun evt world ->
-                if evt.Data.Mounter = mounter then
-                    orderChangeUnsub world
-                    layoutOrderChangeUnsub world
-                    dockTypeChangeUnsub world
-                    gridPositionChangeUnsub world
-                    unmountUnsub.Value world
-                    performLayout entity world
-                Cascade)
-                entity.UnmountEvent
-                entity
-                (nameof LayoutFacet)
-                world
+        World.subscribeFacetPlus Gen.id64 (nameof handleLayout) (Entity.Order.ChangeEvent --> mounter) entity (nameof LayoutFacet) world |> ignore
+        World.subscribeFacetPlus Gen.id64 (nameof handleLayout) (Entity.LayoutOrder.ChangeEvent --> mounter) entity (nameof LayoutFacet) world |> ignore
+        World.subscribeFacetPlus Gen.id64 (nameof handleLayout) (Entity.DockType.ChangeEvent --> mounter) entity (nameof LayoutFacet) world |> ignore
+        World.subscribeFacetPlus Gen.id64 (nameof handleLayout) (Entity.GridPosition.ChangeEvent --> mounter) entity (nameof LayoutFacet) world |> ignore
         performLayout entity world
+        Cascade
+
+    static let handleUnmount (evt : Event<MountData, Entity>) (world : World) =
+
+        // on the mounter's unmounting, undo its subscriptions so none pile up on the layout
+        let entity = evt.Subscriber
+        unsubscribeMounterChanges entity evt.Data.Mounter world
+        performLayout entity world
+        Cascade
+
+    static let handleFacetNamesChange (evt : Event<ChangeData, Entity>) (world : World) =
+        if  Set.contains (nameof LayoutFacet) (evt.Data.Previous :?> string Set) &&
+            not (Set.contains (nameof LayoutFacet) (evt.Data.Value :?> string Set)) then
+            unsubscribeMountersChanges evt.Subscriber world
+        Cascade
+
+    static let handleUnregistering (evt : Event<unit, Entity>) (world : World) =
+        unsubscribeMountersChanges evt.Subscriber world
         Cascade
 
     static member Properties =
@@ -2716,12 +2760,15 @@ type LayoutFacet () =
 
     override this.Register (entity, world) =
         performLayout entity world
-        World.sense handleMount entity.MountEvent entity (nameof LayoutFacet) world
-        World.sense handleLayoutPlus entity.Size.ChangeEvent entity (nameof LayoutFacet) world
-        World.sense handleLayout entity.Perimeter.ChangeEvent entity (nameof LayoutFacet) world
-        World.sense handleLayout entity.Layout.ChangeEvent entity (nameof LayoutFacet) world
-        World.sense handleLayout entity.LayoutMargin.ChangeEvent entity (nameof LayoutFacet) world
-        World.sense handleLayoutPlus entity.LayoutOrder.ChangeEvent entity (nameof LayoutFacet) world
+        World.sense (nameof handleMount) entity.MountEvent entity (nameof LayoutFacet) world
+        World.sense (nameof handleUnmount) entity.UnmountEvent entity (nameof LayoutFacet) world
+        World.sense (nameof handleFacetNamesChange) entity.FacetNames.ChangeEvent entity (nameof LayoutFacet) world
+        World.sense (nameof handleUnregistering) entity.UnregisteringEvent entity (nameof LayoutFacet) world
+        World.sense (nameof handleLayoutPlus) entity.Size.ChangeEvent entity (nameof LayoutFacet) world
+        World.sense (nameof handleLayout) entity.Perimeter.ChangeEvent entity (nameof LayoutFacet) world
+        World.sense (nameof handleLayout) entity.Layout.ChangeEvent entity (nameof LayoutFacet) world
+        World.sense (nameof handleLayout) entity.LayoutMargin.ChangeEvent entity (nameof LayoutFacet) world
+        World.sense (nameof handleLayoutPlus) entity.LayoutOrder.ChangeEvent entity (nameof LayoutFacet) world
 
 [<AutoOpen>]
 module SkyBoxFacetExtensions =
@@ -2817,9 +2864,9 @@ type LightProbeFacet () =
          nonPersistent Entity.ProbeStale false]
 
     override this.Register (entity, world) =
-        World.sense handleProbeVisibleChange entity.Group.Editing.ChangeEvent entity (nameof LightProbeFacet) world
-        World.sense handleProbeVisibleChange entity.Visible.ChangeEvent entity (nameof LightProbeFacet) world
-        World.sense handleProbeStaleChange entity.ProbeStale.ChangeEvent entity (nameof LightProbeFacet) world
+        World.sense (nameof handleProbeVisibleChange) entity.Group.Editing.ChangeEvent entity (nameof LightProbeFacet) world
+        World.sense (nameof handleProbeVisibleChange) entity.Visible.ChangeEvent entity (nameof LightProbeFacet) world
+        World.sense (nameof handleProbeStaleChange) entity.ProbeStale.ChangeEvent entity (nameof LightProbeFacet) world
         entity.SetProbeStale true world
 
     override this.Render (renderPass, entity, world) =
@@ -2967,7 +3014,7 @@ module Light3dModule =
 type Light3dFacet () =
     inherit Facet (false, false, true)
 
-    static let handleLightingChange evt world =
+    static let handleLightingChange (evt : Event<ChangeData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         let brightness = entity.GetBrightness world
         let lightCutoff = entity.GetLightCutoff world
@@ -2997,8 +3044,8 @@ type Light3dFacet () =
          define Entity.DesireFog false]
 
     override this.Register (entity, world) =
-        World.sense handleLightingChange entity.Brightness.ChangeEvent entity (nameof Light3dFacet) world
-        World.sense handleLightingChange entity.LightCutoff.ChangeEvent entity (nameof Light3dFacet) world
+        World.sense (nameof handleLightingChange) entity.Brightness.ChangeEvent entity (nameof Light3dFacet) world
+        World.sense (nameof handleLightingChange) entity.LightCutoff.ChangeEvent entity (nameof Light3dFacet) world
 
     override this.Render (renderPass, entity, world) =
         let lightId = entity.GetId world
@@ -3274,64 +3321,64 @@ type BasicStaticBillboardEmitterFacet () =
         | Particles.OutputEmitter (name, emitter) -> mapParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
         | Particles.Outputs outputs -> for output in outputs do processOutput output entity world
 
-    static let handleEmitterMaterialChange evt world =
+    static let handleEmitterMaterialChange (evt : Event<ChangeData, Entity>) (world : World) =
         let emitterMaterial = evt.Data.Value :?> Material
         mapEmitter (fun emitter -> if emitter.Material <> emitterMaterial then { emitter with Material = emitterMaterial } else emitter) evt.Subscriber world
         Cascade
 
-    static let handleEmitterMaterialPropertiesChange evt world =
+    static let handleEmitterMaterialPropertiesChange (evt : Event<ChangeData, Entity>) (world : World) =
         let emitterMaterialProperties = evt.Data.Value :?> MaterialProperties
         mapEmitter (fun emitter -> if emitter.MaterialProperties <> emitterMaterialProperties then { emitter with MaterialProperties = emitterMaterialProperties } else emitter) evt.Subscriber world
         Cascade
 
-    static let handleEmitterShadowOffsetChange evt world =
+    static let handleEmitterShadowOffsetChange (evt : Event<ChangeData, Entity>) (world : World) =
         let emitterShadowOffset = evt.Data.Value :?> single
         mapEmitter (fun emitter -> if emitter.ShadowOffset <> emitterShadowOffset then { emitter with ShadowOffset = emitterShadowOffset } else emitter) evt.Subscriber world
         Cascade
 
-    static let handleEmitterRenderStyleChange evt world =
+    static let handleEmitterRenderStyleChange (evt : Event<ChangeData, Entity>) (world : World) =
         let emitterRenderStyle = evt.Data.Value :?> RenderStyle
         let emitterRenderType = match emitterRenderStyle with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
         mapEmitter (fun emitter -> if emitter.RenderType <> emitterRenderType then { emitter with RenderType = emitterRenderType } else emitter) evt.Subscriber world
         Cascade
 
-    static let handleEmitterLifeTimeOptChange evt world =
+    static let handleEmitterLifeTimeOptChange (evt : Event<ChangeData, Entity>) (world : World) =
         let emitterLifeTimeOpt = evt.Data.Value :?> GameTime
         mapEmitter (fun emitter -> if emitter.Life.LifeTimeOpt <> emitterLifeTimeOpt then { emitter with Life = { emitter.Life with LifeTimeOpt = emitterLifeTimeOpt }} else emitter) evt.Subscriber world
         Cascade
 
-    static let handleParticleLifeTimeMaxOptChange evt world =
+    static let handleParticleLifeTimeMaxOptChange (evt : Event<ChangeData, Entity>) (world : World) =
         let particleLifeTimeMaxOpt = evt.Data.Value :?> GameTime
         mapEmitter (fun emitter -> if emitter.ParticleLifeTimeMaxOpt <> particleLifeTimeMaxOpt then { emitter with ParticleLifeTimeMaxOpt = particleLifeTimeMaxOpt } else emitter) evt.Subscriber world
         Cascade
 
-    static let handleParticleRateChange evt world =
+    static let handleParticleRateChange (evt : Event<ChangeData, Entity>) (world : World) =
         let particleRate = evt.Data.Value :?> single
         mapEmitter (fun emitter -> if emitter.ParticleRate <> particleRate then { emitter with ParticleRate = particleRate } else emitter) evt.Subscriber world
         Cascade
 
-    static let handleParticleMaxChange evt world =
+    static let handleParticleMaxChange (evt : Event<ChangeData, Entity>) (world : World) =
         let particleMax = evt.Data.Value :?> int
         mapEmitter (fun emitter -> if emitter.ParticleRing.Length <> particleMax then Particles.BasicStaticBillboardEmitter.resize particleMax emitter else emitter) evt.Subscriber world
         Cascade
 
-    static let handleBasicParticleSeedChange evt world =
+    static let handleBasicParticleSeedChange (evt : Event<ChangeData, Entity>) (world : World) =
         let particleSeed = evt.Data.Value :?> Particles.BasicParticle
         mapEmitter (fun emitter -> if emitter.ParticleSeed <> particleSeed then { emitter with ParticleSeed = particleSeed } else emitter) evt.Subscriber world
         Cascade
 
-    static let handleEmitterConstraintChange evt world =
+    static let handleEmitterConstraintChange (evt : Event<ChangeData, Entity>) (world : World) =
         let emitterConstraint = evt.Data.Value :?> Particles.Constraint
         mapEmitter (fun emitter -> if emitter.Constraint <> emitterConstraint then { emitter with Constraint = emitterConstraint } else emitter) evt.Subscriber world
         Cascade
 
-    static let handleEmitterStyleChange evt world =
+    static let handleEmitterStyleChange (evt : Event<ChangeData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         let emitter = makeEmitter entity world
         mapEmitter (constant emitter) entity world
         Cascade
 
-    static let handlePositionChange evt world =
+    static let handlePositionChange (evt : Event<ChangeData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         let particleSystem = entity.GetParticleSystem world
         let particleSystem =
@@ -3347,7 +3394,7 @@ type BasicStaticBillboardEmitterFacet () =
         entity.SetParticleSystem particleSystem world
         Cascade
 
-    static let handleRotationChange evt world =
+    static let handleRotationChange (evt : Event<ChangeData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         let particleSystem = entity.GetParticleSystem world
         let particleSystem =
@@ -3384,19 +3431,19 @@ type BasicStaticBillboardEmitterFacet () =
         let particleSystem = entity.GetParticleSystem world
         let particleSystem = { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticBillboardEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
         entity.SetParticleSystem particleSystem world
-        World.sense handlePositionChange entity.Position.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        World.sense handleRotationChange entity.Rotation.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        World.sense handleEmitterMaterialChange entity.EmitterMaterial.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        World.sense handleEmitterMaterialPropertiesChange entity.EmitterMaterialProperties.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        World.sense handleEmitterShadowOffsetChange entity.EmitterShadowOffset.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        World.sense handleEmitterRenderStyleChange entity.EmitterRenderStyle.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        World.sense handleEmitterLifeTimeOptChange entity.EmitterLifeTimeOpt.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        World.sense handleParticleLifeTimeMaxOptChange entity.ParticleLifeTimeMaxOpt.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        World.sense handleParticleRateChange entity.ParticleRate.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        World.sense handleParticleMaxChange entity.ParticleMax.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        World.sense handleBasicParticleSeedChange entity.BasicParticleSeed.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        World.sense handleEmitterConstraintChange entity.EmitterConstraint.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        World.sense handleEmitterStyleChange entity.EmitterStyle.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense (nameof handlePositionChange) entity.Position.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense (nameof handleRotationChange) entity.Rotation.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense (nameof handleEmitterMaterialChange) entity.EmitterMaterial.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense (nameof handleEmitterMaterialPropertiesChange) entity.EmitterMaterialProperties.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense (nameof handleEmitterShadowOffsetChange) entity.EmitterShadowOffset.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense (nameof handleEmitterRenderStyleChange) entity.EmitterRenderStyle.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense (nameof handleEmitterLifeTimeOptChange) entity.EmitterLifeTimeOpt.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense (nameof handleParticleLifeTimeMaxOptChange) entity.ParticleLifeTimeMaxOpt.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense (nameof handleParticleRateChange) entity.ParticleRate.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense (nameof handleParticleMaxChange) entity.ParticleMax.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense (nameof handleBasicParticleSeedChange) entity.BasicParticleSeed.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense (nameof handleEmitterConstraintChange) entity.EmitterConstraint.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense (nameof handleEmitterStyleChange) entity.EmitterStyle.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
 
     override this.Unregister (entity, world) =
         let particleSystem = entity.GetParticleSystem world
@@ -3743,6 +3790,23 @@ module AnimatedModelFacetExtensions =
 type AnimatedModelFacet () =
     inherit Facet (false, false, false)
 
+    static let handleAnimationsChange (evt : Event<ChangeData, Entity>) (world : World) =
+        let entity = evt.Subscriber
+        let playBox = fst' (World.getPlayBounds3d world)
+        let outsidePlayBounds = entity.GetPresence world <> Omnipresent && not (entity.GetAlwaysUpdate world) && not (playBox.Intersects (entity.GetBounds world))
+        let disabled = not (entity.GetEnabled world)
+        let notUpdating = world.TimeHalted || outsidePlayBounds || disabled
+        if notUpdating then entity.AnimateBones world
+        Cascade
+
+    static let handleAnimatedModelChange (evt : Event<ChangeData, Entity>) (world : World) =
+        evt.Subscriber.AnimateBones world
+        Cascade
+
+    static let handleAssetsReload (evt : Event<unit, Entity>) (world : World) =
+        evt.Subscriber.AnimateBones world
+        Cascade
+
     static member Properties =
         [define Entity.InsetOpt None
          define Entity.Material Material.empty
@@ -3759,17 +3823,9 @@ type AnimatedModelFacet () =
 
     override this.Register (entity, world) =
         entity.AnimateBones world
-        World.sense
-            (fun evt world ->
-                let playBox = fst' (World.getPlayBounds3d world)
-                let outsidePlayBounds = entity.GetPresence world <> Omnipresent && not (entity.GetAlwaysUpdate world) && not (playBox.Intersects (evt.Subscriber.GetBounds world))
-                let disabled = not (entity.GetEnabled world)
-                let notUpdating = world.TimeHalted || outsidePlayBounds || disabled
-                if notUpdating then evt.Subscriber.AnimateBones world
-                Cascade)
-            (entity.ChangeEvent (nameof entity.Animations)) entity (nameof AnimatedModelFacet) world
-        World.sense (fun evt world -> evt.Subscriber.AnimateBones world; Cascade) (entity.ChangeEvent (nameof entity.AnimatedModel)) entity (nameof AnimatedModelFacet) world
-        World.sense (fun evt world -> evt.Subscriber.AnimateBones world; Cascade) Game.AssetsReloadEvent entity (nameof AnimatedModelFacet) world
+        World.sense (nameof handleAnimationsChange) (entity.ChangeEvent (nameof entity.Animations)) entity (nameof AnimatedModelFacet) world
+        World.sense (nameof handleAnimatedModelChange) (entity.ChangeEvent (nameof entity.AnimatedModel)) entity (nameof AnimatedModelFacet) world
+        World.sense (nameof handleAssetsReload) Game.AssetsReloadEvent entity (nameof AnimatedModelFacet) world
 
     override this.Update (entity, world) =
         if entity.GetEnabled world then
@@ -3912,6 +3968,10 @@ module TerrainFacetExtensions =
 type TerrainFacet () =
     inherit Facet (true, false, false)
 
+    static let handlePropagatePhysics (evt : Event<ChangeData, Entity>) (world : World) =
+        evt.Subscriber.PropagatePhysics world
+        Cascade
+
     static member Properties =
         [define Entity.Size (v3 512.0f 128.0f 512.0f)
          define Entity.Presence Omnipresent
@@ -3955,14 +4015,14 @@ type TerrainFacet () =
          computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
 
     override this.Register (entity, world) =
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity (nameof TerrainFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof TerrainFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Friction)) entity (nameof TerrainFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Restitution)) entity (nameof TerrainFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity (nameof TerrainFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.CollisionMask)) entity (nameof TerrainFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.HeightMap)) entity (nameof TerrainFacet) world
-        World.sense (fun _ world -> entity.PropagatePhysics world; Cascade) (entity.ChangeEvent (nameof entity.Patches)) entity (nameof TerrainFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity (nameof TerrainFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof TerrainFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.Friction)) entity (nameof TerrainFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.Restitution)) entity (nameof TerrainFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity (nameof TerrainFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.CollisionMask)) entity (nameof TerrainFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.HeightMap)) entity (nameof TerrainFacet) world
+        World.sense (nameof handlePropagatePhysics) (entity.ChangeEvent (nameof entity.Patches)) entity (nameof TerrainFacet) world
         entity.SetAwakeTimeStamp world.UpdateTime world
 
     override this.RegisterPhysics (entity, world) =
@@ -4294,6 +4354,46 @@ type NavBodyFacet () =
                         | ValueNone -> World.setNav3dBodyOpt None navId world
                 else World.setNav3dBodyOpt None navId world
 
+    static let handlePropagateNavBody (evt : Event<ChangeData, Entity>) (world : World) =
+        propagateNavBody evt.Subscriber world
+        Cascade
+
+    static let subscribeBoundsChange (entity : Entity) world =
+        World.subscribeFacetPlus Gen.id64 (nameof handlePropagateNavBody) (entity.ChangeEvent (nameof entity.Bounds)) entity (nameof NavBodyFacet) world |> ignore
+
+    static let unsubscribeBoundsChange (entity : Entity) world =
+        World.unsubscribe4 (nameof handlePropagateNavBody) (entity.ChangeEvent (nameof entity.Bounds)) entity world
+
+    static let handleNavShapeChange (evt : Event<ChangeData, Entity>) (world : World) =
+        let entity = evt.Subscriber
+        let previous = evt.Data.Previous :?> NavShape
+        let value = evt.Data.Value :?> NavShape
+        let navEnabled = entity.GetNavEnabled world
+        if not previous.IsEmptyNavShape || navEnabled then unsubscribeBoundsChange entity world
+        if not value.IsEmptyNavShape || navEnabled then subscribeBoundsChange entity world
+        propagateNavBody entity world
+        Cascade
+
+    static let handleNavEnabledChange (evt : Event<ChangeData, Entity>) (world : World) =
+        let entity = evt.Subscriber
+        let previous = evt.Data.Previous :?> bool
+        let value = evt.Data.Value :?> bool
+        let navShape = entity.GetNavShape world
+        if not navShape.IsEmptyNavShape || previous then unsubscribeBoundsChange entity world
+        if not navShape.IsEmptyNavShape || value then subscribeBoundsChange entity world
+        propagateNavBody entity world
+        Cascade
+
+    static let handleFacetNamesChange (evt : Event<ChangeData, Entity>) (world : World) =
+        if  Set.contains (nameof NavBodyFacet) (evt.Data.Previous :?> string Set) &&
+            not (Set.contains (nameof NavBodyFacet) (evt.Data.Value :?> string Set)) then
+            unsubscribeBoundsChange evt.Subscriber world
+        Cascade
+
+    static let handleUnregistering (evt : Event<unit, Entity>) (world : World) =
+        unsubscribeBoundsChange evt.Subscriber world
+        Cascade
+
     static member Properties =
         [define Entity.NavShape ContourNavShape
          define Entity.NavEnabled true]
@@ -4301,48 +4401,18 @@ type NavBodyFacet () =
     override this.Register (entity, world) =
 
         // OPTIMIZATION: conditionally subscribe to bounds change event.
-        let subId = Gen.id64
-        let subscribe world =
-            World.subscribePlus subId (fun _ world -> propagateNavBody entity world; Cascade) (entity.ChangeEvent (nameof entity.Bounds)) entity world |> ignore
-        let unsubscribe world =
-            World.unsubscribe subId world
-        let callback evt world =
-            let entity = evt.Subscriber : Entity
-            let previous = evt.Data.Previous :?> NavShape
-            let value = evt.Data.Value :?> NavShape
-            let navEnabled = entity.GetNavEnabled world
-            if not previous.IsEmptyNavShape || navEnabled then unsubscribe world
-            if not value.IsEmptyNavShape || navEnabled then subscribe world
-            propagateNavBody entity world
-            Cascade
-        let callback2 evt world =
-            let entity = evt.Subscriber : Entity
-            let previous = evt.Data.Previous :?> bool
-            let value = evt.Data.Value :?> bool
-            let navShape = entity.GetNavShape world
-            if not navShape.IsEmptyNavShape || previous then unsubscribe world
-            if not navShape.IsEmptyNavShape || value then subscribe world
-            propagateNavBody entity world
-            Cascade
-        let callback3 evt world =
-            if  Set.contains (nameof NavBodyFacet) (evt.Data.Previous :?> string Set) &&
-                Set.contains (nameof NavBodyFacet) (evt.Data.Value :?> string Set) |> not then
-                unsubscribe world
-            Cascade
-        let callback4 _ world = unsubscribe world; Cascade
         match entity.GetNavShape world with
         | EmptyNavShape -> ()
-        | _ -> subscribe world
-        World.sense callback (entity.ChangeEvent (nameof entity.NavShape)) entity (nameof NavBodyFacet) world
-        World.sense callback2 (entity.ChangeEvent (nameof entity.NavEnabled)) entity (nameof NavBodyFacet) world
-        World.sense callback3 entity.FacetNames.ChangeEvent entity (nameof NavBodyFacet) world
-        World.sense callback4 entity.UnregisteringEvent entity (nameof NavBodyFacet) world
+        | _ -> subscribeBoundsChange entity world
+        World.sense (nameof handleNavShapeChange) (entity.ChangeEvent (nameof entity.NavShape)) entity (nameof NavBodyFacet) world
+        World.sense (nameof handleNavEnabledChange) (entity.ChangeEvent (nameof entity.NavEnabled)) entity (nameof NavBodyFacet) world
+        World.sense (nameof handleFacetNamesChange) entity.FacetNames.ChangeEvent entity (nameof NavBodyFacet) world
+        World.sense (nameof handleUnregistering) entity.UnregisteringEvent entity (nameof NavBodyFacet) world
 
         // unconditional registration behavior
-        let callbackPnb evt world = propagateNavBody evt.Subscriber world; Cascade
-        World.sense callbackPnb (entity.ChangeEvent (nameof entity.StaticModel)) entity (nameof NavBodyFacet) world
-        World.sense callbackPnb (entity.ChangeEvent (nameof entity.SurfaceIndex)) entity (nameof NavBodyFacet) world
-        World.sense callbackPnb (entity.ChangeEvent (nameof entity.HeightMap)) entity (nameof NavBodyFacet) world
+        World.sense (nameof handlePropagateNavBody) (entity.ChangeEvent (nameof entity.StaticModel)) entity (nameof NavBodyFacet) world
+        World.sense (nameof handlePropagateNavBody) (entity.ChangeEvent (nameof entity.SurfaceIndex)) entity (nameof NavBodyFacet) world
+        World.sense (nameof handlePropagateNavBody) (entity.ChangeEvent (nameof entity.HeightMap)) entity (nameof NavBodyFacet) world
         propagateNavBody entity world
 
     override this.Unregister (entity, world) =

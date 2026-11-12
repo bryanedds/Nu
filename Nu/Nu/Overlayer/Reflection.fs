@@ -199,22 +199,22 @@ module Reflection =
         let propertyContainers = getReflectivePropertyContainers target
         List.map getType propertyContainers
 
-    /// Get all the reflective property definitions of a type, including those of its dispatcher and /
-    /// or facets, organized in a map from the containing type's name to the property definition.
+    /// Get all the reflective property definitions of a type, including those of its dispatcher and / or facets,
+    /// organized in a map from the containing type's name to the property definition.
     let getReflectivePropertyDefinitionMap (target : 'a) =
         let containerTypes = getReflectivePropertyContainerTypes target
         Map.ofListBy (fun (ty : Type) -> (ty.Name, getPropertyDefinitions ty)) containerTypes
 
-    /// Get all the unique reflective property definitions of a type, including those of its
-    /// dispatcher and / or facets.
+    /// Get all the unique reflective property definitions of a type, including those of its dispatcher and / or
+    /// facets.
     let getReflectivePropertyDefinitions (target : 'a) =
         target
         |> getReflectivePropertyContainerTypes
         |> Seq.collect getPropertyDefinitions
         |> Map.ofSeqBy (fun definition -> (definition.PropertyName, definition))
 
-    /// Get all the unique reflective property definitions of a type with its containing dispatcher
-    /// and / or facet type name, with the property name as key.
+    /// Get all the unique reflective property definitions of a type with its containing dispatcher and / or facet type
+    /// name, with the property name as key.
     let getReflectivePropertyDefinitionAndContainingTypes (target : 'a) =
         target
         |> getReflectivePropertyContainerTypes

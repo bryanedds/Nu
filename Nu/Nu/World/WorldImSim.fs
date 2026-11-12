@@ -85,12 +85,12 @@ module WorldImSim =
                 if not (Array.contains "Event" eventAddress.Names)
                 then Address.makeFromArray<'d> (Array.concat [|eventAddress.Names; [|"Event"|]; world.ContextImSim.Names|])
                 else eventAddress
-            let subscriptionKey = (name, eventAddress :> Address, eventAddress' :> Address)
+            let subscriptionKey = (WorldModuleInternal.UpdateLateBindingsCount, name, eventAddress :> Address, eventAddress' :> Address)
             match world.SubscriptionJournals.TryGetValue subscriptionKey with
             | (true, subscriptionJournal) -> World.utilizeSubscriptionInJournal subscriptionKey subscriptionJournal world
             | (false, _) ->
                 let subId = Gen.id64
-                World.subscribePlus subId (fun event world ->
+                World.subscribeLambdaPlus subId (fun event world ->
                     match world.SubscriptionJournals.TryGetValue subscriptionKey with
                     | (true, subscriptionJournal) ->
                         let results = subscriptionJournal.Results :?> 'r FQueue
@@ -146,10 +146,10 @@ module WorldImSim =
 
         /// ImSim subscribe to the given entity's body events, mapping the results to a user-defined result.
         static member initBodyResult updateResult (entity : Entity) world =
-            World.monitor (fun event world -> updateResult (FQueue.conj $ BodyPenetrationData event.Data) world; Cascade) entity.BodyPenetrationEvent entity world
-            World.monitor (fun event world -> updateResult (FQueue.conj $ BodySeparationExplicitData event.Data) world; Cascade) entity.BodySeparationExplicitEvent entity world
-            World.monitor (fun event world -> updateResult (FQueue.conj $ BodySeparationImplicitData event.Data) world; Cascade) entity.BodySeparationImplicitEvent entity world
-            World.monitor (fun event world -> updateResult (FQueue.conj $ BodyTransformData event.Data) world; Cascade) entity.BodyTransformEvent entity world
+            World.monitorLambda (fun event world -> updateResult (FQueue.conj $ BodyPenetrationData event.Data) world; Cascade) entity.BodyPenetrationEvent entity world
+            World.monitorLambda (fun event world -> updateResult (FQueue.conj $ BodySeparationExplicitData event.Data) world; Cascade) entity.BodySeparationExplicitEvent entity world
+            World.monitorLambda (fun event world -> updateResult (FQueue.conj $ BodySeparationImplicitData event.Data) world; Cascade) entity.BodySeparationImplicitEvent entity world
+            World.monitorLambda (fun event world -> updateResult (FQueue.conj $ BodyTransformData event.Data) world; Cascade) entity.BodyTransformEvent entity world
 
         /// Clear the current ImSim context.
         static member scopeWorld world =
@@ -541,7 +541,7 @@ module WorldImSim =
         /// See <see cref="ButtonDispatcher" />.
         /// </summary>
         static member doButton name args world =
-            let init updateResult (entity : Entity) world = World.monitor (fun _ world -> updateResult tautology world; Cascade) entity.ClickEvent entity world
+            let init updateResult (entity : Entity) world = World.monitorLambda (fun _ world -> updateResult tautology world; Cascade) entity.ClickEvent entity world
             World.doEntityPlus<ButtonDispatcher, _> false init name args world
 
         /// <summary>
@@ -549,7 +549,7 @@ module WorldImSim =
         /// See <see cref="ToggleButtonDispatcher" />.
         /// </summary>
         static member doToggleButton name args world =
-            let init updateResult (entity : Entity) world = World.monitor (fun _ world -> updateResult tautology world; Cascade) entity.ToggleEvent entity world
+            let init updateResult (entity : Entity) world = World.monitorLambda (fun _ world -> updateResult tautology world; Cascade) entity.ToggleEvent entity world
             let toggleChanged = World.doEntityPlus<ToggleButtonDispatcher, _> false init name args world
             (world.DeclaredEntity.GetToggled world, toggleChanged)
 
@@ -558,7 +558,7 @@ module WorldImSim =
         /// See <see cref="RadioButtonDispatcher" />.
         /// </summary>
         static member doRadioButton name args world =
-            let init updateResult (entity : Entity) world = World.monitor (fun _ world -> updateResult tautology world; Cascade) entity.DialEvent entity world
+            let init updateResult (entity : Entity) world = World.monitorLambda (fun _ world -> updateResult tautology world; Cascade) entity.DialEvent entity world
             let dialChanged = World.doEntityPlus<RadioButtonDispatcher, _> false init name args world
             (world.DeclaredEntity.GetDialed world, dialChanged)
 
@@ -573,7 +573,7 @@ module WorldImSim =
         /// See <see cref="FeelerDispatcher" />.
         /// </summary>
         static member doFeeler name args world =
-            let init updateResult (entity : Entity) world = World.monitor (fun _ world -> updateResult tautology world; Cascade) entity.TouchEvent entity world
+            let init updateResult (entity : Entity) world = World.monitorLambda (fun _ world -> updateResult tautology world; Cascade) entity.TouchEvent entity world
             let touchChanged = World.doEntityPlus<FeelerDispatcher, _> false init name args world
             (world.DeclaredEntity.GetTouched world, touchChanged)
 
@@ -582,7 +582,7 @@ module WorldImSim =
         /// See <see cref="TextBoxDispatcher" />.
         /// </summary>
         static member doTextBox name args world =
-            let init updateResult (entity : Entity) world = World.monitor (fun _ world -> updateResult tautology world; Cascade) entity.TextEditEvent entity world
+            let init updateResult (entity : Entity) world = World.monitorLambda (fun _ world -> updateResult tautology world; Cascade) entity.TextEditEvent entity world
             let textChanged = World.doEntityPlus<TextBoxDispatcher, _> false init name args world
             (world.DeclaredEntity.GetText world, textChanged)
 
