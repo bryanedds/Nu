@@ -549,7 +549,7 @@ module Freezer3dFacetExtensions =
 type Freezer3dFacet () =
     inherit Facet (false, false, false)
 
-    static let handleUpdateFrozenHierarchy evt world =
+    static let handleUpdateFrozenHierarchy (evt : Event<ChangeData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         entity.UpdateFrozenHierarchy world
         Cascade
@@ -566,7 +566,7 @@ type Freezer3dFacet () =
     override this.Register (entity, world) =
         entity.SetOffset v3Zero world
         World.defer (entity.UpdateFrozenHierarchy) entity world // children not loaded yet, so freeze at end of frame
-        World.sense handleUpdateFrozenHierarchy (entity.ChangeEvent (nameof entity.Frozen)) entity (nameof Freezer3dFacet) world
+        World.sense (nameof handleUpdateFrozenHierarchy) (entity.ChangeEvent (nameof entity.Frozen)) entity (nameof Freezer3dFacet) world
 
     override this.Render (renderPass, entity, world) =
         let bounds = entity.GetBounds world
@@ -633,7 +633,7 @@ type StaticModelHierarchyDispatcher () =
             Convex false (Right entity) world
         entity.UpdateFrozenHierarchy world
 
-    static let handleUpdateLoadedHierarchy evt world =
+    static let handleUpdateLoadedHierarchy (evt : Event<ChangeData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         updateLoadedHierarchy entity world
         Cascade
@@ -649,9 +649,9 @@ type StaticModelHierarchyDispatcher () =
         if not (entity.GetLoaded world) then
             updateLoadedHierarchy entity world
             entity.SetLoaded true world
-        World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.StaticModel)) entity world
-        World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.PresenceConferred)) entity world
-        World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.SurfaceMaterialsPopulated)) entity world
+        World.monitor (nameof handleUpdateLoadedHierarchy) (entity.ChangeEvent (nameof entity.StaticModel)) entity world
+        World.monitor (nameof handleUpdateLoadedHierarchy) (entity.ChangeEvent (nameof entity.PresenceConferred)) entity world
+        World.monitor (nameof handleUpdateLoadedHierarchy) (entity.ChangeEvent (nameof entity.SurfaceMaterialsPopulated)) entity world
 
     override this.Edit (op, _, _) =
         match op with
@@ -683,7 +683,7 @@ type RigidModelHierarchyDispatcher () =
             true (Right entity) world
         entity.UpdateFrozenHierarchy world
 
-    static let handleUpdateLoadedHierarchy evt world =
+    static let handleUpdateLoadedHierarchy (evt : Event<ChangeData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
         updateLoadedHierarchy entity world
         Cascade
@@ -700,10 +700,10 @@ type RigidModelHierarchyDispatcher () =
         if not (entity.GetLoaded world) then
             updateLoadedHierarchy entity world
             entity.SetLoaded true world
-        World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.StaticModel)) entity world
-        World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.PresenceConferred)) entity world
-        World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.SurfaceMaterialsPopulated)) entity world
-        World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.Profile)) entity world
+        World.monitor (nameof handleUpdateLoadedHierarchy) (entity.ChangeEvent (nameof entity.StaticModel)) entity world
+        World.monitor (nameof handleUpdateLoadedHierarchy) (entity.ChangeEvent (nameof entity.PresenceConferred)) entity world
+        World.monitor (nameof handleUpdateLoadedHierarchy) (entity.ChangeEvent (nameof entity.SurfaceMaterialsPopulated)) entity world
+        World.monitor (nameof handleUpdateLoadedHierarchy) (entity.ChangeEvent (nameof entity.Profile)) entity world
 
     override this.Edit (op, _, _) =
         match op with

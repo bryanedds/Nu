@@ -453,6 +453,22 @@ module WorldModuleScreen =
                     screenState definitions
             World.setScreenState screenState screen world
 
+        static member internal refreshScreenComputedProperties screen world =
+            let screenState = World.getScreenState screen world
+            let definitions = Reflection.getReflectivePropertyDefinitions screenState
+            let screenState =
+                Map.fold (fun screenState propertyName (propertyDefinition : PropertyDefinition) ->
+                    let mutable property = Unchecked.defaultof<_>
+                    let computedOld = ScreenState.tryGetProperty (propertyName, screenState, &property) && property.PropertyValue :? ComputedProperty
+                    let computedNew = match propertyDefinition.PropertyExpr with ComputedExpr _ -> true | _ -> false
+                    if computedOld || computedNew then
+                        let propertyValue = PropertyExpr.eval propertyDefinition.PropertyExpr world
+                        let property = { PropertyType = propertyDefinition.PropertyType; PropertyValue = propertyValue }
+                        ScreenState.attachProperty propertyName property screenState
+                    else screenState)
+                    screenState definitions
+            World.setScreenState screenState screen world
+
         static member internal registerScreen screen world =
             let dispatcher = World.getScreenDispatcher screen world
             dispatcher.Register (screen, world)

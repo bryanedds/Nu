@@ -368,8 +368,9 @@ module WorldModule4 =
             // prepare for late-bound type updating
             WorldImSim.Initializing <- initializing
             WorldImSim.Reinitializing <- true
-            Content.UpdateLateBindingsCount <- inc Content.UpdateLateBindingsCount
+            WorldModuleInternal.UpdateLateBindingsCount <- inc WorldModuleInternal.UpdateLateBindingsCount
             World.clearEntityFromClipboard world // HACK: clear what's on the clipboard rather than changing its dispatcher instance.
+            WorldModuleInternal.NamedCallbacks.Clear ()
 
             // update plugin
             let pluginType =

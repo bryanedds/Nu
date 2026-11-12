@@ -767,6 +767,22 @@ module WorldModuleGame =
                     gameState definitions
             World.setGameState gameState game world
 
+        static member internal refreshGameComputedProperties game world =
+            let gameState = World.getGameState game world
+            let definitions = Reflection.getReflectivePropertyDefinitions gameState
+            let gameState =
+                Map.fold (fun gameState propertyName (propertyDefinition : PropertyDefinition) ->
+                    let mutable property = Unchecked.defaultof<_>
+                    let computedOld = GameState.tryGetProperty (propertyName, gameState, &property) && property.PropertyValue :? ComputedProperty
+                    let computedNew = match propertyDefinition.PropertyExpr with ComputedExpr _ -> true | _ -> false
+                    if computedOld || computedNew then
+                        let propertyValue = PropertyExpr.eval propertyDefinition.PropertyExpr world
+                        let property = { PropertyType = propertyDefinition.PropertyType; PropertyValue = propertyValue }
+                        GameState.attachProperty propertyName property gameState
+                    else gameState)
+                    gameState definitions
+            World.setGameState gameState game world
+
         static member internal viewGameProperties game world =
             let state = World.getGameState game world
             World.viewSimulantStateProperties state

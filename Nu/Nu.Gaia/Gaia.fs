@@ -4595,15 +4595,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             | Right (screen, world) ->
 
                 // subscribe to events related to editing
-                World.subscribe handleNuMouseButton Game.MouseLeftDownEvent Game world |> ignore
-                World.subscribe handleNuMouseButton Game.MouseLeftUpEvent Game world |> ignore
-                World.subscribe handleNuMouseButton Game.MouseMiddleDownEvent Game world |> ignore
-                World.subscribe handleNuMouseButton Game.MouseMiddleUpEvent Game world |> ignore
-                World.subscribe handleNuMouseButton Game.MouseRightDownEvent Game world |> ignore
-                World.subscribe handleNuMouseButton Game.MouseRightUpEvent Game world |> ignore
-                World.subscribe handleNuLifeCycleGroup (Game.LifeCycleEvent (nameof Group)) Game world |> ignore
-                World.subscribe handleNuSelectedScreenOptChange Game.PostSelectEvent Game world |> ignore
-                World.subscribe handleNuExitRequest Game.ExitRequestEvent Game world |> ignore
+                World.subscribeLambda handleNuMouseButton Game.MouseLeftDownEvent Game world |> ignore
+                World.subscribeLambda handleNuMouseButton Game.MouseLeftUpEvent Game world |> ignore
+                World.subscribeLambda handleNuMouseButton Game.MouseMiddleDownEvent Game world |> ignore
+                World.subscribeLambda handleNuMouseButton Game.MouseMiddleUpEvent Game world |> ignore
+                World.subscribeLambda handleNuMouseButton Game.MouseRightDownEvent Game world |> ignore
+                World.subscribeLambda handleNuMouseButton Game.MouseRightUpEvent Game world |> ignore
+                World.subscribeLambda handleNuLifeCycleGroup (Game.LifeCycleEvent (nameof Group)) Game world |> ignore
+                World.subscribeLambda handleNuSelectedScreenOptChange Game.PostSelectEvent Game world |> ignore
+                World.subscribeLambda handleNuExitRequest Game.ExitRequestEvent Game world |> ignore
 
                 // run the world
                 runWithCleanUp gaiaState targetDir screen world
