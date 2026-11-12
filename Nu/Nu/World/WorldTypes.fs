@@ -9,6 +9,7 @@ open System
 open System.Collections.Generic
 open System.ComponentModel
 open System.Diagnostics
+open System.Diagnostics.CodeAnalysis
 open System.Numerics
 open System.Reflection
 open DotRecast.Core
@@ -464,7 +465,8 @@ and LateBindings = interface end
 and Dispatcher = inherit LateBindings
 
 /// Generalized interface tag for simulant dispatchers.
-and SimulantDispatcher () = interface Dispatcher
+and [<DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods ||| DynamicallyAccessedMemberTypes.NonPublicMethods)>]
+    SimulantDispatcher () = interface Dispatcher
 
 /// The default dispatcher for games.
 and GameDispatcher () =
@@ -763,7 +765,8 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
     member this.Light = light
 
 /// Dynamically augments an entity's behavior in a composable way.
-and Facet (physical, lightProbe, light) =
+and [<DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods ||| DynamicallyAccessedMemberTypes.NonPublicMethods)>]
+    Facet (physical, lightProbe, light) =
 
     /// The presence override, if any.-
     abstract PresenceOverride : Presence voption
@@ -1919,7 +1922,7 @@ and [<ReferenceEquality>] internal WorldExtension =
       mutable ContextImSim : Address
       mutable DeclaredImSim : Address
       mutable SimulantJournals : SUMap<Address, SimulantJournal>
-      mutable SubscriptionJournals : SUMap<string * Address * Address, SubscriptionJournal>
+      mutable SubscriptionJournals : SUMap<int * string * Address * Address, SubscriptionJournal>
       JobGraph : JobGraph
       GeometryViewport : Viewport
 
