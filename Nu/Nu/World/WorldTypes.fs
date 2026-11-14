@@ -2050,6 +2050,10 @@ and [<NoEquality; NoComparison>] World =
     member internal this.TimeAdvancementCleared =
         this.AmbientState.TimeAdvancementCleared
 
+    /// The number of ticks each frame advances time by in place of the real time passed, if overridden.
+    member this.TickDeltaOverride =
+        AmbientState.getTickDeltaOverride this.AmbientState
+
     /// Check that the world's frame rate is being explicitly paced based on clock progression.
     member this.FramePacing =
         this.AmbientState.FramePacing

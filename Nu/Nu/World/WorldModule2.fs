@@ -2054,8 +2054,8 @@ module WorldModule2 =
                                                                     let rendererProcess = World.getRendererProcess world
                                                                     if Option.isNone firstFrameCallbackOpt then rendererProcess.RequestSwap ()
 
-                                                                    // process frame pacing mechanics
-                                                                    if world.Timers.MainThreadTimer.IsRunning then
+                                                                    // process frame pacing mechanics unless the tick delta is overridden
+                                                                    if world.Timers.MainThreadTimer.IsRunning && world.TickDeltaOverride.IsNone then
 
                                                                         // automatically enable frame pacing when need is detected
                                                                         if not world.FramePacing then
