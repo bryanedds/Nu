@@ -353,6 +353,7 @@ type [<ReferenceEquality>] 'w Tasklet =
 type [<ReferenceEquality>] WorldConfig =
     { Accompanied : bool
       TimeAdvancing : bool
+      TickDeltaOverride : int64 option
       FramePacing : bool
       ModeOpt : string option
       SdlConfig : SdlConfig }
@@ -365,6 +366,7 @@ type [<ReferenceEquality>] WorldConfig =
     static member val defaultConfig =
         { Accompanied = false
           TimeAdvancing = true
+          TickDeltaOverride = None
           FramePacing = false
           ModeOpt = None
           SdlConfig = SdlConfig.defaultConfig }
@@ -473,6 +475,7 @@ module internal AmbientState =
               mutable TickTime : int64
               mutable ScaledTimeAccumulator : double
               TickWatch : Stopwatch
+              TickDeltaOverride : int64 option
               mutable DateDelta : TimeSpan
               mutable TickDeltaPrevious : int64
               mutable DateTime : DateTimeOffset
@@ -572,6 +575,9 @@ module internal AmbientState =
     let internal getTimers state =
         state.Timers
 
+    let internal getTickDeltaOverride state =
+        state.TickDeltaOverride
+
     let internal processTime (state : 'w AmbientState) =
         if state.TimeResumptionRequested then
             state.TickWatch.Start ()
@@ -580,13 +586,15 @@ module internal AmbientState =
             state.TickWatch.Stop ()
             state.Flags <- state.Flags &&& ~~~TimeAdvancingMask &&& ~~~TimeHaltRequestedMask
         let tickDeltaCurrent =
-            if state.TimeAdvancing
-            then min state.TickWatch.ElapsedTicks Constants.Engine.TickDeltaMax
+            if state.TimeAdvancing then
+                match state.TickDeltaOverride with
+                | Some tickDeltaOverride -> tickDeltaOverride
+                | None -> min state.TickWatch.ElapsedTicks Constants.Engine.TickDeltaMax
             else 0L
         state.TickWatch.Restart ()
         let updateDelta = if state.TimeAdvancing then 1L else 0L
         let tickDelta =
-            if Constants.Engine.TickDeltaAveraging
+            if Constants.Engine.TickDeltaAveraging && state.TickDeltaOverride.IsNone
             then (tickDeltaCurrent + state.TickDeltaPrevious) / 2L
             else tickDeltaCurrent
         let tickTime = state.TickTime + tickDelta
@@ -745,7 +753,7 @@ module internal AmbientState =
     let internal requestLightMapRender state =
         state.LightMapRenderRequested <- true
 
-    let internal make accompanied timeAdvancing framePacing symbolics overlayer timers sdlDepsOpt =
+    let internal make accompanied timeAdvancing tickDeltaOverride framePacing symbolics overlayer timers sdlDepsOpt =
         let flags =
             (if accompanied then AccompaniedMask else 0u) |||
             (if timeAdvancing then TimeAdvancingMask else 0u) |||
@@ -764,6 +772,7 @@ module internal AmbientState =
           TickTime = 0L
           ScaledTimeAccumulator = 0.0
           TickWatch = if timeAdvancing then Stopwatch.StartNew () else Stopwatch ()
+          TickDeltaOverride = tickDeltaOverride
           DateDelta = TimeSpan.Zero
           TickDeltaPrevious = 0L
           DateTime = DateTime.Now
