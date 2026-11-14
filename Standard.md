@@ -188,6 +188,8 @@ type T =
 
 15) Conceptually, (a, b, c) is a tuple, so please treat it as such. For example, write `fn (a, b, c)` rather than `fn(a, b, c)`. The exception is when you need to use F#'s flow-syntax feature.
 
+16) Avoid using `x |> C.f` for trivial cases. `|>` should only be used for multiple pipes or when type annotation becomes too noisy for the lambda parameter(s).
+
 **C) Simplicity**
 
 1) Use F\# as a functional-first language, rather than an object-oriented one. [*Here's our friend Rich Hickey on why object-orientation in inherently complex.*](http://www.infoq.com/presentations/Simple-Made-Easy)
