@@ -6,6 +6,7 @@
 
 namespace Nu.Tests
 open System
+open System.Diagnostics
 open NUnit.Framework
 open Prime
 open Nu
@@ -34,6 +35,18 @@ module WorldTests =
             Assert.Equal (UpdateTime 0L, world.ScaledDelta)
             World.cleanUp world
         | DynamicFrameRate _ -> ()
+
+    let [<Test>] ``With a tick delta override, each frame advances time by exactly it, faster than real time.`` () =
+        Nu.init ()
+        let tickDeltaOverride = Stopwatch.Frequency // a whole second per frame
+        let world = World.makeStub (constant None) { WorldConfig.defaultConfig with Accompanied = true; TickDeltaOverride = Some tickDeltaOverride } (TestPlugin ())
+        let stopwatch = Stopwatch.StartNew ()
+        World.runWithoutCleanUp (fun world -> world.UpdateTime < 10L) ignore ignore ignore ignore ignore (Some ignore) world |> ignore
+        Assert.Equal (tickDeltaOverride, world.TickDelta)
+        Assert.Equal (tickDeltaOverride * 10L, world.TickTime)
+        Assert.Equal (10.0f, world.ClockTime)
+        Assert.IsTrue (stopwatch.Elapsed.TotalSeconds < 10.0)
+        World.cleanUp world
 
     let [<Test; Category "Integration">] ``Run integration frame then clean up.`` () =
         Nu.init ()

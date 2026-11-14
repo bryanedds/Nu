@@ -4577,6 +4577,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                   Accompanied = true
                   TimeAdvancing = false
                   FramePacing = false
+                  TickDeltaOverride = None
                   ModeOpt = gaiaState.ProjectEditModeOpt
                   SdlConfig = sdlConfig }
 
