@@ -12,7 +12,7 @@
 // Dependencies (resolved via NuGet automatically):
 //   Magick.NET-Q8-AnyCPU (SVG rendering + image resizing)
 
-#r "nuget: Magick.NET-Q8-AnyCPU, 14.5.0"
+#r "nuget: Magick.NET-Q8-AnyCPU, 15.1.0"
 
 open System
 open System.IO
