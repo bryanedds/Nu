@@ -1768,9 +1768,8 @@ module WorldModule2 =
 
                             // compute shadow info
                             let lightId = light.GetId world
-                            let shadowRotation = light.GetRotation world
+                            let shadowOrigin = world.Eye3dCenter
                             let shadowCutoff = light.GetLightCutoff world
-                            let shadowOrigin = Light3dModule.getCascadedLightOrigin shadowRotation shadowCutoff world
                             let shadowRotation = light.GetRotation world
                             let shadowForward = shadowRotation.Down
                             let shadowUp = shadowForward.OrthonormalUp
