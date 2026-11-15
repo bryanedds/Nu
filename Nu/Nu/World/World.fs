@@ -370,7 +370,7 @@ module WorldModule4 =
             WorldImSim.Reinitializing <- true
             WorldModuleInternal.UpdateLateBindingsCount <- inc WorldModuleInternal.UpdateLateBindingsCount
             World.clearEntityFromClipboard world // HACK: clear what's on the clipboard rather than changing its dispatcher instance.
-            WorldModuleInternal.NamedCallbacks.Clear ()
+            World.clearNamedCallbacks world
 
             // update plugin
             let pluginType =

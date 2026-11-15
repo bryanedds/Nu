@@ -49,12 +49,6 @@ module internal WorldModuleInternal =
     let mutable internal getSelected : Simulant -> World -> bool =
         Unchecked.defaultof<_>
 
-    /// The callbacks of named subscriptions, found by owner type, handler name, and event type.
-    let internal NamedCallbacks = Dictionary<struct (Type * string * Type), obj> HashIdentity.Structural
-
-    /// The callback of a named subscription whose owner or handler could not be found.
-    let internal CascadeCallback = box (fun (_ : Event<obj, Simulant>) (_ : World) -> Cascade)
-
     /// F# reach function for sorting subscriptions by elevation.
     let mutable internal sortSubscriptionsByElevation : (uint64 * SubscriptionEntry) seq -> obj -> (uint64 * SubscriptionEntry) seq =
         Unchecked.defaultof<_>
@@ -112,6 +106,12 @@ module internal WorldModuleInternal =
 [<AutoOpen>]
 module WorldModule =
 
+    /// The callback of a named subscription whose owner or handler could not be found.
+    let private CascadeCallback = box (fun (_ : Event<obj, Simulant>) (_ : World) -> Cascade)
+
+    /// The cached callbacks of named subscriptions, found by owner type, handler name, and event type.
+    let private CachedNamedCallbacks = Dictionary<struct (Type * string * Type), obj> HashIdentity.Structural
+
     type World with // JobGraph
 
         /// Enqueue a job for threaded execution.
@@ -138,6 +138,10 @@ module WorldModule =
 
     type World with // LateBindingsInstances
 
+        /// Clear the cached named callbacks such as due to code reload.
+        static member internal clearNamedCallbacks (_ : World) =
+            CachedNamedCallbacks.Clear ()
+
         /// Get the facets of the world.
         static member getFacets (world : World) =
             world.WorldExtension.LateBindingsInstances.Facets
@@ -157,7 +161,7 @@ module WorldModule =
         /// Get the game dispatchers of the world.
         static member getGameDispatchers (world : World) =
             world.WorldExtension.LateBindingsInstances.GameDispatchers
-
+            
     type World with // AmbientState
 
         static member internal getAmbientState (world : World) =
@@ -729,14 +733,14 @@ module WorldModule =
 
         static member internal bindNamedCallback<'a, 's when 's :> Simulant> (handlerName : string) (ownerType : Type) : obj =
             let key = struct (ownerType, handlerName, typeof<Event<'a, 's>>)
-            match WorldModuleInternal.NamedCallbacks.TryGetValue key with
+            match CachedNamedCallbacks.TryGetValue key with
             | (true, callback) -> callback
             | (false, _) ->
                 let callback =
                     match World.tryGetNamedHandlerMethod ownerType handlerName [|typeof<Event<'a, 's>>; typeof<World>|] with
                     | null ->
                         Log.errorOnce (World.describeMissingNamedHandler<'a, 's> ownerType handlerName)
-                        WorldModuleInternal.CascadeCallback
+                        CascadeCallback
                     | methodInfo when methodInfo.ReturnType = typeof<Handling> ->
                         let handler = methodInfo.CreateDelegate<Func<Event<'a, 's>, World, Handling>> ()
                         let boxableCallback = fun (evt : Event<obj, Simulant>) (world : World) ->
@@ -745,8 +749,8 @@ module WorldModule =
                         box boxableCallback
                     | _ ->
                         Log.errorOnce (World.describeMissingNamedHandler<'a, 's> ownerType handlerName)
-                        WorldModuleInternal.CascadeCallback
-                WorldModuleInternal.NamedCallbacks[key] <- callback
+                        CascadeCallback
+                CachedNamedCallbacks[key] <- callback
                 callback
 
         static member private tryGetFacetOrDispatcherType (ownerType : Type) (facetName : string) (entityState : EntityState) : Type =
@@ -806,7 +810,7 @@ module WorldModule =
                     named.Handler <- named.Bind ownerType
                     named.OwnerType <- ownerType
                 named.Handler
-            else WorldModuleInternal.CascadeCallback
+            else CascadeCallback
 
         static member internal makeNamedCallback<'a, 's when 's :> Simulant> (handlerName : string) (facetNameOpt : string voption) (subscriber : 's) world =
             let named = { HandlerName = handlerName; FacetNameOpt = facetNameOpt; Bind = World.bindNamedCallback<'a, 's> handlerName; OwnerType = null; Handler = null }
