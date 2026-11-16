@@ -33,11 +33,19 @@ module ImGuiInternal =
     [<DllImport("cimgui", CallingConvention = CallingConvention.Cdecl, EntryPoint = "igGetDragDropPayload")>]
     extern nativeint ImGui_GetDragDropPayload ()
 
+    [<DllImport("cimgui", CallingConvention = CallingConvention.Cdecl, EntryPoint = "igSetKeyOwner")>]
+    extern void ImGui_SetKeyOwner (ImGuiKey key, uint32 ownerId, ImGuiInputFlags flags)
+
     [<DllImport("cimgui", CallingConvention = CallingConvention.Cdecl, EntryPoint = "igDockBuilderGetCentralNode")>]
     extern nativeint DockBuilder_GetCentralNode (uint32 dockSpaceId)
 
     [<DllImport("cimgui", CallingConvention = CallingConvention.Cdecl, EntryPoint = "ImGuiDockNode_Rect")>]
     extern void DockNode_GetRect (nativeint rect, nativeint node)
+
+    /// Claim a key for the given owner, keeping it from imgui's own uses of unowned keys - such as alt toggling the menu
+    /// layer and arrows moving the nav cursor. A claim lasts while the key's held, so make it every frame.
+    let setKeyOwner key ownerId =
+        ImGui_SetKeyOwner (key, ownerId, ImGuiInputFlags.None)
 
     /// Clear the drag drop action.
     let tryCancelDragDrop () =

@@ -40,7 +40,7 @@ let writeIco (pngDataList : (int * byte[]) list) (path : string) =
     bw.Write (uint16 pngDataList.Length)
     // compute offsets: header (6) + directory (16 * count) then each image
     let mutable offset = 6 + 16 * pngDataList.Length
-    for size, data in pngDataList do
+    for (size, data) in pngDataList do
         let w = if size >= 256 then 0uy else byte size
         let h = if size >= 256 then 0uy else byte size
         bw.Write w       // width
@@ -52,7 +52,7 @@ let writeIco (pngDataList : (int * byte[]) list) (path : string) =
         bw.Write (uint32 data.Length)  // image size
         bw.Write (uint32 offset)       // image offset
         offset <- offset + data.Length
-    for _, data in pngDataList do
+    for (_, data) in pngDataList do
         bw.Write data
 
 (* macOS .icns via iconutil *)
@@ -76,7 +76,7 @@ let writeIcns (png1024Path : string) (outputDir : string) =
         1024, 1024, "512x512@2x"]
     use src = new MagickImage (png1024Path)
     src.Format <- MagickFormat.Png32
-    for w, h, suffix in sizes do
+    for (w, h, suffix) in sizes do
         use resized = src.Clone ()
         resized.Resize (uint32 w, uint32 h)
         resized.Write (Path.Combine (iconsetDir, $"icon_{suffix}.png"))
@@ -111,12 +111,12 @@ let writeWindowsIco (png1024Path : string) (outputIco : string) =
     src.Format <- MagickFormat.Png32
     let sizes = [16; 24; 32; 48; 64; 128; 256]
     let pngEntries =
-        [for s in sizes do
+        [for size in sizes do
             use resized = src.Clone ()
-            resized.Resize (uint32 s, uint32 s)
-            use ms = new MemoryStream ()
-            resized.Write (ms)
-            (s, ms.ToArray ())]
+            resized.Resize (uint32 size, uint32 size)
+            use stream = new MemoryStream ()
+            resized.Write (stream)
+            (size, stream.ToArray ())]
     writeIco pngEntries outputIco
     outputIco
 

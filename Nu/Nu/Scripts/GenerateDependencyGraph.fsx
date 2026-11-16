@@ -35,9 +35,9 @@ let private hueToRgb v1 v2 vh =
 
 /// Convert HSL to RGB
 let hslToRgb (h, s, l) =
-    let r, g, b =
+    let (r, g, b) =
         if s = 0.0 then
-            l, l, l
+            (l, l, l)
         else
             let h = h / 360.0
             let v2 =
@@ -47,8 +47,8 @@ let hslToRgb (h, s, l) =
             let r = hueToRgb v1 v2 (h + 1.0 / 3.0)
             let g = hueToRgb v1 v2 h
             let b = hueToRgb v1 v2 (h - 1.0 / 3.0)
-            r, g, b
-    int (255.0 * r), int (255.0 * g), int (255.0 * b)
+            (r, g, b)
+    (int (255.0 * r), int (255.0 * g), int (255.0 * b))
 
 /// Create a text file with the F# compiler arguments scrapped from a binary log file.
 /// Run `dotnet build --no-incremental -bl` to create the binlog file.
@@ -79,7 +79,7 @@ let makeCompilerArgsFromBinLog file =
 
     // extract the arguments
     let mutable args = None
-    build.VisitAllChildren<Task>(fun task ->
+    build.VisitAllChildren<Task> (fun task ->
         match task with
         | :? FscTask as fscTask ->
             match fscTask.Parent.Parent with
@@ -89,7 +89,7 @@ let makeCompilerArgsFromBinLog file =
 
     // attempt to parse the arguments
     match args with
-    | Some args -> args.Substring(args.IndexOf "-o:")
+    | Some args -> args.Substring (args.IndexOf "-o:")
     | None -> failwith "Could not process the binlog file. Did you build using '--no-incremental'?"
 
 // generate a dependency graph of the Nu project and open it in a web browser
@@ -109,7 +109,7 @@ do
     let log = makeCompilerArgsFromBinLog "msbuild.binlog"
     let checker = FSharpChecker.Create(keepAssemblyContents = true)
     let projFile = __SOURCE_DIRECTORY__ + "Nu.fsproj"
-    let opts = checker.GetProjectOptionsFromCommandLineArgs(projFile, log.Split('\n'))
+    let opts = checker.GetProjectOptionsFromCommandLineArgs(projFile, log.Split '\n')
     let checkProjectResults = checker.ParseAndCheckProject(opts) |> Async.RunSynchronously
     let uses = checkProjectResults.GetAllUsesOfAllSymbols()
     let deps =
@@ -124,11 +124,10 @@ do
                              usageDir <> "" && declarationDir <> "" &&
                              usageDir <> declarationDir &&
                              not usage.IsFromOpenStatement then
-                             {|usage = usage.FileName
-                               declaration = location.FileName
-                               usageDir = usageDir
-                               declarationDir = declarationDir|}
-                      else ()
+                             {| usage = usage.FileName
+                                declaration = location.FileName
+                                usageDir = usageDir
+                                declarationDir = declarationDir |}
                   | None -> ()]
 
     // create the graph nodes
@@ -136,8 +135,8 @@ do
     |> List.distinct
     |> List.map (fun name -> graph.Nodes.Add(name, fun node ->
         let color =
-            let r, g, b = hslToRgb (float (Random(name.GetHashCode()).Next(360)), 0.7, 0.8)
-            Color.FromArgb(r, g, b)
+            let (r, g, b) = hslToRgb (float (Random(name.GetHashCode()).Next(360)), 0.7, 0.8)
+            Color.FromArgb (r, g, b)
         node.FillColor <- DotColorDefinition.op_Implicit(color)
         node.Label <- DotLabel.FromText name)) |> ignore
 
@@ -148,18 +147,18 @@ do
     |> List.iter (fun dep ->
         graph.Edges.Add(dep.usageDir, dep.declarationDir, fun edge ->
             let color =
-                let r, g, b =
+                let (r, g, b) =
                     if dep.usageDir = "World"
-                    then 96, 96, 96
+                    then (96, 96, 96)
                     else hslToRgb (float (Random(dep.usageDir.GetHashCode()).Next(360)), 0.5, 0.5)
-                Color.FromArgb(r, g, b)
-            edge.Color <- DotColorDefinition.op_Implicit(color)) |> ignore<DotEdge>)
+                Color.FromArgb (r, g, b)
+            edge.Color <- DotColorDefinition.op_Implicit color) |> ignore<DotEdge>)
 
     // save and open the graph
     let dotFilePath = "DependencyGraph.dot"
-    graph.SaveToFile(dotFilePath)
-    let dot = File.ReadAllText(dotFilePath)
+    graph.SaveToFile dotFilePath
+    let dot = File.ReadAllText dotFilePath
     let url = UriBuilder ("https://dreampuf.github.io/GraphvizOnline/?engine=dot", Fragment = dot)
-    ProcessStartInfo(url.Uri.AbsoluteUri, UseShellExecute = true)
+    ProcessStartInfo (url.Uri.AbsoluteUri, UseShellExecute = true)
     |> Process.Start
     |> ignore<Process>

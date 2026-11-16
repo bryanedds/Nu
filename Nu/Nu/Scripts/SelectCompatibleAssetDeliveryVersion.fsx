@@ -14,7 +14,8 @@ open System.Text.RegularExpressions
 
 (* CLI *)
 
-let args = fsi.CommandLineArgs |> Array.skip 1
+let args =
+    fsi.CommandLineArgs |> Array.skip 1
 
 let projectPath =
     let idx = args |> Array.findIndex (fun a -> a = "--project-path")
@@ -34,14 +35,11 @@ if not (File.Exists projectFullPath) then
 let projectDir = Path.GetDirectoryName projectFullPath
 
 // clean up orphaned probe directories from aborted runs (older than 1 hour)
-try
-    let probeBase = Path.Combine (Path.GetTempPath (), "NuAssetDeliveryProbe")
+try let probeBase = Path.Combine (Path.GetTempPath (), "NuAssetDeliveryProbe")
     if Directory.Exists probeBase then
         let cutoff = DateTime.UtcNow.AddHours -1.
         for dir in Directory.EnumerateDirectories probeBase do
-            try
-                if Directory.GetLastWriteTimeUtc dir < cutoff then
-                    Directory.Delete (dir, recursive = true)
+            try if Directory.GetLastWriteTimeUtc dir < cutoff then Directory.Delete (dir, recursive = true)
             with _ -> ()
 with _ -> ()
 
@@ -52,16 +50,14 @@ with _ -> ()
 let fetchVersionsFromNuget () : Result<string[], string> =
     let attempt useProxy =
         task {
-            try
-                use handler = new HttpClientHandler (UseProxy = useProxy)
+            try use handler = new HttpClientHandler (UseProxy = useProxy)
                 use client = new HttpClient (handler, Timeout = TimeSpan.FromSeconds 30.)
                 let url = "https://api.nuget.org/v3-flatcontainer/xamarin.google.android.play.asset.delivery/index.json"
                 let! json = client.GetStringAsync url
                 use doc = System.Text.Json.JsonDocument.Parse json
                 let root = doc.RootElement
                 let mutable versionsProp = Unchecked.defaultof<_>
-                if root.TryGetProperty ("versions", &versionsProp)
-                then
+                if root.TryGetProperty ("versions", &versionsProp) then
                     return
                         versionsProp.EnumerateArray ()
                         |> Seq.map (fun v -> v.GetString ())
@@ -91,18 +87,16 @@ let tryParseVersion (s: string) : Version voption =
     let clean = s.Replace("-alpha", "").Replace("-beta", "").Replace("-rc", "").Replace("-preview", "")
     let dotParts = clean.Split('.')
     let padded = // pad to at least 4 parts
-        [|yield! dotParts
-          for _ in dotParts.Length .. 3 do yield "0"|]
+        [|yield! dotParts; for _ in dotParts.Length .. 3 do yield "0"|]
         |> Array.map (fun p ->
             match Int32.TryParse p with
             | true, v -> v
             | _ -> 0)
-    try
-        ValueSome (Version (padded[0], padded[1], padded[2], padded[3]))
-    with _ ->
-        ValueNone
+    try ValueSome (Version (padded[0], padded[1], padded[2], padded[3]))
+    with _ -> ValueNone
 
 let runRestoreProbe (candidate: string) : bool * bool =
+
     // use a temporary project file to probe — running restore on the real project would overwrite
     // obj/project.assets.json with Android-only data, losing non-Android TFM entries and breaking subsequent builds.
     let probeDir = Path.Combine (Path.GetTempPath (), "NuAssetDeliveryProbe", Guid.NewGuid().ToString "N", candidate.Replace (".", "_"))
