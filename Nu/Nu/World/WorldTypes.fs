@@ -314,7 +314,7 @@ and EditContext =
       SnapDrag : single
       SelectedScreen : Screen
       SelectedGroup : Group
-      SelectedEntityOpt : Entity option
+      SelectedEntities : Entity Set
       ToSymbolMemo : IDictionary<struct (Type * obj), Symbol>
       OfSymbolMemo : IDictionary<struct (Type * Symbol), obj> }
 

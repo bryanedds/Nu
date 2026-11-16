@@ -14,8 +14,9 @@ open Prime
 [<AutoOpen>]
 module WorldEntityModule =
 
-    /// Mutable clipboard that allows its state to persist beyond undo / redo.
-    let mutable private Clipboard : (bool * EntityDescriptor * Entity) option = None
+    /// Mutable clipboard that allows its state to persist beyond undo / redo, whether cut, and each entity's
+    /// descriptor, source and position
+    let mutable private Clipboard : (bool * (EntityDescriptor * Entity * Vector3) list) option = None
 
     [<RequireQualifiedAccess>]
     module private Cached =
@@ -832,16 +833,31 @@ module WorldEntityModule =
         static member clearEntityFromClipboard (_ : World) =
             Clipboard <- None
 
+        /// Copy entities to the world's clipboard, the first to paste where it's pasted and the rest about it.
+        static member copyEntitiesToClipboard (entities : Entity seq) world =
+            let entries =
+                [for entity in entities do
+                    let entityDescriptor = World.writeEntity false false EntityDescriptor.empty entity world
+                    (entityDescriptor, entity, entity.GetPosition world)]
+            Clipboard <- Some (false, entries)
+
         /// Copy an entity to the world's clipboard.
         static member copyEntityToClipboard entity world =
-            let entityDescriptor = World.writeEntity false false EntityDescriptor.empty entity world
-            Clipboard <- Some (false, entityDescriptor, entity)
+            World.copyEntitiesToClipboard [entity] world
+
+        /// Cut entities to the world's clipboard, the first to paste where it's pasted and the rest about it.
+        static member cutEntitiesToClipboard (entities : Entity seq) world =
+            let entities = List.ofSeq entities
+            let entries =
+                [for entity in entities do
+                    let entityDescriptor = World.writeEntity false true EntityDescriptor.empty entity world
+                    (entityDescriptor, entity, entity.GetPosition world)]
+            Clipboard <- Some (true, entries)
+            for entity in entities do World.destroyEntityImmediate entity world
 
         /// Cut an entity to the world's clipboard.
         static member cutEntityToClipboard (entity : Entity) world =
-            let entityDescriptor = World.writeEntity false true EntityDescriptor.empty entity world
-            Clipboard <- Some (true, entityDescriptor, entity)
-            World.destroyEntityImmediate entity world
+            World.cutEntitiesToClipboard [entity] world
 
         /// Check that there's an entity on the world's clipboard to paste.
         static member canPasteEntityFromClipboard (_ : World) =
@@ -916,10 +932,21 @@ module WorldEntityModule =
             let entityDescriptor = World.writeEntity false false EntityDescriptor.empty entity world
             World.pasteEntityFromDescriptor distance rightClickPosition positionSnapEir pasteType false entityDescriptor entity parent world
 
-        /// Paste an entity from the world's clipboard.
-        static member tryPasteEntityFromClipboard distance rightClickPosition positionSnapEir pasteType parent world =
+        /// Paste the entities on the world's clipboard, the first where the paste type puts it and the rest about it as
+        /// they lay when copied.
+        static member pasteEntitiesFromClipboard distance rightClickPosition positionSnapEir pasteType parent world =
             match Clipboard with
-            | Some (cut, entityDescriptor, entitySource) ->
+            | Some (cut, (entityDescriptor, entitySource, position) :: entries) ->
                 let entity = World.pasteEntityFromDescriptor distance rightClickPosition positionSnapEir pasteType cut entityDescriptor entitySource parent world
-                Some entity
-            | None -> None
+                let entityPosition = entity.GetPosition world
+                entity ::
+                [for (entityDescriptor', entitySource', position') in entries do
+                    let pasteType' = PasteAt (entityPosition + position' - position)
+                    World.pasteEntityFromDescriptor
+                        distance rightClickPosition positionSnapEir pasteType' cut entityDescriptor' entitySource' parent world]
+            | Some (_, []) | None -> []
+
+        /// Paste the entities on the world's clipboard, returning the first.
+        static member tryPasteEntityFromClipboard distance rightClickPosition positionSnapEir pasteType parent world =
+            let entities = World.pasteEntitiesFromClipboard distance rightClickPosition positionSnapEir pasteType parent world
+            List.tryHead entities

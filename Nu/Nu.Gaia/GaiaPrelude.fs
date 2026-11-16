@@ -21,6 +21,7 @@ type ViewMode =
 type DragEntityState =
     | DragEntityPosition2d of DateTime : DateTimeOffset * Snapshotted : bool ref * MousePositionWorldOrig : Vector2 * EntityDragOffset : Vector2 * Entity : Entity
     | DragEntityRotation2d of DateTime : DateTimeOffset * Snapshotted : bool ref * MousePositionWorldOrig : Vector2 * EntityDragOffset : single * Entity : Entity
+    | DragEntityDuplicate2d of DateTime : DateTimeOffset * MousePositionWorldOrig : Vector2 * Entity : Entity // a ctrl+click, till it's a drag
     | DragEntityInactive
 
 /// The state of an eye drag operation in the Gaia editor.
