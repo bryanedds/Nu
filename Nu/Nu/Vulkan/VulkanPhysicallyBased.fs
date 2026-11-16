@@ -45,6 +45,10 @@ type ToneMappingStruct =
     [<FieldOffset(64)>] val mutable toneMapWhitePoint : single
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
+type ColorGradeStruct =
+    [<FieldOffset(0)>] val mutable colorGradeStrength : single
+
+[<Struct; StructLayout (LayoutKind.Explicit)>]
 type ChromaticAberrationStruct =
     [<FieldOffset(0)>] val mutable channelOffsets : Vector3
     [<FieldOffset(16)>] val mutable focalPoint : Vector2
@@ -828,7 +832,8 @@ type FilterFxaaPipeline =
 
 /// Describes a gamma-correction filter pipeline that's loaded into GPU.
 type FilterGammaCorrectionPipeline =
-    { Pipeline : Pipeline }
+    { ColorGradeUniform : VulkanBuffer
+      Pipeline : Pipeline }
 
 /// Physically-based pipelines.
 type PhysicallyBasedPipelines =
@@ -3524,7 +3529,10 @@ module PhysicallyBased =
         | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
 
     /// Create a gamma-correction filter pipeline.
-    let createFilterGammaCorrectionPipeline colorAttachmentFormat =
+    let createFilterGammaCorrectionPipeline colorAttachmentFormat context =
+
+        // create set 0 uniform buffers
+        let colorGradeUniform = VulkanBuffer.create Uniform sizeof<ColorGradeStruct> context
 
         // create pipeline
         let pipeline =
@@ -3532,14 +3540,19 @@ module PhysicallyBased =
                 Constants.Paths.FilterGammaCorrectionShaderFilePath
                 [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 SampledImage FragmentStage 1|] // inputTexture
+                    [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // colorGrade
+                      Pipeline.descriptor 1 SampledImage FragmentStage 1 // inputTexture
+                      Pipeline.descriptor 2 SampledImage FragmentStage 1|] // colorGradeLutTexture
                   Pipeline.descriptorSet<Unit>
-                    [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|] // inputSampler
-                [||] [|colorAttachmentFormat|] None [||]
+                    [|Pipeline.descriptor 0 Sampler FragmentStage 1 // inputSampler
+                      Pipeline.descriptor 1 Sampler FragmentStage 1|]|] // colorGradeLutSampler
+                [||] [|colorAttachmentFormat|] None
+                [|colorGradeUniform|]
 
         // make pipeline
         let filterGammaCorrectionPipeline =
-            { Pipeline = pipeline }
+            { ColorGradeUniform = colorGradeUniform
+              Pipeline = pipeline }
 
         // fin
         filterGammaCorrectionPipeline
@@ -3550,6 +3563,9 @@ module PhysicallyBased =
 
     /// Draw the gamma-correction filter pass of a physically-based surface.
     let drawFilterGammaCorrectionSurface
+        (colorGradeStrength : single)
+        (colorGradeLutTexture : Texture)
+        (colorGradeLutSampler : Sampler)
         (inputTexture : Texture)
         (inputSampler : Sampler)
         (colorAttachment : Texture)
@@ -3564,11 +3580,24 @@ module PhysicallyBased =
 
             // specify uniforms
             let mutable uniformsDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline $ fun vkSet ->
-                Pipeline.writeDescriptorSampledTexture 0 0 inputTexture vkSet
 
-            // specify sampler
+                // specify color grade
+                let colorGrade =
+                    ColorGradeStruct
+                        (colorGradeStrength = colorGradeStrength)
+                VulkanBuffer.uploadValue colorGrade pipeline.ColorGradeUniform context
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.ColorGradeUniform vkSet
+
+                // specify input texture
+                Pipeline.writeDescriptorSampledTexture 1 0 inputTexture vkSet
+
+                // specify color grade lut texture
+                Pipeline.writeDescriptorSampledTexture 2 0 colorGradeLutTexture vkSet
+
+            // specify samplers
             let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline $ fun vkSet ->
                 Pipeline.writeDescriptorSampler 0 0 inputSampler vkSet
+                Pipeline.writeDescriptorSampler 1 0 colorGradeLutSampler vkSet
 
             // set up render
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
@@ -6028,7 +6057,7 @@ module PhysicallyBased =
         let filterFxaaPipeline = createFilterFxaaPipeline attachments.ColorFull0Attachment.ImageFormat context
 
         // create gamma-correction filter pipeline
-        let filterGammaCorrectionPipeline = createFilterGammaCorrectionPipeline attachments.GammaCorrectionAttachment.ImageFormat
+        let filterGammaCorrectionPipeline = createFilterGammaCorrectionPipeline attachments.GammaCorrectionAttachment.ImageFormat context
 
         // create shadow static point pipeline
         let (shadowMapColorAttachment, shadowMapZAttachment) = attachments.ShadowMapAttachmentsArray[0] // assume all like first

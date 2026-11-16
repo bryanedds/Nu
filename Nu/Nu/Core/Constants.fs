@@ -282,6 +282,7 @@ module Render =
     let [<Uniform>] ToneMapPowerDefault = v3One
     let [<Literal>] ToneMapSaturationDefault = 1.0f
     let [<Literal>] ToneMapWhitePointDefault = 4.0f
+    let [<Literal>] ColorGradeStrengthDefault = 0.0f
     let [<Literal>] FogEnabledDefault = false
     let [<Uniform>] FogTypeDefault = LinearFog
     let [<Literal>] FogStartDefault = 8.0f

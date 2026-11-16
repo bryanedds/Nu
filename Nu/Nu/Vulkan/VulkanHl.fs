@@ -1153,6 +1153,7 @@ module Hl =
                 name.EndsWith "HeightMap" ||
                 name.EndsWith "Blend" ||
                 name.EndsWith "Tint" ||
+                name.EndsWith "Lut" ||
                 name.EndsWith "Uncompressed" then Uncompressed
             elif
                 name.EndsWith "_n" ||
