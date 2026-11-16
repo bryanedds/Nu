@@ -984,6 +984,7 @@ type RenderMessage3d =
     | RenderCachedAnimatedModel of CachedAnimatedModelMessage
     | RenderCachedAnimatedModelSurface of CachedAnimatedModelSurfaceMessage
     | RenderTerrain of RenderTerrain
+    | RenderEmptyPass of RenderPass
     | ConfigureLighting3d of Lighting3dConfig
     | ConfigureRenderer3d of Renderer3dConfig
     | LoadRenderPackage3d of string
@@ -3669,6 +3670,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | RenderTerrain rt ->
                 let renderTasks = VulkanRenderer3d.getRenderTasks rt.RenderPass renderer
                 VulkanRenderer3d.categorizeTerrain (rt.Visible, rt.TerrainDescriptor, renderTasks, renderer)
+            | RenderEmptyPass renderPass ->
+                VulkanRenderer3d.getRenderTasks renderPass renderer |> ignore<RenderTasks>
             | ConfigureLighting3d l3c ->
                 if renderer.LightingConfig <> l3c then renderer.LightingConfigChanged <- true
                 renderer.LightingConfig <- l3c

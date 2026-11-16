@@ -1569,6 +1569,12 @@ module WorldModule2 =
             (renderPass : RenderPass)
             (world : World) =
 
+            // register shadow pass so that it exists in the renderer even when no simulant renders into it, thus
+            // ensuring that the renderer receives every shadow map face and shadow cascade level in numerical order
+            match renderPass with
+            | ShadowPass (_, _, _, _, _, _) -> World.enqueueRenderMessage3d (RenderEmptyPass renderPass) world
+            | LightMapPass (_, _) | ReflectionPass (_, _) | NormalPass -> ()
+
             // render game
             World.renderGame renderPass game world
 
