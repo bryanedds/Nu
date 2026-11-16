@@ -587,7 +587,7 @@ void main()
         vec3 f0 = mix(vec3(0.04), albedo, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
         for (int i = 0; i < lighting2.lightsCount; ++i)
         {
-            // compute per-light attributes and compensate roughness where applicable
+            // attempt to compute per-light attributes and compensate roughness where applicable
             Light3dStruct light = lights[i];
             bool lightPoint = light.lightType == 0;
             bool lightSpot = light.lightType == 1;
@@ -595,27 +595,45 @@ void main()
             vec3 l, h, radiance;
             if (lightPoint || lightSpot)
             {
-                // compute attributes
+                // skip light when beyond its cutoff (where cutoff scalar would be zero) before doing any expensive math
                 vec3 d = light.origin - position.xyz;
-                l = normalize(d);
+                float distanceSquared = dot(d, d);
+                if (distanceSquared >= light.cutoff * light.cutoff) continue;
+
+                // compute light direction
+                float distance = sqrt(distanceSquared);
+                l = d / distance;
+
+                // attempt to compute half-cone scalar
+                float halfConeScalar = 1.0;
+                if (lightSpot)
+                {
+                    // skip spot light when outside its outer cone (where cone scalar would be zero), comparing cosines to
+                    // avoid acos, then compute cone scalar only for spot lights since it's always one for point lights
+                    float halfConeOuter = light.coneOuter * 0.5;
+                    float cosAngle = dot(l, -light.direction);
+                    if (cosAngle <= cos(halfConeOuter)) continue;
+
+                    // populate half-cone scalar
+                    float angle = acos(cosAngle);
+                    float halfConeInner = light.coneInner * 0.5;
+                    float halfConeDelta = halfConeOuter - halfConeInner;
+                    float halfConeBetween = angle - halfConeInner;
+                    halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
+                }
+
+                // compute remaining attributes
                 h = normalize(v + l);
                 hDotV = saturate(dot(h,  v));
-                float distanceSquared = dot(d, d);
-                float distance = sqrt(distanceSquared);
                 float cutoffScalar = 1.0 - smoothstep(light.cutoff * (1.0 - lighting2.lightCutoffMargin), light.cutoff, distance);
                 float attenuation = 1.0 / (ATTENUATION_CONSTANT + light.attenuationLinear * distance + light.attenuationQuadratic * distanceSquared);
-                float angle = acos(dot(l, -light.direction));
-                float halfConeInner = light.coneInner * 0.5;
-                float halfConeOuter = light.coneOuter * 0.5;
-                float halfConeDelta = halfConeOuter - halfConeInner;
-                float halfConeBetween = angle - halfConeInner;
-                float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
                 intensity = attenuation * halfConeScalar * cutoffScalar;
                 roughnessCompensation = exp(light.radius / 8.0) - 1.0;
                 radiance = light.color * light.brightness * intensity;
             }
             else
             {
+                // compute attributes
                 l = -light.direction;
                 h = normalize(v + l);
                 hDotV = saturate(dot(h, v));
