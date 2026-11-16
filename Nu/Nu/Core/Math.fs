@@ -2179,19 +2179,34 @@ type [<Struct>] FocalType =
 
 namespace System.Collections.Generic
 
+/// Ordered dictionary extensions.
+[<AutoOpen>]
+module OrderedDictionaryExtensions =
+    type OrderedDictionary<'k, 'v> with
+        member this.IsEmpty = this.Count = 0
+        member this.NotEmpty = this.Count > 0
+        member this.Pairs = Seq.map (fun (kvp : KeyValuePair<'k, 'v>) -> (kvp.Key, kvp.Value)) this
+        member this.Pairs' = Seq.map (fun (kvp : KeyValuePair<'k, 'v>) -> struct (kvp.Key, kvp.Value)) this
+
 /// Ordered dictionary operations.
 [<RequireQualifiedAccess>]
 module OrderedDictionary =
 
+    /// Dictionary pattern matching.
+    let (|EmptyDictionary|NonEmptyDictionary|) (dict : OrderedDictionary<'k, 'v>) =
+        if dict.IsEmpty
+        then EmptyDictionary
+        else NonEmptyDictionary dict
+
     /// Make a dictionary with a single entry.
-    let inline singleton (comparer : KeyValuePair<'k, 'v> IEqualityComparer) key value =
+    let inline singleton (comparer : 'k IEqualityComparer) key value =
         let dictionary = OrderedDictionary comparer
         dictionary.Add (key, value)
         dictionary
 
     /// Map over an ordered dictionary. A new ordered dictionary is produced.
     let map (mapper : KeyValuePair<'k, 'v> -> 'v) (dictionary : OrderedDictionary<'k, 'v>) =
-        let result = Dictionary<'k, 'v> dictionary.Comparer
+        let result = OrderedDictionary<'k, 'v> dictionary.Comparer
         for kvp in dictionary do result.Add (kvp.Key, mapper kvp)
         result
 
