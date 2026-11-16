@@ -974,7 +974,9 @@ void main()
     vec3 fogAccum = vec3(0.0);
     for (int i = 0; i < lighting3.lightsCount; ++i)
     {
-        // compute per-light attributes and compensate roughness where applicable
+        // attempt to compute per-light attributes and compensate roughness where applicable
+        // NOTE: unlike the deferred lighting shader, we can't skip a light via continue here because its fog must still
+        // be accumulated below, so instead we leave intensity at zero when the light can't reach this fragment.
         Light3dStruct light = lights[i];
         bool lightPoint = light.lightType == 0;
         bool lightSpot = light.lightType == 1;
@@ -982,27 +984,53 @@ void main()
         vec3 l, h, radiance;
         if (lightPoint || lightSpot)
         {
-            // compute attributes
+            // skip light when beyond its cutoff (where cutoff scalar would be zero) before doing any expensive math
+            intensity = 0.0;
             vec3 d = light.origin - position.xyz;
-            l = normalize(d);
-            h = normalize(v + l);
-            hDotV = saturate(dot(h, v));
             float distanceSquared = dot(d, d);
-            float distance = sqrt(distanceSquared);
-            float cutoffScalar = 1.0 - smoothstep(light.cutoff * (1.0 - lighting.lightCutoffMargin), light.cutoff, distance);
-            float attenuation = 1.0 / (ATTENUATION_CONSTANT + light.attenuationLinear * distance + light.attenuationQuadratic * distanceSquared);
-            float angle = acos(dot(l, -light.direction));
-            float halfConeInner = light.coneInner * 0.5;
-            float halfConeOuter = light.coneOuter * 0.5;
-            float halfConeDelta = halfConeOuter - halfConeInner;
-            float halfConeBetween = angle - halfConeInner;
-            float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
-            intensity = attenuation * halfConeScalar * cutoffScalar;
-            roughnessCompensation = exp(light.radius / 8.0) - 1.0;
-            radiance = light.color * light.brightness * intensity;
+            if (distanceSquared < light.cutoff * light.cutoff)
+            {
+                // compute light direction
+                float distance = sqrt(distanceSquared);
+                l = d / distance;
+
+                // attempt to compute half-cone scalar
+                float halfConeScalar = 1.0;
+                bool inCone = true;
+                if (lightSpot)
+                {
+                    // skip spot light when outside its outer cone (where cone scalar would be zero), comparing cosines
+                    // to avoid acos, then compute cone scalar only for spot lights since it's always one for point lights
+                    float halfConeOuter = light.coneOuter * 0.5;
+                    float cosAngle = dot(l, -light.direction);
+                    inCone = cosAngle > cos(halfConeOuter);
+                    if (inCone)
+                    {
+                        // populate half-cone scalar
+                        float angle = acos(cosAngle);
+                        float halfConeInner = light.coneInner * 0.5;
+                        float halfConeDelta = halfConeOuter - halfConeInner;
+                        float halfConeBetween = angle - halfConeInner;
+                        halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
+                    }
+                }
+
+                // compute remaining attributes
+                if (inCone)
+                {
+                    h = normalize(v + l);
+                    hDotV = saturate(dot(h, v));
+                    float cutoffScalar = 1.0 - smoothstep(light.cutoff * (1.0 - lighting.lightCutoffMargin), light.cutoff, distance);
+                    float attenuation = 1.0 / (ATTENUATION_CONSTANT + light.attenuationLinear * distance + light.attenuationQuadratic * distanceSquared);
+                    intensity = attenuation * halfConeScalar * cutoffScalar;
+                    roughnessCompensation = exp(light.radius / 8.0) - 1.0;
+                    radiance = light.color * light.brightness * intensity;
+                }
+            }
         }
         else
         {
+            // compute attributes
             l = -light.direction;
             h = normalize(v + l);
             hDotV = saturate(dot(h, v));
