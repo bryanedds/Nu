@@ -1514,22 +1514,75 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     (* Update Functions *)
 
+    let private getEyeDragPivot world =
+        match SelectedEntityOpt with
+        | Some entity when entity.GetExists world && entity.GetIs3d world -> entity.GetPosition world
+        | Some _ | None -> world.Eye3dCenter + world.Eye3dRotation.Forward * NewEntityDistance
+
     let private updateEyeDrag world =
         if canEditWithMouse world then
+            if ImGui.IsMouseClicked ImGuiMouseButton.Right then
+                let mousePositionInset = World.getMousePosition2dInset world
+                DragEyeState <- DragEye2dPan (world.DateTime, mousePositionInset)
             if ImGui.IsMouseClicked ImGuiMouseButton.Middle then
-                let mousePositionInset = World.getMousePosition2dInset world
-                let dragState = DragEye2dCenter (world.Eye2dCenter + mousePositionInset, mousePositionInset)
-                DragEyeState <- dragState
+                let mousePosition = World.getMousePosition world
+                let pivot = getEyeDragPivot world
+                let distance = max (Vector3.Distance (pivot, world.Eye3dCenter)) Constants.Gaia.Eye3dDragDistanceMinimum
+                DragEyeState <-
+                    if ImGui.IsAltDown () && ImGui.IsCtrlDown () then DragEye3dDolly (world.Eye3dCenter, world.Eye3dRotation, distance, mousePosition)
+                    elif ImGui.IsAltDown () then
+                        let forward = world.Eye3dRotation.Forward
+                        let yaw = MathF.Atan2 (-forward.X, -forward.Z)
+                        let pitch = System.Math.Clamp (MathF.Asin (System.Math.Clamp (forward.Y, -1.0f, 1.0f)), -Constants.Gaia.Eye3dPitchMaximum, Constants.Gaia.Eye3dPitchMaximum)
+                        DragEye3dOrbit (world.Eye3dCenter, pivot, yaw, pitch, mousePosition)
+                    else DragEye3dPan (distance, mousePosition)
             match DragEyeState with
-            | DragEye2dCenter (entityDragOffset, mousePositionInsetOrig) ->
+            | DragEye2dPan (time, mousePositionInsetPrevious) ->
                 let mousePositionInset = World.getMousePosition2dInset world
-                DesiredEye2dCenter <- (entityDragOffset - mousePositionInsetOrig) + -Constants.Gaia.EyeSpeed * (mousePositionInset - mousePositionInsetOrig)
-                DragEyeState <- DragEye2dCenter (entityDragOffset, mousePositionInsetOrig)
+                if (world.DateTime - time).TotalSeconds >= Constants.Gaia.DragMinimumSeconds then // a right click held only briefly opens the context menu instead
+                    let speed =
+                        if ImGui.IsEnterDown () || ImGui.IsCtrlDown () then Constants.Gaia.Eye2dPanSpeedFast
+                        elif ImGui.IsShiftDown () then Constants.Gaia.Eye2dPanSpeedSlow
+                        else Constants.Gaia.Eye2dPanSpeed
+                    DesiredEye2dCenter <- DesiredEye2dCenter - (mousePositionInset - mousePositionInsetPrevious) * speed // by frame so the speed can change mid-drag
+                DragEyeState <- DragEye2dPan (time, mousePositionInset)
+            | DragEye3dPan (distance, mousePositionPrevious) ->
+                let mousePosition = World.getMousePosition world
+                let mouseDelta = mousePosition - mousePositionPrevious // by frame so the speed can change mid-drag
+                let speed =
+                    if ImGui.IsEnterDown () || ImGui.IsCtrlDown () then Constants.Gaia.Eye3dPanSpeedFast
+                    elif ImGui.IsShiftDown () then Constants.Gaia.Eye3dPanSpeedSlow
+                    else Constants.Gaia.Eye3dPanSpeed
+                let unitsPerPixel = 2.0f * distance * tan (world.Eye3dFieldOfView * 0.5f) / single world.WindowViewport.Bounds.Size.Y // the world under the mouse at the pivot's distance
+                let rotation = world.Eye3dRotation
+                DesiredEye3dCenter <- DesiredEye3dCenter + (rotation.Right * -mouseDelta.X + rotation.Up * mouseDelta.Y) * unitsPerPixel * speed
+                DragEyeState <- DragEye3dPan (distance, mousePosition)
+            | DragEye3dOrbit (center, pivot, yaw, pitch, mousePositionOrig) ->
+                let mouseDelta = World.getMousePosition world - mousePositionOrig
+                let yaw' = yaw - mouseDelta.X * Constants.Gaia.Eye3dOrbitSpeed
+                let pitch' = System.Math.Clamp (pitch - mouseDelta.Y * Constants.Gaia.Eye3dOrbitSpeed, -Constants.Gaia.Eye3dPitchMaximum, Constants.Gaia.Eye3dPitchMaximum) // never upside-down
+                let rotation = Quaternion.CreateFromAxisAngle (v3Up, yaw) * Quaternion.CreateFromAxisAngle (v3Right, pitch)
+                let rotation' = Quaternion.CreateFromAxisAngle (v3Up, yaw') * Quaternion.CreateFromAxisAngle (v3Right, pitch')
+                DesiredEye3dRotation <- rotation'
+                DesiredEye3dCenter <- pivot + (center - pivot).Transform (rotation' * Quaternion.Inverse rotation)
+            | DragEye3dDolly (center, rotation, distance, mousePositionOrig) ->
+                let mouseDelta = World.getMousePosition world - mousePositionOrig
+                let travel = distance * (1.0f - exp (mouseDelta.Y * Constants.Gaia.Eye3dDollySpeed)) // nears the pivot without ever reaching it
+                DesiredEye3dCenter <- center + rotation.Forward * travel
             | DragEyeInactive -> ()
-        if ImGui.IsMouseReleased ImGuiMouseButton.Middle then
+            let scroll = ImGui.GetIO().MouseWheel
             match DragEyeState with
-            | DragEye2dCenter _ -> DragEyeState <- DragEyeInactive
-            | DragEyeInactive -> ()
+            | DragEyeInactive when scroll <> 0.0f ->
+                let travel =
+                    if ImGui.IsEnterDown () || ImGui.IsCtrlDown () then Constants.Gaia.Eye3dScrollTravelFast
+                    elif ImGui.IsShiftDown () then Constants.Gaia.Eye3dScrollTravelSlow
+                    else Constants.Gaia.Eye3dScrollTravel
+                DesiredEye3dCenter <- world.Eye3dCenter + world.Eye3dRotation.Forward * scroll * travel
+            | _ -> ()
+        match DragEyeState with
+        | DragEye2dPan _ when ImGui.IsMouseReleased ImGuiMouseButton.Right -> DragEyeState <- DragEyeInactive
+        | DragEye3dPan _ | DragEye3dOrbit _ | DragEye3dDolly _ when ImGui.IsMouseReleased ImGuiMouseButton.Middle -> DragEyeState <- DragEyeInactive
+        | _ -> ()
 
     let private updateEyeTravel world =
         if canEditWithKeyboard world then
@@ -1578,7 +1631,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private updateEntityContext world =
         if canEditWithMouse world then
-            if ImGui.IsMouseReleased ImGuiMouseButton.Right then
+            let eyeDragged = // a right drag that's panned the 2d eye opens no context menu as it ends
+                match DragEyeState with
+                | DragEye2dPan (time, _) -> (world.DateTime - time).TotalSeconds >= Constants.Gaia.DragMinimumSeconds
+                | _ -> false
+            if ImGui.IsMouseReleased ImGuiMouseButton.Right && not eyeDragged then
                 let mousePosition = World.getMousePosition world
                 tryMousePick mousePosition world |> ignore<(single * Entity) option>
                 RightClickPosition <- mousePosition
@@ -1589,8 +1646,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         // attempt to start dragging an entity with the mouse
         if canEditWithMouse world then
 
-            // attempt to start dragging
-            if ImGui.IsMouseClicked ImGuiMouseButton.Left then
+            // attempt to start dragging, unless the eye's dragged
+            if ImGui.IsMouseClicked ImGuiMouseButton.Left && not (ImGui.IsMouseDown ImGuiMouseButton.Middle) then
                 let mousePosition = World.getMousePosition world
                 match tryMousePick mousePosition world with
                 | Some (_, entity) ->
@@ -2306,7 +2363,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
                 // light probe bounds manipulation
                 match SelectedEntityOpt with
-                | Some entity when entity.GetExists world && entity.Has<LightProbeFacet> world ->
+                | Some entity when entity.GetExists world && entity.Has<LightProbeFacet> world && not (ImGui.IsMouseDown ImGuiMouseButton.Middle) ->
                     let mutable lightProbeBounds = entity.GetProbeBounds world
                     let manipulationResult =
                         ImGuizmo.ManipulateBox3
@@ -2337,6 +2394,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
                 // attempt transform manipulation
                 match SelectedEntityOpt with
+                | _ when ImGui.IsMouseDown ImGuiMouseButton.Middle -> () // neither manipulation shows nor takes input while the eye's dragged
                 | Some entity when entity.GetExists world && not io.WantCaptureMouseLocal ->
                     if entity.GetIs3d world then
                         let viewMatrix = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
@@ -4319,9 +4377,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if ShowEntityContextMenu then imGuiViewportContext world
 
                 // non-imgui input
+                updateEntityContext world // before the eye drag ends, so it sees whether a right drag's panned the eye
                 updateEyeDrag world
                 updateEyeTravel world
-                updateEntityContext world
                 updateEntityDrag world
                 updateAssetDrag world
                 updateHotkeys entityHierarchyFocused world
