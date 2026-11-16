@@ -13,12 +13,13 @@
            Configuration     — build configuration (e.g., Debug or Release)
            ProjectDirectory  — absolute path of the project directory
            NuPipeOut         — absolute path of the output directory for Nu.Pipe to write to
-           BlockCompression  — BcCompression or AstcCompression -->
+           BlockCompression  — BcCompression or AstcCompression
+           NuPipeAssembly    — absolute path of the built Nu.Pipe.dll (the output of Nu.Pipe's Build target) -->
 
     <Target Name="Run Nu Pipe">
 
         <!-- Manual inclusions of '/' are required for " to not get escaped by '\' on Windows -->
-        <Exec Command="dotnet &quot;$([System.IO.Directory]::GetDirectories('$(MSBuildThisFileDirectory)bin/$(Configuration)')[0])/Nu.Pipe.dll&quot; &quot;$(ProjectDirectory)/&quot; &quot;$(NuPipeOut)/&quot; &quot;$(ProjectDirectory)/refinement/$(BlockCompression)/&quot; &quot;$(BlockCompression)&quot; &quot;False&quot;"
+        <Exec Command="dotnet &quot;$(NuPipeAssembly)&quot; &quot;$(ProjectDirectory)/&quot; &quot;$(NuPipeOut)/&quot; &quot;$(ProjectDirectory)/refinement/$(BlockCompression)/&quot; &quot;$(BlockCompression)&quot; &quot;False&quot;"
               WorkingDirectory="$(ProjectDirectory)" />
 
     </Target>

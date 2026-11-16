@@ -787,6 +787,8 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       ToneMapPower : Vector3
       ToneMapSaturation : single
       ToneMapWhitePoint : single
+      ColorGradeStrength : single
+      ColorGradeLut : Image AssetTag
       FogEnabled : bool // TODO: P1: rename to DistanceFogEnabled and so on for others.
       FogType : FogType
       FogStart : single
@@ -862,6 +864,8 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           ToneMapPower = Constants.Render.ToneMapPowerDefault
           ToneMapSaturation = Constants.Render.ToneMapSaturationDefault
           ToneMapWhitePoint = Constants.Render.ToneMapWhitePointDefault
+          ColorGradeStrength = Constants.Render.ColorGradeStrengthDefault
+          ColorGradeLut = asset<Image> Assets.Default.PackageName Assets.Default.ColorGradeLutName
           FogEnabled = Constants.Render.FogEnabledDefault
           FogType = Constants.Render.FogTypeDefault
           FogStart = Constants.Render.FogStartDefault
@@ -5506,12 +5510,25 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             Texture.recordTransitionLayout TransferSrc ColorAttachmentRead colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
             Texture.recordTransitionLayout TransferDst ColorAttachmentRead toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
 
-        // run gamma-correction pass when needed
+        // run gamma-correction pass, including color grade, when needed
         let intermediateTexture =
             if topLevelRender then
+
+                // determine color grade lut texture, using white texture as a dummy binding when no lut is available
+                let colorGradeLutTextureOpt =
+                    if renderer.LightingConfig.ColorGradeStrength > 0.0f then
+                        match VulkanRenderer3d.tryGetRenderAsset renderer.LightingConfig.ColorGradeLut renderer with
+                        | ValueSome (TextureAsset texture) -> ValueSome texture
+                        | _ -> ValueNone
+                    else ValueNone
+                let colorGradeStrength = if colorGradeLutTextureOpt.IsSome then renderer.LightingConfig.ColorGradeStrength else 0.0f
+                let colorGradeLutTexture = ValueOption.defaultValue renderer.WhiteTexture colorGradeLutTextureOpt
+
+                // run gamma-correction pass
                 let gammaCorrectionTexture = renderer.PhysicallyBasedAttachments.GammaCorrectionAttachment
                 Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite gammaCorrectionTexture renderer.VulkanContext.RenderCommandBuffer
                 PhysicallyBased.drawFilterGammaCorrectionSurface
+                    colorGradeStrength colorGradeLutTexture renderer.FilteredSampler
                     toneMappingTexture renderer.UnfilteredSampler gammaCorrectionTexture geometryResolution
                     renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterGammaCorrectionPipeline renderer.VulkanContext
                 Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead gammaCorrectionTexture renderer.VulkanContext.RenderCommandBuffer

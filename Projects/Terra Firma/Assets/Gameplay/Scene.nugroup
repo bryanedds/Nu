@@ -91,6 +91,8 @@
         [ToneMapPower [1.1 1.1 1.1]]
         [ToneMapSaturation 1.1]
         [ToneMapWhitePoint 4]
+        [ColorGradeStrength 0]
+        [ColorGradeLut [Default ColorGradingLut]]
         [FogEnabled True]
         [FogType ExponentialSquaredFog]
         [FogStart 8]

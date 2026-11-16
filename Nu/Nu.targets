@@ -161,7 +161,9 @@
     <Target Name="BuildNuPipe" BeforeTargets="BeforeBuild">
         <MSBuild Projects="$(MSBuildThisFileDirectory)Nu.Pipe/Nu.Pipe.fsproj"
                  RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained"
-                 Targets="Restore;Build" />
+                 Targets="Restore;Build">
+            <Output TaskParameter="TargetOutputs" ItemName="NuPipeAssembly" />
+        </MSBuild>
     </Target>
 
     <!-- Run Nu.Pipe to process assets. -->
@@ -172,6 +174,7 @@
         <PropertyGroup>
             <NuPipeOut>$(MSBuildProjectDirectory)/$(OutDir)</NuPipeOut>
             <NuPipeOut Condition="'$(TargetPlatformIdentifier)' != '' Or '$(IsPublishing)' == 'true'">$(MSBuildProjectDirectory)/piped/$(BlockCompression)</NuPipeOut>
+            <NuPipeAssemblyPath>@(NuPipeAssembly)</NuPipeAssemblyPath>
         </PropertyGroup>
 
         <!-- These files are not copied by Nu.Pipe but read by the app - count them as Nu.Pipe outputs. App.config is
@@ -190,7 +193,8 @@
                  Properties="Configuration=$(Configuration);
                              ProjectDirectory=$(MSBuildProjectDirectory);
                              NuPipeOut=$(NuPipeOut);
-                             BlockCompression=$(BlockCompression)" />
+                             BlockCompression=$(BlockCompression);
+                             NuPipeAssembly=$(NuPipeAssemblyPath)" />
 
         <!-- iOS: include as bundle asset
              Android: include as fast-follow asset pack (extracted to file system, up to 512MB).
