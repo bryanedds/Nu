@@ -1,6 +1,6 @@
 [GroupDispatcher
  [[Editing True]
-  [Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=10.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
+  [Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
   [Name Scene]
   [Persistent True]]
  [[Entity3dDispatcher
@@ -8,11 +8,11 @@
     [Name Environment]
     [Presence Omnipresent]]
    [[Light3dDispatcher
-     [[AttenuationLinear 0.004166667]
-      [AttenuationQuadratic 0.00017361112]
+     [[AttenuationLinear 0.003125]
+      [AttenuationQuadratic 9.765625E-05]
       [Brightness 10]
       [DesireFog True]
-      [LightCutoff 24]
+      [LightCutoff 32]
       [LightType CascadedLight]
       [MountOpt [Some ^]]
       [Name Sun]
@@ -24,7 +24,7 @@
       [Scale [0.9999998 0.99999994 0.9999999]]
       [ScaleLocal [0.9999999 0.99999994 0.99999994]]
       [ShadowingType DynamicShadowing]
-      [Size [48 48 48]]
+      [Size [64 64 64]]
       [Static True]]
      []]
     [SkyBoxDispatcher

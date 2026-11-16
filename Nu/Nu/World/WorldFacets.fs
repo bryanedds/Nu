@@ -2136,15 +2136,15 @@ type CircleContour2dFacet () =
 
     // create a circle using cubic bezier curves. Uses a magic number for circle approximation with bezier curves in
     // [-1,1] space: 4/3 * (sqrt(2) - 1) = 0.5522847498, divided by 2 to account for radius of 0.5 in normalized space.
-    static let k = 0.5522847498f / 2.0f
+    static let K = 0.5522847498f * 0.5f
         
     // define circle in normalized space from -0.5 to 0.5
-    static let commands =
+    static let Commands =
         [|MoveTo (v2 0.5f 0.0f)                                     // begin at right
-          CubicCurveTo (v2 0.5f k, v2 k 0.5f, v2 0.0f 0.5f)         // top arc
-          CubicCurveTo (v2 -k 0.5f, v2 -0.5f k, v2 -0.5f 0.0f)      // left arc
-          CubicCurveTo (v2 -0.5f -k, v2 -k -0.5f, v2 0.0f -0.5f)    // bottom arc
-          CubicCurveTo (v2 k -0.5f, v2 0.5f -k, v2 0.5f 0.0f)       // right arc
+          CubicCurveTo (v2 0.5f K, v2 K 0.5f, v2 0.0f 0.5f)         // top arc
+          CubicCurveTo (v2 -K 0.5f, v2 -0.5f K, v2 -0.5f 0.0f)      // left arc
+          CubicCurveTo (v2 -0.5f -K, v2 -K -0.5f, v2 0.0f -0.5f)    // bottom arc
+          CubicCurveTo (v2 K -0.5f, v2 0.5f -K, v2 0.5f 0.0f)       // right arc
           CloseContour|]                                            // closing the contour is optional, but can test our implementation
 
     static let updateOverflow (entity : Entity) world =
@@ -2170,7 +2170,7 @@ type CircleContour2dFacet () =
     override this.Render (_, entity, world) =
         let fill = ContourFill.ofColorWinding (entity.GetFillColor world) (entity.GetFillWinding world)
         let stroke = ContourStroke.ofColorThickness (entity.GetStrokeColor world) (entity.GetStrokeThickness world)
-        let prepared = Contour.make fill stroke commands (entity.GetSize world * entity.GetScale world).V2
+        let prepared = Contour.make fill stroke Commands (entity.GetSize world * entity.GetScale world).V2
         World.renderContour
             { Transform = entity.GetTransform world
               ClipOpt = entity.GetClipOpt world |> Option.toValueOption
@@ -2180,7 +2180,7 @@ type CircleContour2dFacet () =
 type RectangleContour2dFacet () =
     inherit Facet (false, false, false)
 
-    static let recCommands =
+    static let Commands =
         [|MoveTo (v2 0.5f 0.5f)
           LineTo (v2 -0.5f 0.5f)
           LineTo (v2 -0.5f -0.5f)
@@ -2210,7 +2210,7 @@ type RectangleContour2dFacet () =
     override this.Render (_, entity, world) =
         let fill = ContourFill.ofColorWinding (entity.GetFillColor world) (entity.GetFillWinding world)
         let stroke = ContourStroke.ofColorThickness (entity.GetStrokeColor world) (entity.GetStrokeThickness world)
-        let prepared = Contour.make fill stroke recCommands (entity.GetSize world * entity.GetScale world).V2
+        let prepared = Contour.make fill stroke Commands (entity.GetSize world * entity.GetScale world).V2
         World.renderContour
             { Transform = entity.GetTransform world
               ClipOpt = entity.GetClipOpt world |> Option.toValueOption
@@ -2227,8 +2227,6 @@ module [<AutoOpen>] SpiralContour2dExtensions =
         member this.GetPointsPerTurn world : single = this.Get (nameof Entity.PointsPerTurn) world
         member this.SetPointsPerTurn (value : single) world = this.Set (nameof Entity.PointsPerTurn) value world
         member this.PointsPerTurn = lens (nameof Entity.PointsPerTurn) this this.GetPointsPerTurn this.SetPointsPerTurn
-
-/// Augments an entity with the behavior of a 2d polygon spiral contour.
 
 /// Augments an entity with the behavior of a 2d polygon spiral contour.
 type SpiralContour2dFacet () =
@@ -2425,8 +2423,7 @@ module RectangleRoundedContour2dExtensions =
 type RectangleRoundedContour2dFacet () =
     inherit Facet (false, false, false)
 
-    // magic constant for circle approximation with cubic Bézier: 4/3 * tan(π/8) ≈ 0.5522847498
-    static let Kappa = 0.5522847498f
+    static let K = 0.5522847498f // magic constant for circle approximation with cubic Bézier: 4/3 * tan(π/8) ≈ 0.5522847498
 
     static let computeRoundedRectCommands (radius : single) (size : Vector2) =
 
@@ -2434,8 +2431,8 @@ type RectangleRoundedContour2dFacet () =
         // this ensures circular corners regardless of aspect ratio
         let radiusX = radius / size.X |> min 0.49999f // HACK: if this is 0.5, the stroke will be missing a small section at the top/bottom/left/right points for a large corner radius approximating an ellipse.
         let radiusY = radius / size.Y |> min 0.49999f
-        let kx = radiusX * Kappa // control point offset for X
-        let ky = radiusY * Kappa // control point offset for Y
+        let kx = radiusX * K // control point offset for X
+        let ky = radiusY * K // control point offset for Y
     
         [|// top-left corner
           MoveTo (v2 (-0.5f + radiusX) 0.5f)
@@ -2989,27 +2986,6 @@ module Light3dModule =
                 originShadow.Z
         originShadow.Transform shadowView.Inverted
 
-    /// Compute the origin for a cascaded light's shadow map, snapping it to texel-sized increments.
-    let getCascadedLightOrigin (lightRotation : Quaternion) lightCutoff world =
-
-        // TODO: P1: make this work if possible.
-        //let frustumCenter = World.getEye3dFrustumCenter lightCutoff world
-        //let shadowForward = lightRotation.Down
-        //let shadowUp = shadowForward.OrthonormalUp
-        //let shadowView = Matrix4x4.CreateLookAt (v3Zero, shadowForward, shadowUp)
-        //let shadowWidth = max (lightCutoff * 2.0f) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
-        //let shadowTexelSize = shadowWidth / single world.GeometryViewport.ShadowTextureResolution.X
-        //let centerShadow = frustumCenter.Transform shadowView
-        //let centerShadowSnapped =
-        //    v3
-        //        (floor (centerShadow.X / shadowTexelSize) * shadowTexelSize)
-        //        (floor (centerShadow.Y / shadowTexelSize) * shadowTexelSize)
-        //        centerShadow.Z
-        //centerShadowSnapped.Transform shadowView.Inverted // TODO: P1: figure out how to compute this like DirectionalLight but for CSM.
-        ignore lightRotation
-        ignore lightCutoff
-        World.getEye3dCenter world
-
 /// Augments an entity with a 3d light.
 type Light3dFacet () =
     inherit Facet (false, false, true)
@@ -3056,7 +3032,7 @@ type Light3dFacet () =
             match lightType with
             | PointLight _ | SpotLight (_, _, _) -> entity.GetPosition world
             | DirectionalLight offsetForwardScalar -> Light3dModule.getDirectionalLightOrigin rotation lightCutoff offsetForwardScalar world
-            | CascadedLight -> Light3dModule.getCascadedLightOrigin rotation lightCutoff world
+            | CascadedLight -> World.getEye3dCenter world
         let direction = rotation.Down
         let color = entity.GetColor world
         let brightness = entity.GetBrightness world

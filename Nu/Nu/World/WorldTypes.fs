@@ -300,6 +300,7 @@ and [<ReferenceEquality; NoComparison>] Nav3d =
 and DragDropPayload =
     | DragDropAsset of AssetTagStr : string * AssetTag : AssetTag
     | DragDropEntity of Entity : Entity
+    | DragDropPropagationSource of Entity : Entity
     | DragDropUserDefined of obj
 
 /// Context for editing behavior.
@@ -313,7 +314,7 @@ and EditContext =
       SnapDrag : single
       SelectedScreen : Screen
       SelectedGroup : Group
-      SelectedEntityOpt : Entity option
+      SelectedEntities : Entity Set
       ToSymbolMemo : IDictionary<struct (Type * obj), Symbol>
       OfSymbolMemo : IDictionary<struct (Type * Symbol), obj> }
 

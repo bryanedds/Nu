@@ -139,7 +139,7 @@ type BlockMapDispatcher () =
             // render cursor when needed
             let io = ImGui.GetIO ()
             match world.EditContextOpt with
-            | Some editContext when editContext.SelectedEntityOpt = Some entity && not io.WantCaptureMouseGlobal ->
+            | Some editContext when Seq.tryExactlyOne editContext.SelectedEntities = Some entity && not io.WantCaptureMouseGlobal ->
                 let position = entity.GetPosition world
                 let ray = World.getMouseRay3dWorld world
                 match BlockMap.tryPickPositionI ray position blockMap with

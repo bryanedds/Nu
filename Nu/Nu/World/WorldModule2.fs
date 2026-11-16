@@ -1095,6 +1095,12 @@ module WorldModule2 =
             | SDL_EventType.SDL_EVENT_WINDOW_ENTER_FULLSCREEN
             | SDL_EventType.SDL_EVENT_WINDOW_LEAVE_FULLSCREEN ->
                 World.processWindowResize world
+            | SDL_EventType.SDL_EVENT_WINDOW_FOCUS_GAINED ->
+                let io = ImGui.GetIO ()
+                io.AddFocusEvent true
+            | SDL_EventType.SDL_EVENT_WINDOW_FOCUS_LOST ->
+                let io = ImGui.GetIO () // NOTE: lets imgui release the keys held as focus left, such as alt in alt-tab.
+                io.AddFocusEvent false
             | SDL_EventType.SDL_EVENT_MOUSE_MOTION ->
                 let io = ImGui.GetIO ()
                 let pixelDensity = World.tryGetWindowPixelDensity world |> Option.defaultValue 1.0f
@@ -1745,9 +1751,8 @@ module WorldModule2 =
 
                             // compute shadow info
                             let lightId = light.GetId world
-                            let shadowRotation = light.GetRotation world
+                            let shadowOrigin = world.Eye3dCenter
                             let shadowCutoff = light.GetLightCutoff world
-                            let shadowOrigin = Light3dModule.getCascadedLightOrigin shadowRotation shadowCutoff world
                             let shadowRotation = light.GetRotation world
                             let shadowForward = shadowRotation.Down
                             let shadowUp = shadowForward.OrthonormalUp

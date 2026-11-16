@@ -754,7 +754,7 @@ module WorldImGui =
                 (false, edited, substance)
             | :? Animation as animation ->
                 let tryReplaceAnimationName (fieldInfo : PropertyInfo) (field : obj) =
-                    match (fieldInfo.Name, context.SelectedEntityOpt) with
+                    match (fieldInfo.Name, Seq.tryExactlyOne context.SelectedEntities) with
                     | ("Name", Some selectedEntity) ->
                         match selectedEntity.TryGetProperty "AnimatedModel" world with // HACK: can only get related asset tag from selected entity's top-level.
                         | Some property when (property.PropertyValue :? AnimatedModel AssetTag) ->
@@ -779,7 +779,7 @@ module WorldImGui =
                 World.imGuiEditPropertyRecordPlus tryReplaceAnimationName true name (typeof<Animation>) animation context world
             | :? UserDefinedImages as images ->
                 let tryReplaceUserDefinedImageOpt (fieldInfo : PropertyInfo) (field : obj) =
-                    match context.SelectedEntityOpt with
+                    match Seq.tryExactlyOne context.SelectedEntities with
                     | Some selectedEntity ->
                         let userDefinedImageSubstring = "UserDefinedImage"
                         if fieldInfo.Name.StartsWith userDefinedImageSubstring then
@@ -816,7 +816,7 @@ module WorldImGui =
                 World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedImageOpt false name (typeof<UserDefinedImages>) images context world
             | :? UserDefinedSettings as settings ->
                 let tryReplaceUserDefinedSettingOpt (fieldInfo : PropertyInfo) (field : obj) =
-                    match context.SelectedEntityOpt with
+                    match Seq.tryExactlyOne context.SelectedEntities with
                     | Some selectedEntity ->
                         let userDefinedSettingSubstring = "UserDefinedSetting"
                         if fieldInfo.Name.StartsWith userDefinedSettingSubstring then
@@ -850,7 +850,7 @@ module WorldImGui =
                 World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedSettingOpt false name (typeof<UserDefinedSettings>) settings context world
             | :? TerrainMaterialProperties as tmps ->
                 let tryReplaceUserDefinedSettingOpt (fieldInfo : PropertyInfo) (field : obj) =
-                    match context.SelectedEntityOpt with
+                    match Seq.tryExactlyOne context.SelectedEntities with
                     | Some selectedEntity ->
                         let userDefinedSettingSubstring = "UserDefinedSetting"
                         let optSubstring = "Opt"
@@ -904,7 +904,7 @@ module WorldImGui =
                 World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedSettingOpt true name (typeof<TerrainMaterialProperties>) tmps context world
             | :? Material as material ->
                 let tryReplaceUserDefinedImageOpt (fieldInfo : PropertyInfo) (field : obj) =
-                    match context.SelectedEntityOpt with
+                    match Seq.tryExactlyOne context.SelectedEntities with
                     | Some selectedEntity ->
                         let userDefinedImageSubstring = "UserDefinedImage"
                         let optSubstring = "Opt"
@@ -1011,7 +1011,7 @@ module WorldImGui =
                 World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedImageOpt false name (typeof<Material>) material context world
             | :? MaterialProperties as properties ->
                 let tryReplaceUserDefinedSettingOpt (fieldInfo : PropertyInfo) (field : obj) =
-                    match context.SelectedEntityOpt with
+                    match Seq.tryExactlyOne context.SelectedEntities with
                     | Some selectedEntity ->
                         let userDefinedSettingSubstring = "UserDefinedSetting"
                         let optSubstring = "Opt"
@@ -1525,7 +1525,7 @@ module WorldImGui =
                 ImGui.PopID ()
                 (promoted, edited, animations)
             | :? StairSteppingCharacterProperties when
-                (match context.SelectedEntityOpt with
+                (match Seq.tryExactlyOne context.SelectedEntities with
                  | Some entity -> match entity.TryGet<Nu.BodyType> "BodyType" world with ValueSome bodyType -> not bodyType.IsCharacter | ValueNone -> false
                  | None -> false) ->
                 (false, false, value) // hides character properties unless is character body type
