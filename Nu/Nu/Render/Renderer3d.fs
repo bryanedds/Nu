@@ -1320,9 +1320,9 @@ type [<ReferenceEquality>] private RenderTasks =
 
         renderTasks.DeferredAnimatedRemovals.Clear ()
 
-    static member shadowUpToDate lightingConfigChanged renderingConfigChanged renderTasks renderTasksCached =
+    static member shadowUpToDate lightShadowConfigChanged renderingConfigChanged renderTasks renderTasksCached =
 
-        if not lightingConfigChanged && not renderingConfigChanged then
+        if not lightShadowConfigChanged && not renderingConfigChanged then
 
             let deferredStaticCached =
                 renderTasks.DeferredStatic.Count = renderTasksCached.DeferredStatic.Count &&
@@ -1538,7 +1538,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable PhysicallyBasedAttachments : PhysicallyBasedAttachments3d
           LightMaps : Dictionary<uint64, LightMap>
           mutable LightingConfig : Lighting3dConfig
-          mutable LightingConfigChanged : bool
+          mutable LightShadowConfigChanged : bool
           mutable RendererConfig : Renderer3dConfig
           mutable RendererConfigChanged : bool
           mutable InstanceFields : single array
@@ -3640,7 +3640,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     if renderer.ShadowLightIdSet.Add lightId then renderer.ShadowLightIdList.Add lightId
                 | LightMapPass (_, _) | ReflectionPass (_, _) | NormalPass -> ()
             | ConfigureLighting3d l3c ->
-                if renderer.LightingConfig <> l3c then renderer.LightingConfigChanged <- true
+                // NOTE: only the lighting config fields that affect shadow map contents invalidate cached shadows.
+                if  renderer.LightingConfig.LightShadowExponent <> l3c.LightShadowExponent ||
+                    renderer.LightingConfig.LightShadowRadius <> l3c.LightShadowRadius then
+                    renderer.LightShadowConfigChanged <- true
                 renderer.LightingConfig <- l3c
             | ConfigureRenderer3d r3c ->
                 if renderer.RendererConfig <> r3c then renderer.RendererConfigChanged <- true
@@ -4011,6 +4014,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Pipeline.beginFrame renderer.IrradiancePipeline.Pipeline
         Pipeline.beginFrame renderer.EnvironmentFilterPipeline.Pipeline
         PhysicallyBased.beginPhysicallyBasedPipelines renderer.PhysicallyBasedPipelines
+
+        // reload render assets when requested on previous frame, doing so before categorizing messages so that this
+        // frame's render passes aren't cleared by the reload
+        if renderer.ReloadAssetsRequested then
+            VulkanRenderer3d.handleReloadRenderAssets renderer
+            renderer.ReloadAssetsRequested <- false
 
         // categorize messages
         VulkanRenderer3d.categorize frustumInterior frustumExterior frustumImposter eyeCenter eyeRotation renderMessages renderer
@@ -4395,7 +4404,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             match renderer.RenderPasses2.TryGetValue renderPass with
                             | (true, renderTasksCached) ->
                                 if Option.contains shadowTextureIndex renderTasksCached.ShadowBufferIndexOpt then
-                                    let upToDate = RenderTasks.shadowUpToDate renderer.LightingConfigChanged renderer.RendererConfigChanged renderTasks renderTasksCached
+                                    let upToDate = RenderTasks.shadowUpToDate renderer.LightShadowConfigChanged renderer.RendererConfigChanged renderTasks renderTasksCached
                                     not upToDate
                                 else true
                             | (_, _) -> true
@@ -4477,7 +4486,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 match renderer.RenderPasses2.TryGetValue renderPass with
                                 | (true, renderTasksCached) ->
                                     if Option.contains (shadowMapBufferIndex + Constants.Render.ShadowTexturesMax) renderTasksCached.ShadowBufferIndexOpt then
-                                        let upToDate = RenderTasks.shadowUpToDate renderer.LightingConfigChanged renderer.RendererConfigChanged renderTasks renderTasksCached
+                                        let upToDate = RenderTasks.shadowUpToDate renderer.LightShadowConfigChanged renderer.RendererConfigChanged renderTasks renderTasksCached
                                         not upToDate
                                     else true
                                 | (_, _) -> true
@@ -4539,7 +4548,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 match renderer.RenderPasses2.TryGetValue renderPass with
                                 | (true, renderTasksCached) ->
                                     if Option.contains (shadowCascadeBufferIndex + Constants.Render.ShadowTexturesMax) renderTasksCached.ShadowBufferIndexOpt then
-                                        let upToDate = RenderTasks.shadowUpToDate renderer.LightingConfigChanged renderer.RendererConfigChanged renderTasks renderTasksCached
+                                        let upToDate = RenderTasks.shadowUpToDate renderer.LightShadowConfigChanged renderer.RendererConfigChanged renderTasks renderTasksCached
                                         not upToDate
                                     else true
                                 | (_, _) -> true
@@ -5542,7 +5551,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // update viewports
         if renderer.GeometryViewport <> geometryViewport then
             VulkanRenderer3d.invalidateCaches renderer
-            VulkanRenderer3d.clearRenderPasses false renderer // force shadows to rerender, but keep light probes for light map tracking
+            // force shadows to rerender by clearing their cache source rather than this frame's render passes
+            renderer.RenderPasses2.Clear ()
             renderer.GeometryViewport <- geometryViewport
         renderer.WindowViewport <- windowViewport
 
@@ -5552,11 +5562,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // delete textures as requested on previous frame
         TextureDumpster.dump renderer.TextureDumpster renderer.VulkanContext
-
-        // reload render assets when requested on previous frame
-        if renderer.ReloadAssetsRequested then
-            VulkanRenderer3d.handleReloadRenderAssets renderer
-            renderer.ReloadAssetsRequested <- false
 
         // render light maps
         VulkanRenderer3d.renderLightMaps frustumInterior frustumExterior frustumImposter renderer
@@ -5585,7 +5590,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 targetBounds 0 resolveTexture.Image
 
         // clear config dirty flags
-        renderer.LightingConfigChanged <- false
+        renderer.LightShadowConfigChanged <- false
         renderer.RendererConfigChanged <- false
 
         // clear light shadow indices
@@ -5892,7 +5897,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               PhysicallyBasedAttachments = physicallyBasedAttachments
               LightMaps = dictPlus HashIdentity.Structural []
               LightingConfig = Lighting3dConfig.defaultConfig
-              LightingConfigChanged = false
+              LightShadowConfigChanged = false
               RendererConfig = Renderer3dConfig.defaultConfig
               RendererConfigChanged = false
               InstanceFields = Array.zeroCreate<single> (Constants.Render.InstanceFieldCount * Constants.Render.InstanceBatchPrealloc)
