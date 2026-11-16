@@ -1148,6 +1148,7 @@ module Hl =
                 name.EndsWith "_hm" ||
                 name.EndsWith "_b" ||
                 name.EndsWith "_t" ||
+                name.EndsWith "_l" ||
                 name.EndsWith "_u" ||
                 name.EndsWith "Face" ||
                 name.EndsWith "HeightMap" ||
