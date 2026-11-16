@@ -99,6 +99,7 @@ module Default =
     let [<Literal>] LightbulbModelName = "LightbulbModel"
     let [<Literal>] LightProbeModelName = "LightProbeModel"
     let [<Literal>] AnimatedModelName = "AnimatedModel"
+    let [<Literal>] ColorGradeLutName = "ColorGradeLut"
     let [<Literal>] SoundName = "Sound"
     let [<Literal>] SongName = "Song"
     let [<Literal>] RawIconName = "RawIcon"

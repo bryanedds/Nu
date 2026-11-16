@@ -3150,7 +3150,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiTimelineWindow () =
         let windowName = "Timeline"
-        if ImGui.Begin windowName then
+        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             if ImGui.BeginListBox ("##history", v2 -1.0f -1.0f) then
                 for (snapshotType, _) in List.rev Pasts do
@@ -3174,28 +3174,28 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiGamePropertiesWindow world =
         let windowName = "Game Properties"
-        if ImGui.Begin windowName then
+        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             imGuiEditProperties Game world
         ImGui.End ()
 
     let private imGuiScreenPropertiesWindow world =
         let windowName = "Screen Properties"
-        if ImGui.Begin windowName then
+        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             imGuiEditProperties SelectedScreen world
         ImGui.End ()
 
     let private imGuiGroupPropertiesWindow world =
         let windowName = "Group Properties"
-        if ImGui.Begin windowName then
+        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             imGuiEditProperties SelectedGroup world
         ImGui.End ()
 
     let private imGuiEntityPropertiesWindow world =
         let windowName = "Entity Properties"
-        if ImGui.Begin windowName then
+        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             match Seq.tryExactlyOne SelectedEntities with
             | Some entity when entity.GetExists world && SelectedEntities.Count = 1 -> imGuiEditProperties entity world
@@ -3204,7 +3204,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiPropagationSourcesWindow world =
         let windowName = "Propagation Sources"
-        if ImGui.Begin windowName then
+        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
             ImGui.SetNextItemWidth -1.0f
             ImGui.InputTextWithHint ("##propagationSourcesSearchStr", "[enter search text]", &PropagationSourcesSearchStr, 4096u) |> ignore<bool>
             let propagationSources =
@@ -3295,7 +3295,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiOverlayerWindow () =
         let windowName = "Edit Overlayer"
-        if ImGui.Begin windowName then
+        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             if ImGui.Button "Save" then
                 let overlayerSourceDir = TargetDir + "/../../.."
@@ -3316,7 +3316,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiAssetGraphWindow () =
         let windowName = "Edit Asset Graph"
-        if ImGui.Begin windowName then
+        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             if ImGui.Button "Save" then
                 let assetSourceDir = TargetDir + "/../../.."
@@ -3339,7 +3339,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.SetNextWindowFocus ()
             PropertyEditorFocusRequested <- false
         let windowName = "Edit Property"
-        if ImGui.Begin windowName then
+        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             match PropertyFocusedOpt with
             | Some (propertyDescriptor, simulant) when
@@ -3407,7 +3407,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
         // metrics window
         let windowName = "Metrics"
-        if ImGui.Begin windowName then
+        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
                 
             // store focus
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
@@ -3492,7 +3492,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiInteractiveWindow world =
         let windowName = "Interactive"
-        if ImGui.Begin windowName then
+        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             let mutable toBottom = false
             let eval = ImGui.Button "Eval" || ImGui.IsAnyItemActive () && ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () && ImGui.IsShiftUp ()
@@ -3621,7 +3621,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiEventTracingWindow world =
         let windowName = "Event Tracing"
-        if ImGui.Begin windowName then
+        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             let mutable traceEvents = world |> World.getEventTracerOpt |> Option.isSome
             if ImGui.Checkbox ("Trace Events", &traceEvents) then
@@ -3637,7 +3637,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiAudioPlayerWindow world =
         let windowName = "Audio Player"
-        if ImGui.Begin windowName then
+        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             ImGui.Text "Master Sound Volume"
             let mutable masterSoundVolume = World.getMasterSoundVolume world
@@ -3653,7 +3653,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiRendererWindow world =
         let windowName = "Renderer"
-        if ImGui.Begin windowName then
+        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             let renderer3dConfig = World.getRenderer3dConfig world
             let mutable renderer3dEdited = false
@@ -3727,7 +3727,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.PushStyleColor (ImGuiCol.TabDimmed, flashColor)
             ImGui.PushStyleColor (ImGuiCol.TabDimmedSelected, flashColor)
         let windowName = "Log"
-        if ImGui.Begin windowName then
+        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             ImGui.Text "Log:"
             ImGui.SameLine ()
@@ -3743,7 +3743,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiEditorConfigWindow () =
         let windowName = "Editor"
-        if ImGui.Begin windowName then
+        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             ImGui.Text "Transform Snapping"
             ImGui.SetNextItemWidth 50.0f
@@ -3788,7 +3788,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiAssetViewerWindow world =
         let windowName = "Asset Viewer"
-        if ImGui.Begin windowName then
+        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             ImGui.SetNextItemWidth (ImGui.GetContentRegionAvail().X * 0.5f)
             let searchActivePrevious = not (String.IsNullOrWhiteSpace AssetViewerSearchStr)

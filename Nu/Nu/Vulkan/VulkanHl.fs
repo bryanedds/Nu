@@ -1153,6 +1153,7 @@ module Hl =
                 name.EndsWith "HeightMap" ||
                 name.EndsWith "Blend" ||
                 name.EndsWith "Tint" ||
+                name.EndsWith "Lut" ||
                 name.EndsWith "Uncompressed" then Uncompressed
             elif
                 name.EndsWith "_n" ||
@@ -1352,28 +1353,40 @@ module Hl =
 
     /// Format compressed pfim image data.
     let formatCompressedPfdds minimal (dds : Dds) =
-        let minimal = minimal && dds.Header.MipMapCount >= 3u // NOTE: at least three mipmaps are needed for minimal load since the last 2 are not valid when compressed.
+
+        // compute mipmap properties per-axis so that non-square textures (such as color grade luts) are sized correctly
+        let getMipmapSize (dims : Vector2i) = ((dims.X + 3) / 4) * ((dims.Y + 3) / 4) * 16
+        let getMipmapDims (dims : Vector2i) = v2i (max 1 (dims.X / 2)) (max 1 (dims.Y / 2))
+        let isMipmapValid (dims : Vector2i) = dims.X >= 4 && dims.Y >= 4 // NOTE: mipmaps smaller than a block aren't valid when compressed.
+
+        // count valid mipmaps beyond the base image (header mipmap count includes the base image)
+        let mipmapCount = int dds.Header.MipMapCount
+        let mipmapValidCount =
+            let mutable dims = v2i dds.Width dds.Height
+            let mutable count = 0
+            for _ in 1 .. dec mipmapCount do
+                dims <- getMipmapDims dims
+                if isMipmapValid dims then count <- inc count
+            count
+
+        // determine minimal load, which requires a valid mipmap at the minimal mipmap index
+        let minimalMipmapIndex = max 1 Constants.Render.TextureMinimalMipmapIndex
+        let minimal = minimal && mipmapValidCount >= minimalMipmapIndex
         let mutable dims = v2i dds.Width dds.Height
-        let mutable size = ((dims.X + 3) / 4) * ((dims.Y + 3) / 4) * 16
+        let mutable size = getMipmapSize dims
         let mutable index = 0
         let bytes =
             if not minimal
             then dds.Data.AsSpan(index, size).ToArray()
             else [||]
-        let minimalMipmapIndex =
-            if minimal
-            then min dds.Header.MipMapCount (uint Constants.Render.TextureMinimalMipmapIndex)
-            else 1u
+        let mipmapIndexStart = if minimal then minimalMipmapIndex else 1
         let mipmapBytesArray =
-            if dds.Header.MipMapCount >= 2u then
-                [|for i in 1u .. dds.Header.MipMapCount do
-                    dims <- dims / 2
-                    index <- index + size
-                    size <- size / 4
-                    if  i >= minimalMipmapIndex &&
-                        size >= 16 then // NOTE: as mentioned above, mipmap with size < 16 can exist but isn't valid when compressed.
-                        (dims, dds.Data.AsSpan(index, size).ToArray())|]
-            else [||]
+            [|for i in 1 .. dec mipmapCount do
+                index <- index + size
+                dims <- getMipmapDims dims
+                size <- getMipmapSize dims
+                if i >= mipmapIndexStart && isMipmapValid dims then
+                    (dims, dds.Data.AsSpan(index, size).ToArray())|]
         if minimal then
             let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray[0]
             let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]
