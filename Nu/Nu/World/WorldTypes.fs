@@ -300,6 +300,7 @@ and [<ReferenceEquality; NoComparison>] Nav3d =
 and DragDropPayload =
     | DragDropAsset of AssetTagStr : string * AssetTag : AssetTag
     | DragDropEntity of Entity : Entity
+    | DragDropPropagationSource of Entity : Entity
     | DragDropUserDefined of obj
 
 /// Context for editing behavior.

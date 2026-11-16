@@ -944,7 +944,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             entity.ResetProbeBounds world
         | Some _ | None -> ()
 
-    let private createEntity atMouse inHierarchy dispatcherNameOverride parentOverride world =
+    let private createEntity atMouse inHierarchy dispatcherNameOverride (parentOverride : Simulant option) world =
         snapshot CreateEntity world
         let dispatcherName = Option.defaultValue NewEntityDispatcherName dispatcherNameOverride
         let overlayNameDescriptor =
@@ -954,22 +954,53 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             | "(No Overlay)" -> NoOverlay
             | overlayName -> ExplicitOverlay overlayName
         let name = World.generateEntitySequentialName dispatcherName SelectedGroup world
+        let parentOpt =
+            if inHierarchy then Option.map cast<Simulant> SelectedEntityOpt
+            else Option.orElse (Option.map cast<Simulant> NewEntityParentOpt) parentOverride
         let surnames =
-            match SelectedEntityOpt with
-            | Some entity ->
-                if inHierarchy then
-                    if entity.GetExists world
-                    then Array.add name entity.Surnames
-                    else [|name|]
-                else
-                    match Option.orElse NewEntityParentOpt parentOverride with
-                    | Some newEntityParent when newEntityParent.GetExists world -> Array.add name newEntityParent.Surnames
-                    | Some _ | None -> [|name|]
-            | None -> [|name|]
+            match parentOpt with
+            | Some (:? Entity as parent) when parent.GetExists world -> Array.add name parent.Surnames
+            | Some _ | None -> [|name|] // a group parent, or none, places it at the top
         let entity = World.createEntity7 false dispatcherName (Some Address.parent) overlayNameDescriptor (Some surnames) SelectedGroup world
         inductEntity atMouse entity world
         selectEntityOpt (Some entity) world
         ImGui.SetWindowFocus "Viewport"
+        ShowSelectedEntity <- true
+        entity
+
+    /// The dispatcher of the entity an asset makes, if any, and how to give it the asset - a sprite of a texture, a tile
+    /// map of a tile map, and a model of a model.
+    let private tryGetAssetEntityDispatcher (assetTag : AssetTag) =
+        match Metadata.tryGetMetadata assetTag with
+        | ValueSome metadata ->
+            match metadata with
+            | TextureMetadata _ -> Some (nameof StaticSpriteDispatcher, fun (entity : Entity) world -> entity.SetStaticImage (AssetTag.specialize assetTag) world)
+            | TileMapMetadata _ -> Some (nameof TileMapDispatcher, fun (entity : Entity) world -> entity.SetTileMap (AssetTag.specialize assetTag) world)
+            | StaticModelMetadata _ -> Some (nameof StaticModelDispatcher, fun (entity : Entity) world -> entity.SetStaticModel (AssetTag.specialize assetTag) world)
+            | AnimatedModelMetadata _ -> Some (nameof AnimatedModelDispatcher, fun (entity : Entity) world -> entity.SetAnimatedModel (AssetTag.specialize assetTag) world)
+            | RawMetadata | SoundMetadata | SongMetadata -> None
+        | ValueNone -> None
+
+    /// Create the entity an asset makes, if any, under the given parent.
+    let private tryCreateEntityOfAsset atMouse parentOverride assetTag world =
+        match tryGetAssetEntityDispatcher assetTag with
+        | Some (dispatcherName, giveAsset) ->
+            let entity = createEntity atMouse false (Some dispatcherName) parentOverride world
+            giveAsset entity world
+            entity.AutoBounds world
+            Some entity
+        | None -> None
+
+    /// Create an entity propagated from a propagation source, under the given parent.
+    let private createEntityOfPropagationSource pasteType (parentOverride : Simulant option) (source : Entity) world =
+        snapshot DuplicateEntity world
+        let parent =
+            match parentOverride with
+            | Some parent -> parent
+            | None -> NewEntityParentOpt |> Option.map cast<Simulant> |> Option.defaultValue source.Group
+        let positionSnapEir = if Snaps2dSelected then Left (a__ Snaps2d) else Right (a__ Snaps3d)
+        let entity = World.pasteEntity NewEntityDistance RightClickPosition positionSnapEir pasteType source parent world
+        selectEntityOpt (Some entity) world
         ShowSelectedEntity <- true
         entity
 
@@ -1753,33 +1784,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 ImGui.IsMouseReleased ImGuiMouseButton.Left &&
                 not io.WantCaptureMouse &&
                 (*NativePtr.notNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr*)true ->
-                match Metadata.tryGetMetadata assetTag with
-                | ValueSome metadata ->
-                    match metadata with
-                    | RawMetadata -> ()
-                    | TextureMetadata _ ->
-                        RightClickPosition <- World.getMousePosition world
-                        let entity = createEntity true false (Some (nameof StaticSpriteDispatcher)) None world
-                        entity.SetStaticImage (AssetTag.specialize assetTag) world
-                        entity.AutoBounds world
-                    | TileMapMetadata _ ->
-                        RightClickPosition <- World.getMousePosition world
-                        let entity = createEntity true false (Some (nameof TileMapDispatcher)) None world
-                        entity.SetTileMap (AssetTag.specialize assetTag) world
-                        entity.AutoBounds world
-                    | StaticModelMetadata _ ->
-                        RightClickPosition <- World.getMousePosition world
-                        let entity = createEntity true false (Some (nameof StaticModelDispatcher)) None world
-                        entity.SetStaticModel (AssetTag.specialize assetTag) world
-                        entity.AutoBounds world
-                    | AnimatedModelMetadata _ ->
-                        RightClickPosition <- World.getMousePosition world
-                        let entity = createEntity true false (Some (nameof AnimatedModelDispatcher)) None world
-                        entity.SetAnimatedModel (AssetTag.specialize assetTag) world
-                        entity.AutoBounds world
-                    | SoundMetadata -> ()
-                    | SongMetadata -> ()
-                | ValueNone -> ()
+                RightClickPosition <- World.getMousePosition world
+                tryCreateEntityOfAsset true None assetTag world |> ignore<Entity option>
+            | Some (DragDropPropagationSource source) when
+                ImGui.IsMouseReleased ImGuiMouseButton.Left &&
+                not io.WantCaptureMouse &&
+                (*NativePtr.notNullPtr (ImGui.AcceptDragDropPayload "PropagationSource").NativePtr*)true ->
+                if source.GetExists world then
+                    RightClickPosition <- World.getMousePosition world
+                    createEntityOfPropagationSource PasteAtMouse None source world |> ignore<Entity>
             | Some _ | None -> ()
             (*ImGui.EndDragDropTarget ()*)
 
@@ -1947,6 +1960,18 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         if openPopupContextItemWhenUnselected then
             ImGui.OpenPopup popupContextItemTitle
         if ImGui.BeginDragDropTarget () then
+            if NativePtr.notNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr then
+                match DragDropPayloadOpt with
+                | Some (DragDropAsset (_, assetTag)) ->
+                    let parent = Nu.Entity (SelectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
+                    tryCreateEntityOfAsset false (Some (parent :> Simulant)) assetTag world |> ignore<Entity option>
+                | Some _ | None -> ()
+            if NativePtr.notNullPtr (ImGui.AcceptDragDropPayload "PropagationSource").NativePtr then
+                match DragDropPayloadOpt with
+                | Some (DragDropPropagationSource source) when source.GetExists world ->
+                    let parent = Nu.Entity (SelectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
+                    createEntityOfPropagationSource PasteAtLook (Some (parent :> Simulant)) source world |> ignore<Entity>
+                | Some _ | None -> ()
             if NativePtr.notNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr then
                 match DragDropPayloadOpt with
                 | Some (DragDropEntity sourceEntity) ->
@@ -2902,6 +2927,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         if group.Name = selectedGroupName then ImGui.SetItemDefaultFocus ()
                     ImGui.EndCombo ()
                 if ImGui.BeginDragDropTarget () then
+                    if NativePtr.notNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr then
+                        match DragDropPayloadOpt with
+                        | Some (DragDropAsset (_, assetTag)) -> tryCreateEntityOfAsset false (Some (SelectedGroup :> Simulant)) assetTag world |> ignore<Entity option>
+                        | Some _ | None -> ()
+                    if NativePtr.notNullPtr (ImGui.AcceptDragDropPayload "PropagationSource").NativePtr then
+                        match DragDropPayloadOpt with
+                        | Some (DragDropPropagationSource source) when source.GetExists world ->
+                            createEntityOfPropagationSource PasteAtLook (Some (SelectedGroup :> Simulant)) source world |> ignore<Entity>
+                        | Some _ | None -> ()
                     if NativePtr.notNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr then
                         match DragDropPayloadOpt with
                         | Some (DragDropEntity sourceEntity) ->
@@ -3038,6 +3072,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if ImGui.TreeNodeEx (entity.Name, treeNodeFlags) then
                     if ImGui.IsMouseReleased ImGuiMouseButton.Left && ImGui.IsItemHovered () then
                         selectEntityOpt (Some entity) world
+                    if ImGui.BeginDragDropSource () then
+                        DragDropPayloadOpt <- Some (DragDropPropagationSource entity)
+                        ImGui.Text entity.Name
+                        ImGui.SetDragDropPayload ("PropagationSource", IntPtr.Zero, 0u) |> ignore<bool>
+                        ImGui.EndDragDropSource ()
                     if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
                         if not (entity.GetAbsolute world) then
                             if entity.GetIs2d world then
@@ -3060,11 +3099,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     ImGui.SameLine ()
                     ImGui.PushID ("##create" + scstringMemo entity)
                     if ImGui.SmallButton "Create" then
-                        snapshot DuplicateEntity world
-                        let parent = NewEntityParentOpt |> Option.map cast<Simulant> |> Option.defaultValue entity.Group
-                        let positionSnapEir = if Snaps2dSelected then Left (a__ Snaps2d) else Right (a__ Snaps3d)
-                        let duplicate = World.pasteEntity NewEntityDistance RightClickPosition positionSnapEir PasteAtLook entity parent world
-                        selectEntityOpt (Some duplicate) world
+                        createEntityOfPropagationSource PasteAtLook None entity world |> ignore<Entity>
                     if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                         ImGui.Text "Create a copy of the specified entity."
                         ImGui.EndTooltip ()
@@ -3671,55 +3706,28 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 ImGui.Text assetTagStr
                                 ImGui.SetDragDropPayload ("Asset", IntPtr.Zero, 0u) |> ignore<bool>
                                 ImGui.EndDragDropSource ()
-                            let creatorOpt =
-                                match __c assetEntry.Value with
-                                | RawMetadata -> None
-                                | TextureMetadata _ ->
-                                    (fun parentOpt world ->
-                                        let entity = createEntity false false (Some (nameof StaticSpriteDispatcher)) parentOpt world
-                                        entity.SetStaticImage (asset packageName assetName) world
-                                        entity.AutoBounds world
-                                        entity) |> Some
-                                | TileMapMetadata _ ->
-                                    (fun parentOpt world ->
-                                        let entity = createEntity false false (Some (nameof TileMapDispatcher)) parentOpt world
-                                        entity.SetTileMap (asset packageName assetName) world
-                                        entity.AutoBounds world
-                                        entity) |> Some
-                                | StaticModelMetadata _ ->
-                                    (fun parentOpt world ->
-                                        let entity = createEntity false false (Some (nameof StaticModelDispatcher)) parentOpt world
-                                        entity.SetStaticModel (asset packageName assetName) world
-                                        entity.AutoBounds world
-                                        entity) |> Some
-                                | AnimatedModelMetadata _ ->
-                                    (fun parentOpt world ->
-                                        let entity = createEntity false false (Some (nameof AnimatedModelDispatcher)) parentOpt world
-                                        entity.SetAnimatedModel (asset packageName assetName) world
-                                        entity.AutoBounds world
-                                        entity) |> Some
-                                | SoundMetadata -> 
-                                    ImGui.SameLine ()
-                                    if ImGui.SmallButton "Play" then
-                                        World.playSound 0.0f 0.0f 1.0f (asset packageName assetName) world
-                                    None
-                                | SongMetadata -> None
-                            match creatorOpt with
-                            | Some creator ->
+                            match __c assetEntry.Value with
+                            | SoundMetadata ->
+                                ImGui.SameLine ()
+                                if ImGui.SmallButton "Play" then
+                                    World.playSound 0.0f 0.0f 1.0f (asset packageName assetName) world
+                            | _ -> ()
+                            let assetTag = asset<obj> packageName assetName
+                            if (tryGetAssetEntityDispatcher assetTag).IsSome then
                                 ImGui.SameLine ()
                                 if ImGui.SmallButton "Create" then
-                                    creator None world |> ignore<Entity>
+                                    tryCreateEntityOfAsset false None assetTag world |> ignore<Entity option>
                                 match SelectedEntityOpt with
                                 | Some selectedEntity ->
                                     ImGui.SameLine ()
                                     if ImGui.SmallButton "as Child" then
-                                        creator (Some selectedEntity) world |> ignore<Entity>
+                                        tryCreateEntityOfAsset false (Some (selectedEntity :> Simulant)) assetTag world |> ignore<Entity option>
                                     ImGui.SameLine ()
                                     if ImGui.SmallButton "at Local Origin" then
-                                        let entity = creator (Some selectedEntity) world
-                                        entity.SetPositionLocal v3Zero world
+                                        match tryCreateEntityOfAsset false (Some (selectedEntity :> Simulant)) assetTag world with
+                                        | Some entity -> entity.SetPositionLocal v3Zero world
+                                        | None -> ()
                                 | None -> ()
-                            | None -> ()
                             ImGui.TreePop ()
                     ImGui.TreePop ()
             ImGui.EndChild ()
