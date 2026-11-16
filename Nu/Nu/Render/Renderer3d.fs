@@ -1547,8 +1547,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           ForwardSurfacesComparer : IComparer<struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBasedSurface * single * int)>
           ForwardSurfacesSortBuffer : struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBasedSurface * single * int) List
           RenderPackages : Packages<RenderAsset, AssetClient>
-          mutable RenderPasses : Dictionary<RenderPass, RenderTasks>
-          mutable RenderPasses2 : Dictionary<RenderPass, RenderTasks>
+          // NOTE: render passes are ordered since shadow passes must be processed in the order they were received.
+          mutable RenderPasses : OrderedDictionary<RenderPass, RenderTasks>
+          mutable RenderPasses2 : OrderedDictionary<RenderPass, RenderTasks>
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
           mutable ReloadAssetsRequested : bool
@@ -1650,13 +1651,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
     static member private clearRenderPasses lightProbesIncluded renderer =
 
         // clear current render passes with possible exception of light probes to preserve tracking of associated light maps
-        let normalTasksOpt = Dictionary.tryFind NormalPass renderer.RenderPasses
+        let mutable normalTasks = Unchecked.defaultof<RenderTasks>
+        let normalTasksFound = renderer.RenderPasses.TryGetValue (NormalPass, &normalTasks)
         renderer.RenderPasses.Clear ()
-        match normalTasksOpt with
-        | Some normalTasks ->
+        if normalTasksFound then
             RenderTasks.clear lightProbesIncluded normalTasks
             renderer.RenderPasses.Add (NormalPass, normalTasks)
-        | None -> ()
 
         // clear previous render passes
         renderer.RenderPasses2.Clear ()
@@ -2202,8 +2202,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 [for entry in renderer.RenderPasses do
                     if RenderPass.displaces renderPass entry.Key then
                         entry]
+            let mutable insertionIndex = renderer.RenderPasses.Count
             for displacedPass in displacedPasses do
-                renderer.RenderPasses.Remove displacedPass.Key |> ignore<bool>
+                let displacedIndex = renderer.RenderPasses.IndexOf displacedPass.Key
+                renderer.RenderPasses.RemoveAt displacedIndex
+                insertionIndex <- min insertionIndex displacedIndex
             let renderTasks =
                 match displacedPasses with
                 | head :: _ ->
@@ -2211,7 +2214,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     RenderTasks.clear true recycledTasks
                     recycledTasks
                 | _ -> RenderTasks.make ()
-            renderer.RenderPasses.Add (renderPass, renderTasks)
+
+            // insert render pass, taking its displaced pass's position if any
+            let insertionIndex = min insertionIndex renderer.RenderPasses.Count
+            renderer.RenderPasses.Insert (insertionIndex, renderPass, renderTasks)
             renderTasks
 
     static member private getLastSkyBoxOpt renderPass renderer =
@@ -4401,7 +4407,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         // draw shadow texture when not cached
                         let shouldDraw =
                             renderer.RendererConfig.LightShadowingEnabled &&
-                            match renderer.RenderPasses2.TryGetValue renderPass with
+                            match (renderer.RenderPasses2.TryGetValue renderPass : bool * RenderTasks) with
                             | (true, renderTasksCached) ->
                                 if Option.contains shadowTextureIndex renderTasksCached.ShadowBufferIndexOpt then
                                     let upToDate = RenderTasks.shadowUpToDate renderer.LightShadowConfigChanged renderer.RendererConfigChanged renderTasks renderTasksCached
@@ -4483,7 +4489,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             // NOTE: it's a tiny bit inefficient that we set up and tear down the same shadow map once
                             // per face render here, but probably nothing worth caring about.
                             let shouldDraw =
-                                match renderer.RenderPasses2.TryGetValue renderPass with
+                                match (renderer.RenderPasses2.TryGetValue renderPass : bool * RenderTasks) with
                                 | (true, renderTasksCached) ->
                                     if Option.contains (shadowMapBufferIndex + Constants.Render.ShadowTexturesMax) renderTasksCached.ShadowBufferIndexOpt then
                                         let upToDate = RenderTasks.shadowUpToDate renderer.LightShadowConfigChanged renderer.RendererConfigChanged renderTasks renderTasksCached
@@ -4545,7 +4551,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
                             // draw shadow cascade when not cached
                             let shouldDraw =
-                                match renderer.RenderPasses2.TryGetValue renderPass with
+                                match (renderer.RenderPasses2.TryGetValue renderPass : bool * RenderTasks) with
                                 | (true, renderTasksCached) ->
                                     if Option.contains (shadowCascadeBufferIndex + Constants.Render.ShadowTexturesMax) renderTasksCached.ShadowBufferIndexOpt then
                                         let upToDate = RenderTasks.shadowUpToDate renderer.LightShadowConfigChanged renderer.RendererConfigChanged renderTasks renderTasksCached
@@ -5863,6 +5869,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             if ssc <> 0 then ssc
                             else -order.CompareTo order2 } // order enabled stable sort
 
+        // create render passes, each starting with a normal pass
+        let renderPasses = OrderedDictionary<RenderPass, RenderTasks> HashIdentity.Structural
+        renderPasses.Add (NormalPass, RenderTasks.make ())
+        let renderPasses2 = OrderedDictionary<RenderPass, RenderTasks> HashIdentity.Structural
+        renderPasses2.Add (NormalPass, RenderTasks.make ())
+
         // make renderer
         let renderer =
             { GeometryViewport = geometryViewport
@@ -5906,8 +5918,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               ForwardSurfacesComparer = forwardSurfacesComparer
               ForwardSurfacesSortBuffer = List ()
               RenderPackages = dictPlus StringComparer.Ordinal []
-              RenderPasses = dictPlus HashIdentity.Structural [(NormalPass, RenderTasks.make ())]
-              RenderPasses2 = dictPlus HashIdentity.Structural [(NormalPass, RenderTasks.make ())]
+              RenderPasses = renderPasses
+              RenderPasses2 = renderPasses2
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
               ReloadAssetsRequested = false
