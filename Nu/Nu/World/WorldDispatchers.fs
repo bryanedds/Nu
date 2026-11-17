@@ -510,7 +510,7 @@ type SkyBoxDispatcher () =
     static member Facets =
         [typeof<SkyBoxFacet>]
 
-    override this.PresenceOverride (_, _) =
+    override this.PresenceOverride =
         ValueSome Omnipresent
 
 [<AutoOpen>]

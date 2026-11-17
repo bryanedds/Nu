@@ -259,11 +259,11 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let dispatcherOverride =
                 if not entityState.Absolute then
-                    match entityState.Dispatcher.PresenceOverride (entity, world) with
+                    match entityState.Dispatcher.PresenceOverride with
                     | ValueSome _ as override_ -> override_
                     | _ -> ValueNone
                 else ValueSome Omnipresent
-            let facetOverrides = Array.map (fun (facet : Facet) -> facet.PresenceOverride (entity, world)) entityState.Facets
+            let facetOverrides = Array.map (fun (facet : Facet) -> facet.PresenceOverride) entityState.Facets
             Presence.highestOverride2 dispatcherOverride facetOverrides
 
         static member internal getEntityModelProperty entity world =
