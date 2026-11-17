@@ -393,6 +393,22 @@ module BlockMap =
     let tryGetBlockColor block blockMap =
         Block.tryGetColor block blockMap.Palette_
 
+    /// Remove the palette style at the given index, keeping each block's style by shifting down the style indices
+    /// above it, and giving the blocks of the removed style the first style.
+    let removeStyle styleIndex blockMap =
+        let palette = Palette.removeStyle styleIndex blockMap.Palette_
+        let shiftStyleIndex index =
+            if index > styleIndex then dec index
+            elif index = styleIndex then 0
+            else index
+        let chunk =
+            { blockMap.Chunk_ with
+                Blocks = Map.map (fun _ block -> { block with StyleIndex = shiftStyleIndex block.StyleIndex }) blockMap.Chunk_.Blocks }
+        { blockMap with
+            Palette_ = palette
+            StyleIndex_ = shiftStyleIndex blockMap.StyleIndex_
+            Chunk_ = chunk }
+
     (* High-Level API *)
 
     let tryPickPositionI (ray : Ray3) blockMapPosition (blockMap : BlockMap) =
