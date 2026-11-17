@@ -667,7 +667,7 @@ type AetherBodyJoint =
 
 /// Allows users to create their own two-body Box2dNet physics joints.
 type Box2dNetBodyJoint =
-    { CreateBodyJoint : (single -> single) -> (Vector3 -> Box2D.NET.B2Vec2) -> Box2D.NET.B2BodyId -> Box2D.NET.B2BodyId -> Box2D.NET.B2WorldId -> Box2D.NET.B2JointId }
+    { CreateBodyJoint : Box2D.NET.B2BodyId -> Box2D.NET.B2BodyId -> Box2D.NET.B2WorldId -> Box2D.NET.B2JointId }
 
 /// Allows users to create their own two-body Jolt physics joints.
 type JoltBodyJoint =

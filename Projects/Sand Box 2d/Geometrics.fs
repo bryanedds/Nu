@@ -24,6 +24,9 @@ module Geometrics =
     /// Source-authored torque and angular impulse scale with the square of the authored-to-physics length conversion.
     let SourceTorqueScale = SourceToPhysicsScale * SourceToPhysicsScale
 
+    /// Source-authored torque on Box2D joints, which measure length in pixels.
+    let SourceJointTorqueScale = RaceCourseScale * RaceCourseScale
+
     /// Aether's source gravity (-10 source units/s^2), expressed in Nu pixel units.
     let SourceGravity = -10f * RaceCourseScale
 

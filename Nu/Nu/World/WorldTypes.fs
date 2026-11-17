@@ -406,6 +406,7 @@ and SnapshotType =
     | ClearBlocks
     | GenerateFromBlockMap
     | PaintBlocks
+    | RemoveBlockStyle
     | SynchronizeNav
     | SetEditMode of int
     | ReloadCode
@@ -448,6 +449,7 @@ and SnapshotType =
         | ClearBlocks -> (scstringMemo this).Spaced
         | GenerateFromBlockMap -> (scstringMemo this).Spaced
         | PaintBlocks -> (scstringMemo this).Spaced
+        | RemoveBlockStyle -> (scstringMemo this).Spaced
         | FreezeEntities -> (scstringMemo this).Spaced
         | ThawEntities -> (scstringMemo this).Spaced
         | Permafreeze -> (scstringMemo this).Spaced
