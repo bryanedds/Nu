@@ -1279,7 +1279,7 @@ module WorldImGui =
                     lighting3dEdited <- ImGui.SliderFloat ("Tone Map Saturation", &toneMapSaturation, 0.0f, 2.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 if toneMapType = ReinhardExtendedToneMap.Enumerate then
                     lighting3dEdited <- ImGui.SliderFloat ("Tone Map White Point", &toneMapWhitePoint, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                ImGui.Text "Color Grade"
+                ImGui.Text "Color Grading"
                 lighting3dEdited <- ImGui.SliderFloat ("Color Grade Strength", &colorGradeStrength, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 let (_, colorGradeLutEdited, colorGradeLut') = World.imGuiEditProperty "Color Grade Lut" typeof<Image AssetTag> colorGradeLut context world
                 if colorGradeLutEdited then
