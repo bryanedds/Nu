@@ -159,6 +159,11 @@ module Events =
     /// Raised when a key-value pair is changed in the world.
     let KeyedValueChangeEvent key = rtoa<KeyedValueChangeData> [|"KeyedValue"; key; "Change"; "Event"|]
 
+    /// Raised when a facet is about to be removed from an entity, with the facet's name as data. Raised while the
+    /// facet is still attached, so the facet's own handlers can still receive it. Not raised when the entity itself
+    /// is unregistered.
+    let FacetRemovingEvent = stoa<string> "Facet/Removing/Event"
+
     /// Raised when a screen is selected.
     let SelectEvent = stoa<unit> "Select/Event"
 

@@ -440,7 +440,8 @@ module WorldScreenModule =
                         [|for descriptor in descriptors do
                             match descriptor with
                             | Choice1Of3 _ ->
-                                // as the corners are ordered in Box3.Corners...
+                                // as the corners are ordered in Box3.Corners, wound so that each face's normal,
+                                // cross (v1 - v0, v2 - v0) as recast computes it, points outward...
                                 //
                                 //     6--------7
                                 //    /|       /|
@@ -455,12 +456,12 @@ module WorldScreenModule =
                                 yield offset + 2; yield offset + 7; yield offset + 4
                                 yield offset + 0; yield offset + 1; yield offset + 5 // left
                                 yield offset + 0; yield offset + 5; yield offset + 6
-                                yield offset + 4; yield offset + 5; yield offset + 6 // top
-                                yield offset + 4; yield offset + 6; yield offset + 7
-                                yield offset + 0; yield offset + 1; yield offset + 2 // bottom
-                                yield offset + 0; yield offset + 2; yield offset + 3
-                                yield offset + 0; yield offset + 3; yield offset + 7 // back
-                                yield offset + 0; yield offset + 7; yield offset + 6
+                                yield offset + 4; yield offset + 6; yield offset + 5 // top
+                                yield offset + 4; yield offset + 7; yield offset + 6
+                                yield offset + 0; yield offset + 2; yield offset + 1 // bottom
+                                yield offset + 0; yield offset + 3; yield offset + 2
+                                yield offset + 0; yield offset + 7; yield offset + 3 // back
+                                yield offset + 0; yield offset + 6; yield offset + 7
                                 yield offset + 1; yield offset + 2; yield offset + 4 // front
                                 yield offset + 1; yield offset + 4; yield offset + 5
                                 offset <- offset + 8
@@ -598,6 +599,8 @@ module WorldScreenModule =
             | None -> None
 
         /// A nav3d query that attempts to compute navigation information that results in following the given destination.
+        /// Returns the position reached by traveling moveSpeed along the path, and the first path point ahead of the
+        /// start position, which gives the direction in which to steer so that travel follows the path around corners.
         static member tryNav3dFollowQuery moveSpeed (startPosition : Vector3) (endPosition : Vector3) navConfig (navMesh : DtNavMesh) (query : DtNavMeshQuery) =
 
             // attempt to compute start position information
@@ -627,22 +630,30 @@ module WorldScreenModule =
                 while pathStatus = DtStatus.DT_IN_PROGRESS do
                     pathStatus <- navMeshTool.FindFollowPath (navMesh, query, startRef, endRef, startPosition, endPosition, filter, true, polys.AsSpan (), ref 0, path.AsSpan (), &pathCount)
                 if pathStatus = DtStatus.DT_SUCCESS && pathCount > 0 then
+
+                    // walk the path up to moveSpeed, each substep going from the previous path point to the next
                     let mutable pathIndex = 0
                     let mutable travel = 0.0f
-                    let mutable step = RcVec3f.Zero
+                    let mutable stepPosition = startPosition
                     while pathIndex < pathCount && travel < moveSpeed do
-                        let substep = path[pathIndex] - startPosition
-                        let substepTrunc =
-                            if travel + substep.Length () > moveSpeed then
-                                let travelOver = travel + substep.Length () - moveSpeed
-                                let travelDelta = substep.Length () - travelOver + 0.0001f
-                                RcVec3f.Normalize substep * travelDelta
-                            else substep
-                        travel <- travel + substepTrunc.Length ()
-                        step <- step + substepTrunc
-                        pathIndex <- inc pathIndex
-                    let stepPosition = startPosition + step
-                    Some (v3 stepPosition.X (stepPosition.Y - navConfig.CellHeight) stepPosition.Z)
+                        let substep = path[pathIndex] - stepPosition
+                        let substepLength = substep.Length ()
+                        if travel + substepLength > moveSpeed then
+                            stepPosition <- stepPosition + RcVec3f.Normalize substep * (moveSpeed - travel)
+                            travel <- moveSpeed
+                        else
+                            stepPosition <- path[pathIndex]
+                            travel <- travel + substepLength
+                            pathIndex <- inc pathIndex
+
+                    // find the first path point meaningfully ahead of the start position to steer toward
+                    let mutable steerIndex = 0
+                    while steerIndex < dec pathCount && (path[steerIndex] - startPosition).Length () < 0.01f do
+                        steerIndex <- inc steerIndex
+                    let steerPosition = path[steerIndex]
+                    Some
+                        struct (v3 stepPosition.X (stepPosition.Y - navConfig.CellHeight) stepPosition.Z,
+                                v3 steerPosition.X (steerPosition.Y - navConfig.CellHeight) steerPosition.Z)
                 else None
             else None
 
@@ -659,8 +670,11 @@ module WorldScreenModule =
                 let appliedAngle =
                     Math.Clamp (signedAngle, -turnSpeed * deltaTime, turnSpeed * deltaTime)
                 let newRotation =
-                    if abs signedAngle <= abs appliedAngle
-                    then Quaternion.CreateFromAxisAngle (v3Up, atan2 desiredForward.X desiredForward.Z + MathF.PI)
+                    if abs signedAngle <= abs appliedAngle then
+                        // NOTE: keeping the incoming rotation's sign since the constructed quaternion's sign
+                        // flips as its angle wraps through zero, even though q and -q are the same rotation.
+                        let snapRotation = Quaternion.CreateFromAxisAngle (v3Up, atan2 desiredForward.X desiredForward.Z + MathF.PI)
+                        if Quaternion.Dot (snapRotation, rotation) < 0.0f then -snapRotation else snapRotation
                     else rotation * Quaternion.CreateFromAxisAngle (v3Up, appliedAngle)
                 let angularVelocity =
                     v3 0.0f (appliedAngle / deltaTime) 0.0f
@@ -674,17 +688,22 @@ module WorldScreenModule =
             if  (Option.isNone distanceMinOpt || distance > distanceMinOpt.Value) &&
                 (Option.isNone distanceMaxOpt || distance <= distanceMaxOpt.Value) then
                 match World.tryQueryNav3d (World.tryNav3dFollowQuery moveSpeed position destination) screen world with
-                | Some (Some navPosition) ->
+                | Some (Some struct (stepPosition, steerPosition)) ->
                     // TODO: consider doing an offset physics ray cast to align navPosition with near
                     // ground. Additionally, consider removing the CellHeight offset in the above query so
                     // that we don't need to do an offset here at all.
-                    let navLinearVelocity = navPosition - position
-                    if navLinearVelocity.WithY(0.0f).Magnitude < 0.0001f then
+                    let stepDelta = stepPosition - position
+                    let steerDirection = (steerPosition - position).WithY 0.0f
+                    if stepDelta.WithY(0.0f).Magnitude < 0.0001f || steerDirection.Magnitude < 0.0001f then
                         let navDirection = destination - position
                         let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection world
                         { NavPosition = position; NavRotation = navRotation; NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
                     else
-                        let navPosition = Vector3.Lerp (position, navPosition, deltaTime)
+                        // NOTE: we steer toward the next path point rather than straight at the step position since
+                        // the straight line to a step position around a corner would cut across that corner.
+                        let navSpeed = stepDelta.WithY(0.0f).Magnitude
+                        let navLinearVelocity = steerDirection.Normalized * navSpeed + v3Up * stepDelta.Y
+                        let navPosition = position + navLinearVelocity * deltaTime
                         let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navLinearVelocity world
                         { NavPosition = navPosition; NavRotation = navRotation; NavLinearVelocity = navLinearVelocity; NavAngularVelocity = navAngularVelocity }
                 | _ ->

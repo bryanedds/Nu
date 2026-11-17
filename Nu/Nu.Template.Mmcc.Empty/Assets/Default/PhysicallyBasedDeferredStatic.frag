@@ -104,6 +104,13 @@ void main()
     vec3 normal = normalize(normal);
     vec3 tangent = normalize(tangent);
     vec3 binormal = -normalize(cross(normal, tangent));
+    if (!gl_FrontFacing)
+    {
+        // a back face is the other side of the same surface, so it faces the opposite way
+        normal = -normal;
+        tangent = -tangent;
+        binormal = -binormal;
+    }
     mat3 toWorld = mat3(tangent, binormal, normal);
 
     // compute albedo

@@ -7,6 +7,7 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.Threading
 open Prime
 
 /// Provides engine-specific value generation functionality.
@@ -154,15 +155,14 @@ module Gen =
         /// Generate a unique non-zero 32-bit id.
         /// Thread-safe.
         static member id32 =
-            lock Lock (fun () ->
-                if Id32 = UInt32.MaxValue then Log.fail "Overflowed Gen.Id32."
-                Id32 <- inc Id32
-                Id32)
+            let id = Interlocked.Increment &Id32
+            if id = 0u then Log.fail "Overflowed Gen.Id32."
+            id
 
         /// Generate a unique non-zero 64-bit id.
         /// Thread-safe.
         static member id64 =
-            lock Lock (fun () -> Id64 <- inc Id64; Id64)
+            Interlocked.Increment &Id64
 
         /// Derive a unique id and name if given none.
         /// Thread-safe.

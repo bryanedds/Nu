@@ -772,7 +772,7 @@ module WorldModule2 =
                 | _ -> ()
             if eventNamesLength >= 4 then
                 match eventNames[0] with
-                | "Change" ->
+                | "Change" when eventNames[1] <> Constants.Engine.FacetNamesPropertyName -> // facet names changes are always published
                     if eventNamesLength >= 7 then
                         let entityAddress = rtoa (Array.skip 3 eventNames)
                         let entity = Nu.Entity entityAddress

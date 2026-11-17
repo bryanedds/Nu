@@ -32,10 +32,12 @@ module ImGuizmo =
         let viewProjection = view * projection
         let segments = box.Segments
         for segment in segments do
-            for segment' in Math.TryUnionSegmentAndFrustum' (segment, eyeFrustum) do
+            match Math.TryUnionSegmentAndFrustum (segment, eyeFrustum) with
+            | Some segment' ->
                 let aInner = ImGui.Position3dToInner (windowPosition, windowSize, viewProjection, viewport, segment'.A)
                 let bInner = ImGui.Position3dToInner (windowPosition, windowSize, viewProjection, viewport, segment'.B)
                 drawList.AddLine (aInner, bInner, uint 0xFF00CFCF)
+            | None -> ()
 
         // manipulate centers
         let centers = box.FaceCenters

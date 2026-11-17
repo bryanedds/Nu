@@ -6491,7 +6491,7 @@ type PhysicallyBasedSceneClient () =
                                 let lightType =
                                     match light.LightType with
                                     | Assimp.LightSourceType.Spot -> SpotLight (radius, light.AngleInnerCone, light.AngleOuterCone)
-                                    | _ -> PointLight radius // default to point light
+                                    | _ -> PointLight (radius, None) // default to point light
                                 let physicallyBasedLight =
                                     { LightNames = names
                                       LightMatrixIsIdentity = lightMatrix.IsIdentity

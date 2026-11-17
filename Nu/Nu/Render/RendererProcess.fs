@@ -77,6 +77,9 @@ type RendererProcess =
         /// Enqueue a 3d rendering message.
         abstract EnqueueMessage3d : RenderMessage3d -> unit
 
+        /// Potential fast-path for rendering billboards.
+        abstract RenderBillboardFast : Matrix4x4 inref * bool * Presence * Box2 voption * bool * bool * Material * MaterialProperties * single * RenderType * RenderPass -> unit
+
         /// Potential fast-path for rendering static models.
         abstract RenderStaticModelFast : Matrix4x4 inref * bool * Presence * Box2 voption * Material * MaterialProperties * StaticModel AssetTag * RenderType * RenderPass -> unit
 
@@ -120,6 +123,7 @@ type RendererStub () =
         member rendererProcess.Start _ _ _ _ = ()
         member rendererProcess.TryGetImGuiTextureId _ = ValueNone
         member rendererProcess.EnqueueMessage3d _ = ()
+        member rendererProcess.RenderBillboardFast (_, _, _, _, _, _, _, _, _, _, _) = ()
         member rendererProcess.RenderStaticModelFast (_, _, _, _, _, _, _, _, _) = ()
         member rendererProcess.RenderStaticModelSurfaceFast (_, _, _, _, _, _, _, _, _, _) = ()
         member rendererProcess.RenderAnimatedModelFast (_, _, _, _, _, _, _, _, _, _, _, _) = ()
@@ -227,6 +231,11 @@ type RendererInline (windowProperties) =
         member ri.EnqueueMessage3d message =
             match dependenciesOpt with
             | Some _ -> messages3d.Add message 
+            | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
+
+        member ri.RenderBillboardFast (modelMatrix, castShadow, presence, insetOpt, orientUp, planar, material, materialProperties, shadowOffset, renderType, renderPass) =
+            match dependenciesOpt with
+            | Some _ -> messages3d.Add (RenderBillboard { ModelMatrix = modelMatrix; CastShadow = castShadow; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; OrientUp = orientUp; Planar = planar; Material = material; MaterialProperties = materialProperties; ShadowOffset = shadowOffset; RenderType = renderType; RenderPass = renderPass })
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member ri.RenderStaticModelFast (modelMatrix, castShadow, presence, insetOpt, material, materialProperties, staticModel, renderType, renderPass) =
@@ -354,6 +363,9 @@ type RendererThread (windowProperties) =
     let messageBuffersImGui = [|List (); List ()|]
     let assetTextureRequests = ConcurrentDictionary<AssetTag, unit> HashIdentity.Structural
     let assetTextureOpts = ConcurrentDictionary<AssetTag, uint32 voption> HashIdentity.Structural
+    let cachedBillboardMessagesLock = obj ()
+    let cachedBillboardMessages = System.Collections.Generic.Queue ()
+    let [<VolatileField>] mutable cachedBillboardMessagesCapacity = Constants.Render.BillboardMessagesPrealloc
     let cachedStaticModelMessagesLock = obj ()
     let cachedStaticModelMessages = System.Collections.Generic.Queue ()
     let [<VolatileField>] mutable cachedStaticModelMessagesCapacity = Constants.Render.StaticModelMessagesPrealloc
@@ -373,6 +385,35 @@ type RendererThread (windowProperties) =
     let mutable resolveTexture = Unchecked.defaultof<Texture>
     
     do Hl.setWindowProperties windowProperties
+
+    let allocBillboardMessage () =
+        lock cachedBillboardMessagesLock (fun () ->
+            if cachedBillboardMessages.Count = 0 then
+                for _ in 0 .. dec cachedBillboardMessagesCapacity do
+                    let billboardDescriptor =
+                        { CachedBillboardMatrix = Unchecked.defaultof<_>
+                          CachedBillboardCastShadow = Unchecked.defaultof<_>
+                          CachedBillboardPresence = Unchecked.defaultof<_>
+                          CachedBillboardInsetOpt = Unchecked.defaultof<_>
+                          CachedBillboardOrientUp = Unchecked.defaultof<_>
+                          CachedBillboardPlanar = Unchecked.defaultof<_>
+                          CachedBillboardMaterial = Unchecked.defaultof<_>
+                          CachedBillboardMaterialProperties = Unchecked.defaultof<_>
+                          CachedBillboardShadowOffset = Unchecked.defaultof<_>
+                          CachedBillboardRenderType = Unchecked.defaultof<_>
+                          CachedBillboardRenderPass = Unchecked.defaultof<_> }
+                    let cachedBillboardMessage = RenderCachedBillboard billboardDescriptor
+                    cachedBillboardMessages.Enqueue cachedBillboardMessage
+                cachedBillboardMessagesCapacity <- cachedBillboardMessagesCapacity * 2
+                cachedBillboardMessages.Dequeue ()
+            else cachedBillboardMessages.Dequeue ())
+
+    let freeBillboardMessages messages =
+        lock cachedBillboardMessagesLock (fun () ->
+            for message in messages do
+                match message with
+                | RenderCachedBillboard _ -> cachedBillboardMessages.Enqueue message
+                | _ -> ())
 
     let allocStaticModelMessage () =
         lock cachedStaticModelMessagesLock (fun () ->
@@ -584,6 +625,7 @@ type RendererThread (windowProperties) =
 
                 // render 3d, freeing allocated messaages after use
                 renderer3d.Render frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport windowViewport resolveTexture renderGeometry
+                freeBillboardMessages messages3d
                 freeStaticModelMessages messages3d
                 freeStaticModelSurfaceMessages messages3d
                 freeAnimatedModelMessages messages3d
@@ -682,6 +724,23 @@ type RendererThread (windowProperties) =
         member rt.EnqueueMessage3d message =
             if Option.isNone threadOpt then raise (InvalidOperationException "Renderer process not yet started or already terminated.")
             match message with
+            | RenderBillboard rb ->
+                let cachedBillboardMessage = allocBillboardMessage ()
+                match cachedBillboardMessage with
+                | RenderCachedBillboard cachedMessage ->
+                    cachedMessage.CachedBillboardMatrix <- rb.ModelMatrix
+                    cachedMessage.CachedBillboardCastShadow <- rb.CastShadow
+                    cachedMessage.CachedBillboardPresence <- rb.Presence
+                    cachedMessage.CachedBillboardInsetOpt <- ValueOption.ofOption rb.InsetOpt
+                    cachedMessage.CachedBillboardOrientUp <- rb.OrientUp
+                    cachedMessage.CachedBillboardPlanar <- rb.Planar
+                    cachedMessage.CachedBillboardMaterial <- rb.Material
+                    cachedMessage.CachedBillboardMaterialProperties <- rb.MaterialProperties
+                    cachedMessage.CachedBillboardShadowOffset <- rb.ShadowOffset
+                    cachedMessage.CachedBillboardRenderType <- rb.RenderType
+                    cachedMessage.CachedBillboardRenderPass <- rb.RenderPass
+                    messageBuffers3d[messageBufferIndex].Add cachedBillboardMessage
+                | _ -> failwithumf ()
             | RenderStaticModel rsm ->
                 let cachedStaticModelMessage = allocStaticModelMessage ()
                 match cachedStaticModelMessage with
@@ -725,6 +784,9 @@ type RendererThread (windowProperties) =
                     cachedMessage.CachedAnimatedModelMaterialProperties <- ram.MaterialProperties
                     cachedMessage.CachedAnimatedModelBoneTransforms <- ram.BoneTransforms
                     cachedMessage.CachedAnimatedModel <- ram.AnimatedModel
+                    cachedMessage.CachedAnimatedModelSubsortOffsets <- ram.SubsortOffsets
+                    cachedMessage.CachedAnimatedModelDualRenderedSurfaces <- ram.DualRenderedSurfaces
+                    cachedMessage.CachedAnimatedModelRenderType <- ram.RenderType
                     cachedMessage.CachedAnimatedModelRenderPass <- ram.RenderPass
                     messageBuffers3d[messageBufferIndex].Add cachedAnimatedModelMessage
                 | _ -> failwithumf ()
@@ -747,6 +809,25 @@ type RendererThread (windowProperties) =
                     messageBuffers3d[messageBufferIndex].Add cachedAnimatedModelSurfaceMessage
                 | _ -> failwithumf ()
             | _ -> messageBuffers3d[messageBufferIndex].Add message
+
+        member rt.RenderBillboardFast (modelMatrix, castShadow, presence, insetOpt, orientUp, planar, material, properties, shadowOffset, renderType, renderPass) =
+            if Option.isNone threadOpt then raise (InvalidOperationException "Renderer process not yet started or already terminated.")
+            let cachedBillboardMessage = allocBillboardMessage ()
+            match cachedBillboardMessage with
+            | RenderCachedBillboard cachedMessage ->
+                cachedMessage.CachedBillboardMatrix <- modelMatrix
+                cachedMessage.CachedBillboardCastShadow <- castShadow
+                cachedMessage.CachedBillboardPresence <- presence
+                cachedMessage.CachedBillboardInsetOpt <- insetOpt
+                cachedMessage.CachedBillboardOrientUp <- orientUp
+                cachedMessage.CachedBillboardPlanar <- planar
+                cachedMessage.CachedBillboardMaterial <- material
+                cachedMessage.CachedBillboardMaterialProperties <- properties
+                cachedMessage.CachedBillboardShadowOffset <- shadowOffset
+                cachedMessage.CachedBillboardRenderType <- renderType
+                cachedMessage.CachedBillboardRenderPass <- renderPass
+                messageBuffers3d[messageBufferIndex].Add cachedBillboardMessage
+            | _ -> failwithumf ()
 
         member rt.RenderStaticModelFast (modelMatrix, castShadow, presence, insetOpt, material, properties, staticModel, renderType, renderPass) =
             if Option.isNone threadOpt then raise (InvalidOperationException "Renderer process not yet started or already terminated.")
