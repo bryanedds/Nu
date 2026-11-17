@@ -24,6 +24,9 @@ module WorldModuleEntity =
     let mutable private EntityGetters = Unchecked.defaultof<FrozenDictionary<string, PropertyGetter>>
     let mutable private EntitySetters = Unchecked.defaultof<FrozenDictionary<string, PropertySetter>>
 
+    /// The address of the entity life cycle event.
+    let private EntityLifeCycleEventAddress = Events.LifeCycleEvent (nameof Entity) --> Nu.Game.Handle
+
     /// Entity change (publishing) count key.
     let internal EntityChangeCountsKey = string Gen.id
 
@@ -766,7 +769,7 @@ module WorldModuleEntity =
 
                 // publish life cycle event unconditionally
                 let eventTrace = EventTrace.debug "World" "setEntityMount" "" EventTrace.empty
-                World.publishPlus (MountOptChangeData (previous, value, entity)) (Events.LifeCycleEvent (nameof Entity) --> Nu.Game.Handle) eventTrace entity false false world
+                World.publishPlus (MountOptChangeData (previous, value, entity)) EntityLifeCycleEventAddress eventTrace entity false false world
                 true
 
             else false
@@ -2305,13 +2308,13 @@ module WorldModuleEntity =
             for eventAddress in eventAddresses do
                 World.publishPlus () eventAddress eventTrace entity false false world
             let eventTrace = EventTrace.debug "World" "registerEntity" "LifeCycle" EventTrace.empty
-            World.publishPlus (RegisterData entity) (Events.LifeCycleEvent (nameof Entity) --> Nu.Game.Handle) eventTrace entity false false world
+            World.publishPlus (RegisterData entity) EntityLifeCycleEventAddress eventTrace entity false false world
 
         static member internal unregisterEntity (entity : Entity) world =
 
             // publish related events
             let eventTrace = EventTrace.debug "World" "unregisterEntity" "LifeCycle" EventTrace.empty
-            World.publishPlus (UnregisteringData entity) (Events.LifeCycleEvent (nameof Entity) --> Nu.Game.Handle) eventTrace entity false false world
+            World.publishPlus (UnregisteringData entity) EntityLifeCycleEventAddress eventTrace entity false false world
             let eventTrace = EventTrace.debug "World" "unregister" "Unregistering" EventTrace.empty
             let eventAddresses = EventGraph.getEventAddresses1 (Events.UnregisteringEvent --> entity)
             for eventAddress in eventAddresses do
