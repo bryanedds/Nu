@@ -670,8 +670,11 @@ module WorldScreenModule =
                 let appliedAngle =
                     Math.Clamp (signedAngle, -turnSpeed * deltaTime, turnSpeed * deltaTime)
                 let newRotation =
-                    if abs signedAngle <= abs appliedAngle
-                    then Quaternion.CreateFromAxisAngle (v3Up, atan2 desiredForward.X desiredForward.Z + MathF.PI)
+                    if abs signedAngle <= abs appliedAngle then
+                        // NOTE: keeping the incoming rotation's sign since the constructed quaternion's sign
+                        // flips as its angle wraps through zero, even though q and -q are the same rotation.
+                        let snapRotation = Quaternion.CreateFromAxisAngle (v3Up, atan2 desiredForward.X desiredForward.Z + MathF.PI)
+                        if Quaternion.Dot (snapRotation, rotation) < 0.0f then -snapRotation else snapRotation
                     else rotation * Quaternion.CreateFromAxisAngle (v3Up, appliedAngle)
                 let angularVelocity =
                     v3 0.0f (appliedAngle / deltaTime) 0.0f

@@ -4200,11 +4200,15 @@ module TraversalInterpolatedFacetExtensions =
             if FQueue.notEmpty rotationHistory then
 
                 // interpolate rotation using time-weighted slerp between all pairs
+                // NOTE: q and -q describe the same rotation, so each one is first brought into the current rotation's
+                // hemisphere since summing midpoints of opposite signs would partially cancel them out.
                 let gameTime = if this.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
                 let history = rotationHistory |> FQueue.conj (gameTime, rotation)
+                let current = rotation
                 let (sum, totalTime, _) =
                     history |> FQueue.fold
                         (fun (sum, totalTime, prevOpt) (time, rotation) ->
+                            let rotation = if Quaternion.Dot (rotation, current) < 0.0f then -rotation else rotation
                             match prevOpt with
                             | ValueSome (previousTime, previousRotation) ->
                                 let deltaTime = time - previousTime
