@@ -2151,6 +2151,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         let expanded = ImGui.TreeNodeEx (treeNodeLabel, treeNodeFlags)
         if ShowSelectedEntity && SelectedEntities.Contains entity then
             ImGui.SetScrollHereY 0.5f
+        if  ImGui.IsItemFocused () &&
+            (ImGui.IsKeyPressed ImGuiKey.Enter || ImGui.IsKeyPressed ImGuiKey.KeypadEnter) &&
+            ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltUp () then
+            ViewportFocusRequested <- true // hand the keyboard back to the viewport after picking an entity
         if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
             let entities = if SelectedEntities.Contains entity then getSelectedEntityRoots false world else [entity]
             frameEntities entities world // the selection when it's among it
