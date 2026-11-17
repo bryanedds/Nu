@@ -839,10 +839,18 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         | (FreeMode, CaptureMode) -> ViewMode <- viewMode
         | (CaptureMode, FreeMode) -> ViewMode <- viewMode
 
+        // focus the viewport so that nothing stays input-focused, including after any window restoration
+        SelectedWindowOpt <- Some "Viewport"
+        ViewportFocusRequested <- true
+
     let private toggleViewMode viewMode world =
         if ViewMode = viewMode
         then setViewMode NormalMode world
         else setViewMode viewMode world
+
+    let private toggleOverlayMode () =
+        OverlayMode <- not OverlayMode
+        ViewportFocusRequested <- true // focus the viewport so that nothing stays input-focused
 
     let private tryUndo (world : World) =
         if  not (World.getImperative world) &&
@@ -2064,7 +2072,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             elif ImGui.IsKeyPressed ImGuiKey.F8 then ReloadAssetsRequested <- 1
             elif ImGui.IsKeyPressed ImGuiKey.F9 && ImGui.IsShiftUp () then ReloadCodeRequested <- (false, 1)
             elif ImGui.IsKeyPressed ImGuiKey.F9 && ImGui.IsShiftDown () then ReloadCodeRequested <- (true, 1)
-            elif ImGui.IsKeyPressed ImGuiKey.F10 then OverlayMode <- not OverlayMode
+            elif ImGui.IsKeyPressed ImGuiKey.F10 then toggleOverlayMode ()
             elif ImGui.IsKeyPressed ImGuiKey.F11 then toggleViewMode FreeMode world
             elif ImGui.IsKeyPressed ImGuiKey.F12 then toggleViewMode CaptureMode world
             elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then World.tryToggleWindowFullScreen world
@@ -3074,9 +3082,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.SameLine ()
             ImGui.Text "Overlay Mode"
             ImGui.SameLine ()
-            ImGui.Checkbox ("##overlayMode", &OverlayMode) |> ignore<bool>
+            let mutable overlayMode = OverlayMode
+            if ImGui.Checkbox ("##overlayMode", &overlayMode) then toggleOverlayMode ()
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                ImGui.Text "Toggle overlay mode (F12 to toggle)."
+                ImGui.Text "Toggle overlay mode (F10 to toggle)."
                 ImGui.EndTooltip ()
 
             // free mode
@@ -3096,9 +3105,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.SameLine ()
             let mutable captureMode = ViewMode.IsCaptureMode
             if ImGui.Checkbox ("##captureMode", &captureMode) then
-                setViewMode (if captureMode then FreeMode else NormalMode) world
+                setViewMode (if captureMode then CaptureMode else NormalMode) world
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                ImGui.Text "Toggle capture mode view (F10 to toggle)."
+                ImGui.Text "Toggle capture mode view (F12 to toggle)."
                 ImGui.EndTooltip ()
 
         ImGui.End ()
