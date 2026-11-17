@@ -926,6 +926,60 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             physicsEngine.PhysicsContext.OptimizeBroadPhase ()
             physicsEngine.BodyUnoptimizedCreationCount <- 0
 
+    /// Get a wheel's world transform, mapping the given wheel model right and up vectors to the wheel's axle and up.
+    /// NOTE: JoltPhysicsSharp returns this matrix in column-vector form (translation in M14, M24 and M34), so we
+    /// transpose it to System.Numerics' row-vector form.
+    static member private getWheelWorldTransform (vehicleConstraint : VehicleConstraint) wheelIndex wheelModelRight wheelModelUp =
+        let mutable wheelModelRight = wheelModelRight
+        let mutable wheelModelUp = wheelModelUp
+        Matrix4x4.Transpose (vehicleConstraint.GetWheelWorldTransform (wheelIndex, &wheelModelRight, &wheelModelUp))
+
+    static member private renderVehicleWheels (renderer : JoltPhysicsEngineRenderContext) distanceMaxSquared physicsEngine =
+        let debugRenderer = renderer.DebugRenderer
+        let contactColor = JoltColor (0, 255, 0, 255)
+        let airborneColor = JoltColor (255, 0, 0, 255)
+        let contactPointColor = JoltColor (255, 255, 0, 255)
+        let rimSegments = 16
+        for vehicleConstraint in physicsEngine.VehicleConstraints.Values do
+            let vehicleCenter = vehicleConstraint.VehicleBody.WorldSpaceBounds.Center
+            let vehicleDistanceSquared = (vehicleCenter - renderer.EyeCenter).MagnitudeSquared
+            if  vehicleDistanceSquared < distanceMaxSquared &&
+                renderer.EyeFrustum.Contains vehicleCenter <> ContainmentType.Disjoint then
+                for i in 0 .. dec vehicleConstraint.WheelsCount do
+
+                    // compute wheel transform such that local x is the axle and the wheel spins in local yz
+                    let wheel = vehicleConstraint.GetWheel i
+                    let radius = wheel.Settings.Radius
+                    let halfWidth = wheel.Settings.Width * 0.5f
+                    let wheelTransform = JoltPhysicsEngine.getWheelWorldTransform vehicleConstraint i v3Right v3Up
+                    let rimPoint side j =
+                        let angle = single j / single rimSegments * MathF.TWO_PI
+                        (v3 side (cos angle * radius) (sin angle * radius)).Transform wheelTransform
+
+                    // draw rims, treads (which show spin and steering), and axle, colored by ground contact
+                    let color = if wheel.HasContact then contactColor else airborneColor
+                    for side in [|-halfWidth; halfWidth|] do
+                        for j in 0 .. dec rimSegments do
+                            let start = rimPoint side j
+                            let stop = rimPoint side (inc j)
+                            debugRenderer.DrawLine (&start, &stop, color)
+                    for j in 0 .. rimSegments / 4 .. dec rimSegments do
+                        let start = rimPoint -halfWidth j
+                        let stop = rimPoint halfWidth j
+                        debugRenderer.DrawLine (&start, &stop, color)
+                    let axleStart = (v3 -halfWidth 0.0f 0.0f).Transform wheelTransform
+                    let axleStop = (v3 halfWidth 0.0f 0.0f).Transform wheelTransform
+                    debugRenderer.DrawLine (&axleStart, &axleStop, color)
+
+                    // draw contact point
+                    if wheel.HasContact then
+                        let contactPosition = wheel.ContactPosition
+                        let markerHalfSize = radius * 0.25f
+                        for axis in [|v3Right; v3Up; v3Forward|] do
+                            let start = contactPosition - axis * markerHalfSize
+                            let stop = contactPosition + axis * markerHalfSize
+                            debugRenderer.DrawLine (&start, &stop, contactPointColor)
+
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
 
         // attempt to create body
@@ -1533,15 +1587,13 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
 
         member physicsEngine.GetBodyWheelModelMatrix (wheelModelRight, wheelModelUp, wheelIndex, bodyId) =
             match physicsEngine.VehicleConstraints.TryGetValue bodyId with
-            | (true, vehicleConstraint) when wheelIndex >= 0 && vehicleConstraint.WheelsCount >= wheelIndex ->
-                let mutable wheelModelRight = wheelModelRight
-                let mutable wheelModelUp = wheelModelUp
-                vehicleConstraint.GetWheelWorldTransform (wheelIndex, &wheelModelRight, &wheelModelUp)
+            | (true, vehicleConstraint) when wheelIndex >= 0 && wheelIndex < vehicleConstraint.WheelsCount ->
+                JoltPhysicsEngine.getWheelWorldTransform vehicleConstraint wheelIndex wheelModelRight wheelModelUp
             | (_, _) -> m4Identity
 
         member physicsEngine.GetBodyWheelAngularVelocity (wheelIndex, bodyId) =
             match physicsEngine.VehicleConstraints.TryGetValue bodyId with
-            | (true, vehicleConstraint) when wheelIndex >= 0 && vehicleConstraint.WheelsCount >= wheelIndex ->
+            | (true, vehicleConstraint) when wheelIndex >= 0 && wheelIndex < vehicleConstraint.WheelsCount ->
                 let wheel = vehicleConstraint.GetWheel<WheelWV> wheelIndex
                 wheel.AngularVelocity
             | (_, _) -> 0.0f
@@ -1750,6 +1802,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                 renderer.DebugRenderer.SetCameraPosition &eyeCenter
                 let drawSettings = renderer.DrawSettings
                 physicsEngine.PhysicsContext.DrawBodies (&drawSettings, renderer.DebugRenderer, drawBodyFilter)
+                JoltPhysicsEngine.renderVehicleWheels renderer distanceMaxSquared physicsEngine
             | _ -> ()
 
         member physicsEngine.ClearInternal () =

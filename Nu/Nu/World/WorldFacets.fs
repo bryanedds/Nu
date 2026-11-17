@@ -1634,7 +1634,12 @@ type RigidBodyFacet () =
         match (op, entity.GetBodyType world) with
         | (ViewportOverlay _, Vehicle) ->
             let bodyId = entity.GetBodyId world
-            for i in 0 .. dec 4 do
+            let wheelsCount =
+                match entity.GetVehicleProperties world with
+                | VehiclePropertiesJolt properties -> properties.VehicleWheels.Length
+                | VehiclePropertiesAbsent -> WheeledVehicleProperties.defaultProperties.VehicleWheels.Length
+                | VehiclePropertiesBox2d -> 0
+            for i in 0 .. dec wheelsCount do
                 let wheelModelMatrix = World.getBodyWheelModelMatrix v3Right v3Up i bodyId world
                 World.imGuiCircle3d wheelModelMatrix.Translation 5.0f false Color.Yellow world
         | (_, _) -> ()
