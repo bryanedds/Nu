@@ -27,6 +27,17 @@ module WorldModuleEntity =
     /// Entity change (publishing) count key.
     let internal EntityChangeCountsKey = string Gen.id
 
+    /// The special change events a property's change also publishes - 1 for BodyPropertiesAffecting and 2 for
+    /// LayoutPropertiesAffecting.
+    /// OPTIMIZATION: one lookup for both property sets.
+    let private PropertiesAffectingFlags =
+        let flags = Dictionary<string, int> StringComparer.Ordinal
+        for propertyName in Constants.Physics.BodyPropertyAffectingPropertyNames do
+            flags[propertyName] <- 1
+        for propertyName in Constants.Gui.LayoutPropertyAffectingPropertyNames do
+            flags[propertyName] <- (match flags.TryGetValue propertyName with (true, flag) -> flag | (false, _) -> 0) ||| 2
+        flags.ToFrozenDictionary StringComparer.Ordinal
+
     // OPTIMIZATION: avoids closure allocation in tight-loop.
     // NOTE: this key only works in a functional context because it relies on the SUMap's reference changing upon entry
     // changes, which is optimized away in an imperative context.
@@ -169,12 +180,19 @@ module WorldModuleEntity =
             if publishChangeEvents then
                 let changeData = { Name = propertyName; Previous = previousValue; Value = propertyValue }
                 let entityNames = Address.getNames entity.EntityAddress
-                // OPTIMIZATION: this works together with RigidBodyFacet to reduce the bookkeeping footprint of its
-                // subscriptions. This does have some run-time performance cost associated with it, however.
-                if Constants.Physics.BodyPropertyAffectingPropertyNames.Contains propertyName then
-                    let changeEventAddress = rtoa<ChangeData> (Array.append [|Constants.Lens.ChangeName; "BodyPropertiesAffecting"; Constants.Lens.EventName|] entityNames)
-                    let eventTrace = EventTrace.debug "World" "publishEntityChange" "BodyPropertiesAffecting" EventTrace.empty
-                    World.publishPlus changeData changeEventAddress eventTrace entity false false world
+                // OPTIMIZATION: this works together with RigidBodyFacet and LayoutFacet to reduce the bookkeeping
+                // footprint of their subscriptions. This does have some run-time performance cost associated with it,
+                // however.
+                let mutable flags = 0
+                if PropertiesAffectingFlags.TryGetValue (propertyName, &flags) then
+                    if flags &&& 1 <> 0 then
+                        let changeEventAddress = rtoa<ChangeData> (Array.append [|Constants.Lens.ChangeName; "BodyPropertiesAffecting"; Constants.Lens.EventName|] entityNames)
+                        let eventTrace = EventTrace.debug "World" "publishEntityChange" "BodyPropertiesAffecting" EventTrace.empty
+                        World.publishPlus changeData changeEventAddress eventTrace entity false false world
+                    if flags &&& 2 <> 0 then
+                        let changeEventAddress = rtoa<ChangeData> (Array.append [|Constants.Lens.ChangeName; "LayoutPropertiesAffecting"; Constants.Lens.EventName|] entityNames)
+                        let eventTrace = EventTrace.debug "World" "publishEntityChange" "LayoutPropertiesAffecting" EventTrace.empty
+                        World.publishPlus changeData changeEventAddress eventTrace entity false false world
                 let changeEventAddress = rtoa<ChangeData> (Array.append [|Constants.Lens.ChangeName; propertyName; Constants.Lens.EventName|] entityNames)
                 let eventTrace = EventTrace.debug "World" "publishEntityChange" "" EventTrace.empty
                 World.publishPlus changeData changeEventAddress eventTrace entity false false world

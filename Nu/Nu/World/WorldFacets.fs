@@ -1523,21 +1523,11 @@ type RigidBodyFacet () =
         Cascade
 
     static let unsubscribePhysicsPropagation (entity : Entity) world =
-        World.unsubscribe4 (nameof propagatePhysicsCenter) (entity.ChangeEvent (nameof entity.Transform)) entity world
-        World.unsubscribe4 (nameof propagatePhysicsRotation) (entity.ChangeEvent (nameof entity.Rotation)) entity world
-        World.unsubscribe4 (nameof propagatePhysicsLinearVelocity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world
-        World.unsubscribe4 (nameof propagatePhysicsAngularVelocity) (entity.ChangeEvent (nameof entity.AngularVelocity)) entity world
-        World.unsubscribe4 (nameof propagatePhysicsAffected) (entity.ChangeEvent "BodyPropertiesAffecting") entity world
-
-    static let handleFacetNamesChange (evt : Event<ChangeData, Entity>) (world : World) =
-        if  Set.contains (nameof RigidBodyFacet) (evt.Data.Previous :?> string Set) &&
-            not (Set.contains (nameof RigidBodyFacet) (evt.Data.Value :?> string Set)) then
-            unsubscribePhysicsPropagation evt.Subscriber world
-        Cascade
-
-    static let handleUnregistering (evt : Event<unit, Entity>) (world : World) =
-        unsubscribePhysicsPropagation evt.Subscriber world
-        Cascade
+        World.unsubscribeFacet5 (nameof propagatePhysicsCenter) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof RigidBodyFacet) world
+        World.unsubscribeFacet5 (nameof propagatePhysicsRotation) (entity.ChangeEvent (nameof entity.Rotation)) entity (nameof RigidBodyFacet) world
+        World.unsubscribeFacet5 (nameof propagatePhysicsLinearVelocity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity (nameof RigidBodyFacet) world
+        World.unsubscribeFacet5 (nameof propagatePhysicsAngularVelocity) (entity.ChangeEvent (nameof entity.AngularVelocity)) entity (nameof RigidBodyFacet) world
+        World.unsubscribeFacet5 (nameof propagatePhysicsAffected) (entity.ChangeEvent "BodyPropertiesAffecting") entity (nameof RigidBodyFacet) world
 
     static member Properties =
         [define Entity.BodyEnabled true
@@ -1569,16 +1559,18 @@ type RigidBodyFacet () =
 
     override this.Register (entity, world) =
 
-        // OPTIMIZATION: using manual unsubscription in order to use less live objects for subscriptions.
+        // OPTIMIZATION: using manual unsubscription (in Unregister, which also runs when the facet is removed) in
+        // order to use less live objects for subscriptions.
         // OPTIMIZATION: using special BodyPropertiesAffecting change event to reduce subscription count.
         World.subscribeFacetPlus Gen.id64 (nameof propagatePhysicsCenter) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof RigidBodyFacet) world |> ignore
         World.subscribeFacetPlus Gen.id64 (nameof propagatePhysicsRotation) (entity.ChangeEvent (nameof entity.Rotation)) entity (nameof RigidBodyFacet) world |> ignore
         World.subscribeFacetPlus Gen.id64 (nameof propagatePhysicsLinearVelocity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity (nameof RigidBodyFacet) world |> ignore
         World.subscribeFacetPlus Gen.id64 (nameof propagatePhysicsAngularVelocity) (entity.ChangeEvent (nameof entity.AngularVelocity)) entity (nameof RigidBodyFacet) world |> ignore
         World.subscribeFacetPlus Gen.id64 (nameof propagatePhysicsAffected) (entity.ChangeEvent "BodyPropertiesAffecting") entity (nameof RigidBodyFacet) world |> ignore
-        World.sense (nameof handleFacetNamesChange) entity.FacetNames.ChangeEvent entity (nameof RigidBodyFacet) world
-        World.sense (nameof handleUnregistering) entity.UnregisteringEvent entity (nameof RigidBodyFacet) world
         entity.SetAwakeTimeStamp world.UpdateTime world
+
+    override this.Unregister (entity, world) =
+        unsubscribePhysicsPropagation entity world
 
     override this.RegisterPhysics (entity, world) =
         let frozen = entity.GetBodyFrozen world
@@ -2662,16 +2654,19 @@ type LayoutFacet () =
         performLayout entity world
         Cascade
 
-    static let handleLayoutPlus (evt : Event<ChangeData, Entity>) (world : World) =
+    static let handleLayoutPropertiesAffecting (evt : Event<ChangeData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
-        performLayoutPlus entity world
+        let propertyName = evt.Data.Name
+        if propertyName = nameof Entity.Size || propertyName = nameof Entity.LayoutOrder
+        then performLayoutPlus entity world
+        else performLayout entity world
         Cascade
 
     static let unsubscribeMounterChanges (entity : Entity) (mounter : Entity) world =
-        World.unsubscribe4 (nameof handleLayout) (Entity.Order.ChangeEvent --> mounter) entity world
-        World.unsubscribe4 (nameof handleLayout) (Entity.LayoutOrder.ChangeEvent --> mounter) entity world
-        World.unsubscribe4 (nameof handleLayout) (Entity.DockType.ChangeEvent --> mounter) entity world
-        World.unsubscribe4 (nameof handleLayout) (Entity.GridPosition.ChangeEvent --> mounter) entity world
+        World.unsubscribeFacet5 (nameof handleLayout) (Entity.Order.ChangeEvent --> mounter) entity (nameof LayoutFacet) world
+        World.unsubscribeFacet5 (nameof handleLayout) (Entity.LayoutOrder.ChangeEvent --> mounter) entity (nameof LayoutFacet) world
+        World.unsubscribeFacet5 (nameof handleLayout) (Entity.DockType.ChangeEvent --> mounter) entity (nameof LayoutFacet) world
+        World.unsubscribeFacet5 (nameof handleLayout) (Entity.GridPosition.ChangeEvent --> mounter) entity (nameof LayoutFacet) world
 
     static let unsubscribeMountersChanges (entity : Entity) world =
         for mounter in World.getEntityMounters entity world do
@@ -2698,15 +2693,11 @@ type LayoutFacet () =
         performLayout entity world
         Cascade
 
-    static let handleFacetNamesChange (evt : Event<ChangeData, Entity>) (world : World) =
-        if  Set.contains (nameof LayoutFacet) (evt.Data.Previous :?> string Set) &&
-            not (Set.contains (nameof LayoutFacet) (evt.Data.Value :?> string Set)) then
-            unsubscribeMountersChanges evt.Subscriber world
-        Cascade
-
-    static let handleUnregistering (evt : Event<unit, Entity>) (world : World) =
-        unsubscribeMountersChanges evt.Subscriber world
-        Cascade
+    static let unsubscribeLayout (entity : Entity) world =
+        unsubscribeMountersChanges entity world
+        World.unsubscribeFacet5 (nameof handleMount) entity.MountEvent entity (nameof LayoutFacet) world
+        World.unsubscribeFacet5 (nameof handleUnmount) entity.UnmountEvent entity (nameof LayoutFacet) world
+        World.unsubscribeFacet5 (nameof handleLayoutPropertiesAffecting) (entity.ChangeEvent "LayoutPropertiesAffecting") entity (nameof LayoutFacet) world
 
     static member Properties =
         [define Entity.Layout Manual
@@ -2716,16 +2707,17 @@ type LayoutFacet () =
          define Entity.GridPosition v2iZero]
 
     override this.Register (entity, world) =
+
+        // OPTIMIZATION: using manual unsubscription (in Unregister, which also runs when the facet is removed) in
+        // order to use less live objects for subscriptions.
+        // OPTIMIZATION: using special LayoutPropertiesAffecting change event to reduce subscription count.
         performLayout entity world
-        World.sense (nameof handleMount) entity.MountEvent entity (nameof LayoutFacet) world
-        World.sense (nameof handleUnmount) entity.UnmountEvent entity (nameof LayoutFacet) world
-        World.sense (nameof handleFacetNamesChange) entity.FacetNames.ChangeEvent entity (nameof LayoutFacet) world
-        World.sense (nameof handleUnregistering) entity.UnregisteringEvent entity (nameof LayoutFacet) world
-        World.sense (nameof handleLayoutPlus) entity.Size.ChangeEvent entity (nameof LayoutFacet) world
-        World.sense (nameof handleLayout) entity.Perimeter.ChangeEvent entity (nameof LayoutFacet) world
-        World.sense (nameof handleLayout) entity.Layout.ChangeEvent entity (nameof LayoutFacet) world
-        World.sense (nameof handleLayout) entity.LayoutMargin.ChangeEvent entity (nameof LayoutFacet) world
-        World.sense (nameof handleLayoutPlus) entity.LayoutOrder.ChangeEvent entity (nameof LayoutFacet) world
+        World.subscribeFacetPlus Gen.id64 (nameof handleMount) entity.MountEvent entity (nameof LayoutFacet) world |> ignore
+        World.subscribeFacetPlus Gen.id64 (nameof handleUnmount) entity.UnmountEvent entity (nameof LayoutFacet) world |> ignore
+        World.subscribeFacetPlus Gen.id64 (nameof handleLayoutPropertiesAffecting) (entity.ChangeEvent "LayoutPropertiesAffecting") entity (nameof LayoutFacet) world |> ignore
+
+    override this.Unregister (entity, world) =
+        unsubscribeLayout entity world
 
 [<AutoOpen>]
 module SkyBoxFacetExtensions =
@@ -2867,25 +2859,15 @@ type LightProbeFacet () =
     static let unsubscribeMount (entity : Entity) (mountOpt : Entity Address option) world =
         match Option.bind (flip tryResolve entity) mountOpt with
         | Some (mount : Entity) ->
-            World.unsubscribe4 (nameof handleMountPositionChange) mount.Position.ChangeEvent entity world
-            World.unsubscribe4 (nameof handleMountRotationChange) mount.Rotation.ChangeEvent entity world
-            World.unsubscribe4 (nameof handleMountScaleChange) mount.Scale.ChangeEvent entity world
+            World.unsubscribeFacet5 (nameof handleMountPositionChange) mount.Position.ChangeEvent entity (nameof LightProbeFacet) world
+            World.unsubscribeFacet5 (nameof handleMountRotationChange) mount.Rotation.ChangeEvent entity (nameof LightProbeFacet) world
+            World.unsubscribeFacet5 (nameof handleMountScaleChange) mount.Scale.ChangeEvent entity (nameof LightProbeFacet) world
         | None -> ()
 
     static let handleMountOptChange (evt : Event<ChangeData, Entity>) world =
         let entity = evt.Subscriber
         unsubscribeMount entity (evt.Data.Previous :?> Entity Address option) world
         subscribeMount entity (evt.Data.Value :?> Entity Address option) world
-        Cascade
-
-    static let handleFacetNamesChange (evt : Event<ChangeData, Entity>) world =
-        if  Set.contains (nameof LightProbeFacet) (evt.Data.Previous :?> string Set) &&
-            not (Set.contains (nameof LightProbeFacet) (evt.Data.Value :?> string Set)) then
-            unsubscribeMount evt.Subscriber (evt.Subscriber.GetMountOpt world) world
-        Cascade
-
-    static let handleUnregistering (evt : Event<unit, Entity>) world =
-        unsubscribeMount evt.Subscriber (evt.Subscriber.GetMountOpt world) world
         Cascade
 
     static member Properties =
@@ -2906,10 +2888,11 @@ type LightProbeFacet () =
         World.sense (nameof handleProbeStaleChange) entity.ProbeStale.ChangeEvent entity (nameof LightProbeFacet) world
         World.sense (nameof handlePositionChange) entity.Position.ChangeEvent entity (nameof LightProbeFacet) world
         World.sense (nameof handleMountOptChange) entity.MountOpt.ChangeEvent entity (nameof LightProbeFacet) world
-        World.sense (nameof handleFacetNamesChange) entity.FacetNames.ChangeEvent entity (nameof LightProbeFacet) world
-        World.sense (nameof handleUnregistering) entity.UnregisteringEvent entity (nameof LightProbeFacet) world
-        subscribeMount entity (entity.GetMountOpt world) world
+        subscribeMount entity (entity.GetMountOpt world) world // NOTE: unsubscribed in Unregister.
         entity.SetProbeStale true world
+
+    override this.Unregister (entity, world) =
+        unsubscribeMount entity (entity.GetMountOpt world) world
 
     override this.Render (renderPass, entity, world) =
         let id = entity.GetId world
@@ -4386,7 +4369,7 @@ type NavBodyFacet () =
         World.subscribeFacetPlus Gen.id64 (nameof handlePropagateNavBody) (entity.ChangeEvent (nameof entity.Bounds)) entity (nameof NavBodyFacet) world |> ignore
 
     static let unsubscribeBoundsChange (entity : Entity) world =
-        World.unsubscribe4 (nameof handlePropagateNavBody) (entity.ChangeEvent (nameof entity.Bounds)) entity world
+        World.unsubscribeFacet5 (nameof handlePropagateNavBody) (entity.ChangeEvent (nameof entity.Bounds)) entity (nameof NavBodyFacet) world
 
     static let handleNavShapeChange (evt : Event<ChangeData, Entity>) (world : World) =
         let entity = evt.Subscriber
@@ -4408,30 +4391,18 @@ type NavBodyFacet () =
         propagateNavBody entity world
         Cascade
 
-    static let handleFacetNamesChange (evt : Event<ChangeData, Entity>) (world : World) =
-        if  Set.contains (nameof NavBodyFacet) (evt.Data.Previous :?> string Set) &&
-            not (Set.contains (nameof NavBodyFacet) (evt.Data.Value :?> string Set)) then
-            unsubscribeBoundsChange evt.Subscriber world
-        Cascade
-
-    static let handleUnregistering (evt : Event<unit, Entity>) (world : World) =
-        unsubscribeBoundsChange evt.Subscriber world
-        Cascade
-
     static member Properties =
         [define Entity.NavShape ContourNavShape
          define Entity.NavEnabled true]
 
     override this.Register (entity, world) =
 
-        // OPTIMIZATION: conditionally subscribe to bounds change event.
+        // OPTIMIZATION: conditionally subscribe to bounds change event (unsubscribed in Unregister).
         match entity.GetNavShape world with
         | EmptyNavShape -> ()
         | _ -> subscribeBoundsChange entity world
         World.sense (nameof handleNavShapeChange) (entity.ChangeEvent (nameof entity.NavShape)) entity (nameof NavBodyFacet) world
         World.sense (nameof handleNavEnabledChange) (entity.ChangeEvent (nameof entity.NavEnabled)) entity (nameof NavBodyFacet) world
-        World.sense (nameof handleFacetNamesChange) entity.FacetNames.ChangeEvent entity (nameof NavBodyFacet) world
-        World.sense (nameof handleUnregistering) entity.UnregisteringEvent entity (nameof NavBodyFacet) world
 
         // unconditional registration behavior
         World.sense (nameof handlePropagateNavBody) (entity.ChangeEvent (nameof entity.StaticModel)) entity (nameof NavBodyFacet) world
@@ -4440,6 +4411,7 @@ type NavBodyFacet () =
         propagateNavBody entity world
 
     override this.Unregister (entity, world) =
+        unsubscribeBoundsChange entity world
         let navId = { NavIndex = -1; NavEntity = entity }
         if entity.GetIs2d world
         then () // TODO: implement for 2d navigation when it's available.

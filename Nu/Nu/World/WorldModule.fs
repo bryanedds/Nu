@@ -1107,6 +1107,29 @@ module WorldModule =
                     World.unsubscribe subscriptionId world
             | None -> ()
 
+        /// Unsubscribe the given entity's facet's handler of the given name from an event. Unlike unsubscribe4, this
+        /// leaves alone any same-named handler of another of the entity's facets.
+        static member internal unsubscribeFacet5<'a>
+            (handlerName : string)
+            (eventAddress : 'a Address)
+            (entity : Entity)
+            (facetName : string)
+            (world : World) =
+            match UMap.tryFind (atooa eventAddress) (World.getSubscriptions world) with
+            | Some subscriptionEntries ->
+                let subscriber = entity :> Simulant
+                let subscriptionIds =
+                    [for (subscriptionId, subscriptionEntry) in OMap.toSeq subscriptionEntries do
+                        match subscriptionEntry.SubscriptionCallback with
+                        | NamedCallback named when
+                            named.HandlerName = handlerName &&
+                            named.FacetNameOpt = ValueSome facetName &&
+                            subscriptionEntry.SubscriptionSubscriber = subscriber -> subscriptionId
+                        | _ -> ()]
+                for subscriptionId in subscriptionIds do
+                    World.unsubscribe subscriptionId world
+            | None -> ()
+
         static member internal subscribeFacetPlus<'a>
             (subscriptionId : uint64)
             (handlerName : string)
