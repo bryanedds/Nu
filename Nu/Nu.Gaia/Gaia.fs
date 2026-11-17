@@ -2866,7 +2866,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private imGuiMainMenuWindow (world : World) =
         
         // menu window
-        if ImGui.Begin ("Gaia", ImGuiWindowFlags.MenuBar) then
+        if ImGui.Begin ("Gaia", ImGuiWindowFlags.MenuBar ||| ImGuiWindowFlags.NoNavInputs) then
             
             // menu bar
             if ImGui.BeginMenuBar () then
@@ -3227,7 +3227,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         let windowName = "Timeline"
         if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
-            if ImGui.BeginListBox ("##history", v2 -1.0f -1.0f) then
+            if ImGui.BeginChild ("##history", v2 -1.0f -1.0f, ImGuiChildFlags.FrameStyle, ImGuiWindowFlags.NoNavInputs) then
                 for (snapshotType, _) in List.rev Pasts do
                     let snapshotLabel = snapshotType.Label
                     ImGui.Text snapshotLabel
@@ -3244,7 +3244,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                         ImGui.Text snapshotLabel
                         ImGui.EndTooltip ()
-                ImGui.EndListBox ()
+            ImGui.EndChild ()
         ImGui.End ()
 
     let private imGuiGamePropertiesWindow world =
@@ -3289,7 +3289,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     entity.Name.ToLowerInvariant().Contains (PropagationSourcesSearchStr.ToLowerInvariant ()))
                 |> Seq.filter (fun entity -> entity.GetProtection world = Unprotected)
                 |> hashSetPlus HashIdentity.Structural
-            ImGui.BeginChild "Container" |> ignore<bool>
+            ImGui.BeginChild ("Container", v2Zero, ImGuiChildFlags.None, ImGuiWindowFlags.NoNavInputs) |> ignore<bool>
             let selectionSize = if Seq.exists SelectedEntities.Contains propagationSources then 1 else 0
             let multiSelectIo = ImGui.BeginMultiSelect (ImGuiMultiSelectFlags.SingleSelect, selectionSize, -1)
             applyPropagationSourcesSelectionRequests multiSelectIo world // NOTE: resolves against last frame's items.
@@ -3688,7 +3688,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             if enter then InteractiveInputStr <- ""
             if eval || enter then InteractiveInputFocusRequested <- true
             ImGui.Separator ()
-            ImGui.BeginChild ("##interactiveOutputStr", v2Zero, ImGuiChildFlags.None, ImGuiWindowFlags.AlwaysHorizontalScrollbar ||| ImGuiWindowFlags.AlwaysVerticalScrollbar) |> ignore<bool>
+            ImGui.BeginChild ("##interactiveOutputStr", v2Zero, ImGuiChildFlags.None, ImGuiWindowFlags.AlwaysHorizontalScrollbar ||| ImGuiWindowFlags.AlwaysVerticalScrollbar ||| ImGuiWindowFlags.NoNavInputs) |> ignore<bool>
             ImGui.TextUnformatted InteractiveOutputStr
             if toBottom then ImGui.SetScrollHereY 1.0f
             ImGui.EndChild ()
@@ -3810,7 +3810,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                 ImGui.Text "Clear evaluation output (Alt+C)"
                 ImGui.EndTooltip ()
-            ImGui.BeginChild ("##outputBufferStr", v2Zero, ImGuiChildFlags.None, ImGuiWindowFlags.AlwaysHorizontalScrollbar ||| ImGuiWindowFlags.AlwaysVerticalScrollbar) |> ignore<bool>
+            ImGui.BeginChild ("##outputBufferStr", v2Zero, ImGuiChildFlags.None, ImGuiWindowFlags.AlwaysHorizontalScrollbar ||| ImGuiWindowFlags.AlwaysVerticalScrollbar ||| ImGuiWindowFlags.NoNavInputs) |> ignore<bool>
             ImGui.TextUnformatted LogStr
             ImGui.EndChild ()
         if flash then for i in 0 .. dec 8 do ImGui.PopStyleColor ()
@@ -3879,7 +3879,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             if ImGui.InputTextWithHint ("##loadPackageName", "[package to load]", &LoadPackageName, 4096u, ImGuiInputTextFlags.EnterReturnsTrue) then
                 Metadata.loadMetadataPackage LoadPackageName
                 LoadPackageName <- ""
-            ImGui.BeginChild "Container" |> ignore<bool>
+            ImGui.BeginChild ("Container", v2Zero, ImGuiChildFlags.None, ImGuiWindowFlags.NoNavInputs) |> ignore<bool>
             for packageEntry in Metadata.getMetadataPackagesLoaded () |> Array.sortWith (fun a b -> String.Compare (a.Key, b.Key, true)) do
                 let flags = ImGuiTreeNodeFlags.OpenOnArrow
                 if searchActiveCurrent then ImGui.SetNextItemOpen true
