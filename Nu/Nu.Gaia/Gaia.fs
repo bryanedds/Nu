@@ -1020,6 +1020,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let entities3d = getPickCandidates3d world
             World.tryPickEntity3d mousePosition entities3d world
 
+    /// Pick all the entities under the mouse, from the nearest down - 2d entities when any are under the mouse, and
+    /// otherwise 3d entities.
+    let private mousePickAll mousePosition world =
+        let entities2d = World.pickEntities2d mousePosition (getPickCandidates2d world) world
+        if Array.notEmpty entities2d then entities2d
+        else World.pickEntities3d mousePosition (getPickCandidates3d world) world |> Array.map snd
+
     let private tryPickName names =
         let io = ImGui.GetIO ()
         io.SwallowKeyboard ()
@@ -1938,9 +1945,25 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         DragEntityState <- DragEntityDuplicate2d (world.DateTime, mousePositionWorld, entity)
                     else toggleEntitySelection entity world
                 | Some (_, entity) ->
-                    if SelectedEntities.Contains entity && SelectedEntities.Count > 1
-                    then SelectionCollapseRequestedOpt <- Some entity // keep the selection to drag, unless just clicked
-                    else selectEntities true (Set.singleton entity) world
+
+                    // when the lone selected entity is under the mouse, even behind others, clicking it acts on it
+                    // and selects the entity behind it on release unless dragged, cycling through overlapping entities
+                    let picks = mousePickAll mousePosition world
+                    let selectedIndexOpt =
+                        match Seq.tryExactlyOne SelectedEntities with
+                        | Some selected -> Array.tryFindIndex ((=) selected) picks
+                        | None -> None
+                    let entity =
+                        match selectedIndexOpt with
+                        | Some selectedIndex ->
+                            if picks.Length > 1 then SelectionCollapseRequestedOpt <- Some picks[(inc selectedIndex) % picks.Length]
+                            picks[selectedIndex]
+                        | None ->
+                            // keep the selection to drag, unless just clicked
+                            if SelectedEntities.Contains entity && SelectedEntities.Count > 1
+                            then SelectionCollapseRequestedOpt <- Some entity
+                            else selectEntities true (Set.singleton entity) world
+                            entity
                     if entity.GetIs2d world && not (getSelectionMixed world) then // not 2d and 3d together
                         if World.isKeyboardAltDown world then
                             let absolute = entity.GetAbsolute world
@@ -2026,7 +2049,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     else DragEntityState <- DragEntityInactive
             | DragEntityInactive -> ()
 
-        // attempt to end dragging, selecting just the entity clicked within a selection when it wasn't dragged
+        // attempt to end dragging, selecting just the entity clicked within a selection (or the entity behind the one
+        // clicked when cycling) when it wasn't dragged
         if ImGui.IsMouseReleased ImGuiMouseButton.Left then
             match SelectionCollapseRequestedOpt with
             | Some entity ->

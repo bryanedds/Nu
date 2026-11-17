@@ -729,17 +729,28 @@ module WorldEntityModule =
         /// Attempt to pick an entity at the given position.
         static member tryPickEntity2d position entities world =
             let entitiesSorted = World.sortEntities2d entities world
-            Array.tryFind (fun (entity : Entity) ->
-                if entity.GetPickable world then
-                    let absolute = entity.GetAbsolute world
-                    let positionWorld = Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize position world.WindowViewport
-                    let bounds = (entity.GetBounds world).Box2
-                    bounds.Intersects positionWorld
-                else false)
-                entitiesSorted
+            Array.tryFind (fun (entity : Entity) -> World.getEntityPicked2d position entity world) entitiesSorted
+
+        /// Pick all the 2d entities at the given position, from the top-most down.
+        static member pickEntities2d position entities world =
+            let entitiesSorted = World.sortEntities2d entities world
+            Array.filter (fun (entity : Entity) -> World.getEntityPicked2d position entity world) entitiesSorted
+
+        static member private getEntityPicked2d position (entity : Entity) world =
+            if entity.GetPickable world then
+                let absolute = entity.GetAbsolute world
+                let positionWorld = Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize position world.WindowViewport
+                let bounds = (entity.GetBounds world).Box2
+                bounds.Intersects positionWorld
+            else false
 
         /// Attempt to pick a 3d entity with the given ray.
         static member tryPickEntity3d position entities (world : World) =
+            World.pickEntities3d position entities world |> Array.tryHead
+
+        /// Pick all the 3d entities hit by the given ray, from the nearest to the furthest, each paired with the
+        /// distance to its nearest hit.
+        static member pickEntities3d position entities (world : World) =
             let intersectionses =
                 Seq.map (fun (entity : Entity) ->
                     if entity.GetPickable world then
@@ -756,7 +767,7 @@ module WorldEntityModule =
                     entities
             let intersections = intersectionses |> Seq.concat |> Seq.toArray
             let sorted = Array.sortBy fst intersections
-            Array.tryHead sorted
+            Array.distinctBy snd sorted
 
         /// Try to find the entity among the given entity's peers with the closest previous order.
         static member tryGetPreviousEntity (entity : Entity) world =
