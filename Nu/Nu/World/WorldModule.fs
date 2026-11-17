@@ -1049,15 +1049,13 @@ module WorldModule =
                 World.unsubscribe fastenId world
                 World.unsubscribe senseId world
             let callback' = fun _ world -> unsubscribe world; Cascade
-            let callback'' = fun changeEvent world ->
-                let previous = changeEvent.Data.Previous :?> string Set
-                let value = changeEvent.Data.Value :?> string Set
-                if previous.Contains facetName && not (value.Contains facetName) then unsubscribe world
+            let callback'' = fun (facetRemovingEvent : Event<string, Simulant>) world ->
+                if facetRemovingEvent.Data = facetName then unsubscribe world
                 Cascade
             let unregisteringEventAddress = rtoa<unit> [|"Unregistering"; "Event"|] --> entity.EntityAddress
-            let changeFacetNamesEventAddress = rtoa<ChangeData> [|"Change"; "FacetNames"; "Event"|] --> entity.EntityAddress
+            let facetRemovingEventAddress = Events.FacetRemovingEvent --> entity.EntityAddress
             World.subscribeLambdaPlus<unit, Simulant> removalId callback' unregisteringEventAddress entity world |> ignore
-            World.subscribeLambdaPlus<ChangeData, Simulant> fastenId callback'' changeFacetNamesEventAddress entity world |> ignore
+            World.subscribeLambdaPlus<string, Simulant> fastenId callback'' facetRemovingEventAddress entity world |> ignore
             unsubscribe
 
         /// Keep active a subscription for the life span of an entity and a given facet.

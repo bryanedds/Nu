@@ -1783,6 +1783,8 @@ module WorldModuleEntity =
                     match entityOpt with
                     | Some entity ->
                         World.setEntityState entityState entity world
+                        let eventTrace = EventTrace.debug "World" "tryRemoveFacet" "FacetRemoving" EventTrace.empty
+                        World.publishPlus facetName (Events.FacetRemovingEvent --> entity) eventTrace entity false false world
                         facet.Unregister (entity, world)
                         if WorldModuleInternal.getSelected entity world then facet.UnregisterPhysics (entity, world)
                         let entityState = World.getEntityState entity world
