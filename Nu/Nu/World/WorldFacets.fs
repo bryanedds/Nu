@@ -3187,11 +3187,7 @@ type StaticBillboardFacet () =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-            World.enqueueRenderMessage3d
-                (RenderBillboard
-                    { CastShadow = castShadow; Presence = presence; ModelMatrix = affineMatrix; InsetOpt = insetOpt; OrientUp = orientUp; Planar = planar;
-                      Material = material; MaterialProperties = properties; ShadowOffset = shadowOffset; RenderType = renderType; RenderPass = renderPass })
-                world
+            World.renderBillboardFast (&affineMatrix, castShadow, presence, ValueOption.ofOption insetOpt, orientUp, planar, material, properties, shadowOffset, renderType, renderPass, world)
 
     override this.RayCast (ray, entity, world) =
         // TODO: P1: intersect against oriented quad rather than bounds.
@@ -3257,11 +3253,7 @@ type AnimatedBillboardFacet () =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-            World.enqueueRenderMessage3d
-                (RenderBillboard
-                    { CastShadow = castShadow; Presence = presence; ModelMatrix = affineMatrix; InsetOpt = insetOpt; OrientUp = orientUp; Planar = planar;
-                      Material = material; MaterialProperties = properties; ShadowOffset = shadowOffset; RenderType = renderType; RenderPass = renderPass })
-                world
+            World.renderBillboardFast (&affineMatrix, castShadow, presence, ValueOption.ofOption insetOpt, orientUp, planar, material, properties, shadowOffset, renderType, renderPass, world)
 
     override this.RayCast (ray, entity, world) =
         // TODO: P1: intersect against oriented quad rather than bounds.

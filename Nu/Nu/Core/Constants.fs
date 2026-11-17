@@ -231,6 +231,7 @@ module Render =
     let [<Literal>] SpriteBatchSize = 128 // NOTE: remember to update SPRITE_BATCH_SIZE in shaders when changing this!
     let [<Literal>] SpriteBorderTexelScalar = 0.001f
     let [<Literal>] SpriteMessagesPrealloc = 256
+    let [<Literal>] BillboardMessagesPrealloc = 256
     let [<Literal>] StaticModelMessagesPrealloc = 256
     let [<Literal>] StaticModelSurfaceMessagesPrealloc = 256
     let [<Literal>] BonesMax = 128 // NOTE: remember to update BONES_MAX in shaders when changing this!
