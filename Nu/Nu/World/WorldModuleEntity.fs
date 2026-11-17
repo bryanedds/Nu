@@ -1873,6 +1873,8 @@ module WorldModuleEntity =
                     let entityState = Overlayer.applyOverlay6 EntityState.copy overlayName overlayName facetNames entityState overlayerOld overlayer
                     World.setEntityState entityState entity world
                     World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
+                    if entityState.FacetNames <> facetNamesOld then
+                        World.publishEntityChange Constants.Engine.FacetNamesPropertyName facetNamesOld entityState.FacetNames true entity world
                 | Left error -> Log.info ("There was an issue in applying a reloaded overlay: " + error)
             | None -> ()
 
