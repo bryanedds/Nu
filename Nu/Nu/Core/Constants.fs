@@ -230,6 +230,7 @@ module Render =
     let [<Literal>] SpriteBatchSize = 128 // NOTE: remember to update SPRITE_BATCH_SIZE in shaders when changing this!
     let [<Literal>] SpriteBorderTexelScalar = 0.001f
     let [<Literal>] SpriteMessagesPrealloc = 256
+    let [<Literal>] BillboardMessagesPrealloc = 256
     let [<Literal>] StaticModelMessagesPrealloc = 256
     let [<Literal>] StaticModelSurfaceMessagesPrealloc = 256
     let [<Literal>] BonesMax = 128 // NOTE: remember to update BONES_MAX in shaders when changing this!
@@ -471,6 +472,14 @@ module Gui =
     let [<Uniform>] mutable SliceMarginDefault = match ConfigurationManager.AppSettings["SliceMarginDefault"] with null -> Vector2 (4.0f, 4.0f) | value -> scvalue value
     let [<Uniform>] ColorDisabledDefault = Color (0.75f, 0.75f, 0.75f, 0.75f)
     let [<Literal>] TextShiftDefault = 0.5f
+    let [<Uniform>] LayoutPropertyAffectingPropertyNames =
+        FrozenSet.ToFrozenSet
+            (["Size"
+              "Perimeter"
+              "Layout"
+              "LayoutMargin"
+              "LayoutOrder"],
+             StringComparer.Ordinal)
 
 [<RequireQualifiedAccess>]
 module TileMap =

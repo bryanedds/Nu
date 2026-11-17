@@ -143,7 +143,7 @@ module AssetGraph =
                 image0.ColorFuzz <- Percentage 100.0
                 image0.FloodFill (MagickColors.Transparent, 0, 0)
                 use image = imageCollection.Flatten MagickColors.Transparent
-                use stream = File.OpenWrite refinementFilePath
+                use stream = File.Create refinementFilePath
                 image.Write (stream, MagickFormat.Png32)
             else
                 if not (File.Exists refinementFilePath) then
@@ -157,7 +157,7 @@ module AssetGraph =
                 match blockCompression with
                 | BcCompression ->
                     use image = new MagickImage (intermediateFilePath)
-                    use stream = File.OpenWrite refinementFilePath
+                    use stream = File.Create refinementFilePath
                     let defines = DdsWriteDefines ()
                     defines.FastMipmaps <- false
                     defines.Compression <- DdsCompression.None
@@ -169,7 +169,7 @@ module AssetGraph =
                         match Hl.tryGenerateUncompressedMipmaps image with
                         | Some mipmapTail ->
                             let mipmapLevels = inc mipmapTail.Length
-                            use stream = File.OpenWrite refinementFilePath
+                            use stream = File.Create refinementFilePath
                             use writer = new BinaryWriter (stream)
                             Hl.writeKtxHeader resolution mipmapLevels false writer                      // ktx header
                             writer.Write (uint mipmapHead.Length)                                       // mip head size
@@ -188,7 +188,7 @@ module AssetGraph =
                 match blockCompression with
                 | BcCompression ->
                     use image = new MagickImage (intermediateFilePath)
-                    use stream = File.OpenWrite refinementFilePath
+                    use stream = File.Create refinementFilePath
                     let defines = DdsWriteDefines ()
                     defines.FastMipmaps <- false
                     image.Alpha AlphaAction.Set // implicitly directs use of dxt5 compression - https://github.com/ImageMagick/ImageMagick/pull/4914#issuecomment-1060654324
@@ -200,7 +200,7 @@ module AssetGraph =
                         match Hl.tryCompressMipmaps image with
                         | Some mipmapTail ->
                             let mipmapLevels = inc mipmapTail.Length
-                            use stream = File.OpenWrite refinementFilePath
+                            use stream = File.Create refinementFilePath
                             use writer = new BinaryWriter (stream)
                             Hl.writeKtxHeader resolution mipmapLevels true writer                   // mip header
                             writer.Write (uint mipmapHead.Length)                                   // mip head size
@@ -221,7 +221,7 @@ module AssetGraph =
                     use image = new MagickImage (intermediateFilePath)
                     image.ColorSpace <- ColorSpace.sRGB
                     image.Format <- MagickFormat.Rgba
-                    use stream = File.OpenWrite refinementFilePath
+                    use stream = File.Create refinementFilePath
                     let encoder = BcEncoder ()
                     encoder.OutputOptions.Quality <- CompressionQuality.BestQuality
                     encoder.OutputOptions.GenerateMipMaps <- true
@@ -236,7 +236,7 @@ module AssetGraph =
                         match Hl.tryCompressMipmaps image with
                         | Some mipmapTail ->
                             let mipmapLevels = inc mipmapTail.Length
-                            use stream = File.OpenWrite refinementFilePath
+                            use stream = File.Create refinementFilePath
                             use writer = new BinaryWriter (stream)
                             Hl.writeKtxHeader resolution mipmapLevels true writer                   // mip header
                             writer.Write (uint mipmapHead.Length)                                   // mip head size

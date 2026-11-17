@@ -964,16 +964,13 @@ module WorldModule =
                 World.unsubscribe fastenId world
                 World.unsubscribe senseId world
             let callback' = fun _ world -> unsubscribe world; Cascade
-            let callback'' = fun changeEvent world ->
-                let previous = changeEvent.Data.Previous :?> string Set
-                let value = changeEvent.Data.Value :?> string Set
-                if previous.Contains facetName && not (value.Contains facetName)
-                then unsubscribe world; Cascade
-                else Cascade
+            let callback'' = fun (facetRemovingEvent : Event<string, Simulant>) world ->
+                if facetRemovingEvent.Data = facetName then unsubscribe world
+                Cascade
             let unregisteringEventAddress = rtoa<unit> [|"Unregistering"; "Event"|] --> entity.EntityAddress
-            let changeFacetNamesEventAddress = rtoa<ChangeData> [|"Change"; "FacetNames"; "Event"|] --> entity.EntityAddress
+            let facetRemovingEventAddress = Events.FacetRemovingEvent --> entity.EntityAddress
             World.subscribeLambdaPlus<unit, Simulant> removalId callback' unregisteringEventAddress entity world |> ignore
-            World.subscribeLambdaPlus<ChangeData, Simulant> fastenId callback'' changeFacetNamesEventAddress entity world |> ignore
+            World.subscribeLambdaPlus<string, Simulant> fastenId callback'' facetRemovingEventAddress entity world |> ignore
             unsubscribe
 
         /// Keep active a subscription for the life span of an entity and a given facet.
@@ -1018,6 +1015,29 @@ module WorldModule =
                     [for subscriptionEntry in subscriptionEntries do
                         match subscriptionEntry.Value.SubscriptionCallback with
                         | NamedCallback named when named.HandlerName = handlerName && subscriptionEntry.Value.SubscriptionSubscriber = subscriber -> subscriptionEntry.Key
+                        | _ -> ()]
+                for subscriptionId in subscriptionIds do
+                    World.unsubscribe subscriptionId world
+            | (false, _) -> ()
+
+        /// Unsubscribe the given entity's facet's handler of the given name from an event. Unlike unsubscribe4, this
+        /// leaves alone any same-named handler of another of the entity's facets.
+        static member internal unsubscribeFacet5<'a>
+            (handlerName : string)
+            (eventAddress : 'a Address)
+            (entity : Entity)
+            (facetName : string)
+            (world : World) =
+            match (World.getSubscriptions world).TryGetValue (atooa eventAddress) with
+            | (true, subscriptionEntries) ->
+                let subscriber = entity :> Simulant
+                let subscriptionIds =
+                    [for subscriptionEntry in subscriptionEntries do
+                        match subscriptionEntry.Value.SubscriptionCallback with
+                        | NamedCallback named when
+                            named.HandlerName = handlerName &&
+                            named.FacetNameOpt = ValueSome facetName &&
+                            subscriptionEntry.Value.SubscriptionSubscriber = subscriber -> subscriptionEntry.Key
                         | _ -> ()]
                 for subscriptionId in subscriptionIds do
                     World.unsubscribe subscriptionId world

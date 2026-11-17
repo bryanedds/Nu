@@ -282,6 +282,21 @@ type Layout =
     /// Utilize no layout, allowing children to be placed freely.
     | Manual
 
+/// The side from which a fill bar fills.
+type FillDirection =
+
+    /// Fill from the left side.
+    | FillFromLeft
+
+    /// Fill from the right side.
+    | FillFromRight
+
+    /// Fill from the bottom side.
+    | FillFromBottom
+
+    /// Fill from the top side.
+    | FillFromTop
+
 /// The type of a screen transition. Incoming means a new screen is being shown and Outgoing
 /// means an existing screen being hidden.
 type TransitionType =

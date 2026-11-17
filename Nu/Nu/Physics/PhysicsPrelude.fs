@@ -442,11 +442,176 @@ type CharacterProperties =
     | PogoSpringCharacterProperties of PogoSpringCharacterProperties
     | StairSteppingCharacterProperties of StairSteppingCharacterProperties
 
+/// The spring of a vehicle wheel's suspension.
+type VehicleSuspensionSpring =
+    | FrequencyAndDampingSpring of Frequency : single * Damping : single
+    | StiffnessAndDampingSpring of Stiffness : single * Damping : single
+
+/// The properties of a wheel of a wheeled vehicle. Friction curves map slip (longitudinal slip ratio or lateral slip
+/// angle in degrees) to a friction multiplier.
+type [<SymbolicExpansion>] VehicleWheelProperties =
+    { WheelPosition : Vector3
+      WheelSuspensionForcePointOpt : Vector3 option
+      WheelSuspensionDirection : Vector3
+      WheelSteeringAxis : Vector3
+      WheelUp : Vector3
+      WheelForward : Vector3
+      WheelSuspensionMinLength : single
+      WheelSuspensionMaxLength : single
+      WheelSuspensionPreloadLength : single
+      WheelSuspensionSpring : VehicleSuspensionSpring
+      WheelRadius : single
+      WheelWidth : single
+      WheelInertia : single
+      WheelMaxSteerAngle : single
+      WheelLongitudinalFriction : Vector2 array
+      WheelLateralFriction : Vector2 array
+      WheelMaxBrakeTorque : single
+      WheelMaxHandBrakeTorque : single }
+
+    /// The default wheel properties at the given position.
+    static member make position =
+        { WheelPosition = position
+          WheelSuspensionForcePointOpt = None
+          WheelSuspensionDirection = v3Down
+          WheelSteeringAxis = v3Up
+          WheelUp = v3Up
+          WheelForward = v3Forward
+          WheelSuspensionMinLength = 0.3f
+          WheelSuspensionMaxLength = 0.5f
+          WheelSuspensionPreloadLength = 0.0f
+          WheelSuspensionSpring = FrequencyAndDampingSpring (1.5f, 0.5f)
+          WheelRadius = 0.3f
+          WheelWidth = 0.1f
+          WheelInertia = 0.9f
+          WheelMaxSteerAngle = degToRadF 70.0f
+          WheelLongitudinalFriction = [|v2 0.0f 0.0f; v2 0.06f 1.2f; v2 0.2f 1.0f|]
+          WheelLateralFriction = [|v2 0.0f 0.0f; v2 3.0f 1.2f; v2 20.0f 1.0f|]
+          WheelMaxBrakeTorque = 1500.0f
+          WheelMaxHandBrakeTorque = 4000.0f }
+
+/// The properties of a wheeled vehicle's engine. The normalized torque curve maps normalized RPM (0 at min RPM, 1 at
+/// max RPM) to a multiplier of max torque.
+type [<SymbolicExpansion>] VehicleEngineProperties =
+    { EngineMaxTorque : single
+      EngineMinRpm : single
+      EngineMaxRpm : single
+      EngineNormalizedTorque : Vector2 array
+      EngineInertia : single
+      EngineAngularDamping : single }
+
+    /// The default engine properties.
+    static member val defaultProperties =
+        { EngineMaxTorque = 500.0f
+          EngineMinRpm = 1000.0f
+          EngineMaxRpm = 6000.0f
+          EngineNormalizedTorque = [|v2 0.0f 0.8f; v2 0.66f 1.0f; v2 1.0f 0.8f|]
+          EngineInertia = 0.5f
+          EngineAngularDamping = 0.2f }
+
+/// The shifting mode of a wheeled vehicle's transmission.
+type VehicleTransmissionMode =
+    | AutomaticTransmission
+    | ManualTransmission
+
+/// The properties of a wheeled vehicle's transmission.
+type [<SymbolicExpansion>] VehicleTransmissionProperties =
+    { TransmissionMode : VehicleTransmissionMode
+      TransmissionGearRatios : single array
+      TransmissionReverseGearRatios : single array
+      TransmissionSwitchTime : single
+      TransmissionClutchReleaseTime : single
+      TransmissionSwitchLatency : single
+      TransmissionShiftUpRpm : single
+      TransmissionShiftDownRpm : single
+      TransmissionClutchStrength : single }
+
+    /// The default transmission properties.
+    static member val defaultProperties =
+        { TransmissionMode = AutomaticTransmission
+          TransmissionGearRatios = [|2.66f; 1.78f; 1.3f; 1.0f; 0.74f|]
+          TransmissionReverseGearRatios = [|-2.9f|]
+          TransmissionSwitchTime = 0.5f
+          TransmissionClutchReleaseTime = 0.3f
+          TransmissionSwitchLatency = 0.5f
+          TransmissionShiftUpRpm = 4000.0f
+          TransmissionShiftDownRpm = 2000.0f
+          TransmissionClutchStrength = 10.0f }
+
+/// The properties of a wheeled vehicle's differential, which distributes engine torque between two wheels. A wheel
+/// index of -1 means no wheel.
+type [<SymbolicExpansion>] VehicleDifferentialProperties =
+    { DifferentialLeftWheel : int
+      DifferentialRightWheel : int
+      DifferentialRatio : single
+      DifferentialLeftRightSplit : single
+      DifferentialLimitedSlipRatio : single
+      DifferentialEngineTorqueRatio : single }
+
+    /// The default differential properties for the given wheels.
+    static member make leftWheel rightWheel =
+        { DifferentialLeftWheel = leftWheel
+          DifferentialRightWheel = rightWheel
+          DifferentialRatio = 3.42f
+          DifferentialLeftRightSplit = 0.5f
+          DifferentialLimitedSlipRatio = 1.4f
+          DifferentialEngineTorqueRatio = 1.0f }
+
+/// The properties of an anti-roll bar connecting two wheels of a wheeled vehicle.
+type [<SymbolicExpansion>] VehicleAntiRollBarProperties =
+    { AntiRollBarLeftWheel : int
+      AntiRollBarRightWheel : int
+      AntiRollBarStiffness : single }
+
+/// How a vehicle's wheels detect the ground. Slope angles are in radians.
+type VehicleCollisionTesterType =
+    | CastCylinderCollisionTester of ConvexRadiusFraction : single
+    | CastSphereCollisionTester of Radius : single * MaxSlopeAngle : single
+    | RayCollisionTester of MaxSlopeAngle : single
+
+/// The properties of a wheeled vehicle.
+type [<SymbolicExpansion>] WheeledVehicleProperties =
+    { VehicleUp : Vector3
+      VehicleForward : Vector3
+      VehicleMaxPitchRollAngle : single
+      VehicleWheels : VehicleWheelProperties array
+      VehicleAntiRollBars : VehicleAntiRollBarProperties array
+      VehicleEngine : VehicleEngineProperties
+      VehicleTransmission : VehicleTransmissionProperties
+      VehicleDifferentials : VehicleDifferentialProperties array
+      VehicleDifferentialLimitedSlipRatio : single
+      VehicleCenterOfMassOffset : Vector3
+      VehicleCollisionTester : VehicleCollisionTesterType }
+
+    /// The default wheeled vehicle properties, describing a four-wheeled car with front-wheel steering, rear-wheel
+    /// braking, hand brakes on all wheels and a front differential.
+    static member val defaultProperties =
+        let makeWheel front position =
+            let wheel = VehicleWheelProperties.make position
+            if front
+            then { wheel with WheelMaxBrakeTorque = 0.0f; WheelMaxHandBrakeTorque = 4000.0f }
+            else { wheel with WheelMaxBrakeTorque = 4000.0f; WheelMaxHandBrakeTorque = 4000.0f; WheelMaxSteerAngle = 0.0f }
+        { VehicleUp = v3Up
+          VehicleForward = v3Forward
+          VehicleMaxPitchRollAngle = MathF.PI
+          VehicleWheels =
+            [|makeWheel true (v3 -0.8f -0.3f -3.0f) // front left
+              makeWheel true (v3 0.8f -0.3f -3.0f) // front right
+              makeWheel false (v3 -0.8f -0.3f 1.5f) // back left
+              makeWheel false (v3 0.8f -0.3f 1.5f)|] // back right
+          VehicleAntiRollBars = [||]
+          VehicleEngine = VehicleEngineProperties.defaultProperties
+          VehicleTransmission = VehicleTransmissionProperties.defaultProperties
+          VehicleDifferentials = [|VehicleDifferentialProperties.make 0 1|]
+          VehicleDifferentialLimitedSlipRatio = 1.4f
+          VehicleCenterOfMassOffset = v3 0.0f -1.25f 0.0f
+          VehicleCollisionTester = CastCylinderCollisionTester 1.0f }
+
 /// The properties needed to describe the vehicle aspects of a body.
 type VehicleProperties =
     | VehiclePropertiesAbsent
     | VehiclePropertiesBox2d
-    | VehiclePropertiesJolt of JoltPhysicsSharp.VehicleConstraintSettings
+    | VehiclePropertiesJolt of WheeledVehicleProperties
     
 /// Describes the gravitational property of a body.
 type Gravity =

@@ -1196,10 +1196,12 @@ module Hl =
         if compressed                           // glInternalFormat
         then writer.Write 0x93B0u               // OpenGL.InternalFormat.CompressedRgbaAstc4x4
         else writer.Write 0x8058u               // OpenGL.InternalFormat.Rgba8
-        writer.Write 0x80E1                     // glBaseInternalFormat = OpenGL.PixelFormat.Bgra
+        if compressed                           // glBaseInternalFormat
+        then writer.Write 0x1908u               // OpenGL.PixelFormat.Rgba (base format of the compressed format)
+        else writer.Write 0x80E1u               // OpenGL.PixelFormat.Bgra (must equal glFormat when uncompressed)
         writer.Write (uint32 resolution.X)      // width
         writer.Write (uint32 resolution.Y)      // height
-        writer.Write 1u                         // depth
+        writer.Write 0u                         // depth (zero for 2d textures)
         writer.Write 0u                         // array elements
         writer.Write 1u                         // faces
         writer.Write (uint32 mipmapLevels)      // mip levels
@@ -1211,15 +1213,21 @@ module Hl =
         let resolution = v2i (int image.Width) (int image.Height)
         Some (resolution, pixelBytes)
 
-    /// Attempt to generate uncompressed astc mipmap bytes from a MagickImage.
+    /// Make a mipmap of a MagickImage at exactly the given resolution.
+    let private makeMipmapImage (image : MagickImage) (width : uint) (height : uint) =
+        let mip = image.Clone () :?> MagickImage
+        mip.Resize (MagickGeometry (width, height, IgnoreAspectRatio = true)) // NOTE: exact size so it matches the ktx header.
+        mip
+
+    /// Attempt to generate uncompressed astc mipmap bytes from a MagickImage, continuing the chain down to 1x1 where
+    /// each level halves (rounding down to no less than 1) each dimension of the level before it.
     let tryGenerateUncompressedMipmaps (image : MagickImage) =
         let mutable (width, height) = (image.Width, image.Height)
         let mipmapOpts =
-            [while width >= 1u && height >= 1u do
-                width <- width / 2u
-                height <- height / 2u
-                let mip = image.Clone () :?> MagickImage
-                mip.Resize (width, height)
+            [while width > 1u || height > 1u do
+                width <- max 1u (width / 2u)
+                height <- max 1u (height / 2u)
+                use mip = makeMipmapImage image width height
                 tryGenerateUncompressedImage mip]
         match List.definitizePlus mipmapOpts with
         | (true, mipmaps) -> Some mipmaps
@@ -1265,8 +1273,7 @@ module Hl =
             [while width >= 8u && height >= 8u do
                 width <- width / 2u
                 height <- height / 2u
-                let mip = image.Clone () :?> MagickImage
-                mip.Resize (width, height)
+                use mip = makeMipmapImage image width height
                 tryCompressImage mip]
         match List.definitizePlus mipmapOpts with
         | (true, mipmaps) -> Some mipmaps

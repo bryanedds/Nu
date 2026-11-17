@@ -35,6 +35,10 @@ module WorldRender =
         static member configureRenderer3d config world =
             World.enqueueRenderMessage3d (ConfigureRenderer3d config) world
 
+        /// Send a message to the render system to render a billboard using a fast path.
+        static member renderBillboardFast (modelMatrix : Matrix4x4 inref, castShadow, presence, insetOpt, orientUp, planar, material : Material, materialProperties : MaterialProperties, shadowOffset, renderType, renderPass, world) =
+            (World.getRendererProcess world).RenderBillboardFast (&modelMatrix, castShadow, presence, insetOpt, orientUp, planar, material, materialProperties, shadowOffset, renderType, renderPass)
+
         /// Send a message to the render system to render a static model using a fast path.
         static member renderStaticModelFast (modelMatrix : Matrix4x4 inref, castShadow, presence, insetOpt, material : Material, materialProperties : MaterialProperties, staticModel, renderType, renderPass, world) =
             (World.getRendererProcess world).RenderStaticModelFast (&modelMatrix, castShadow, presence, insetOpt, material, materialProperties, staticModel, renderType, renderPass)
@@ -91,7 +95,7 @@ module WorldRender =
             let rendererProcess = World.getRendererProcess world
             for operation in operations do rendererProcess.EnqueueMessage2d (LayeredOperation2d operation)
 
-        /// Send a message to the render system to render a static model using a fast path.
+        /// Send a message to the render system to render a layered sprite using a fast path.
         static member renderLayeredSpriteFast
             (elevation, horizon, assetTag, transform : Transform inref, insetOpt : Box2 ValueOption inref, clipOpt : Box2 ValueOption inref,
             image, userDefinedImages : UserDefinedImages inref, pipelineName, color : Color inref, blend, emission : Color inref, flip, userDefinedSettings : UserDefinedSettings inref, world) =

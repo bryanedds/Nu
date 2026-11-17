@@ -24,8 +24,22 @@ module WorldModuleEntity =
     let mutable private EntityGetters = Unchecked.defaultof<FrozenDictionary<string, PropertyGetter>>
     let mutable private EntitySetters = Unchecked.defaultof<FrozenDictionary<string, PropertySetter>>
 
+    /// The address of the entity life cycle event.
+    let private EntityLifeCycleEventAddress = Events.LifeCycleEvent (nameof Entity) --> Nu.Game.Handle
+
     /// Entity change (publishing) count key.
     let internal EntityChangeCountsKey = string Gen.id
+
+    /// The special change events a property's change also publishes - 1 for BodyPropertiesAffecting and 2 for
+    /// LayoutPropertiesAffecting.
+    /// OPTIMIZATION: one lookup for both property sets.
+    let private PropertiesAffectingFlags =
+        let flags = Dictionary<string, int> StringComparer.Ordinal
+        for propertyName in Constants.Physics.BodyPropertyAffectingPropertyNames do
+            flags[propertyName] <- 1
+        for propertyName in Constants.Gui.LayoutPropertyAffectingPropertyNames do
+            flags[propertyName] <- (match flags.TryGetValue propertyName with (true, flag) -> flag | (false, _) -> 0) ||| 2
+        flags.ToFrozenDictionary StringComparer.Ordinal
 
     /// OPTIMIZATION: cache layout facet type for quick containment check.
     let mutable internal LayoutFacetType = Unchecked.defaultof<Type>
@@ -114,12 +128,19 @@ module WorldModuleEntity =
             if publishChangeEvents then
                 let changeData = { Name = propertyName; Previous = previousValue; Value = propertyValue }
                 let entityNames = Address.getNames entity.EntityAddress
-                // OPTIMIZATION: this works together with RigidBodyFacet to reduce the bookkeeping footprint of its
-                // subscriptions. This does have some run-time performance cost associated with it, however.
-                if Constants.Physics.BodyPropertyAffectingPropertyNames.Contains propertyName then
-                    let changeEventAddress = rtoa<ChangeData> (Array.append [|Constants.Lens.ChangeName; "BodyPropertiesAffecting"; Constants.Lens.EventName|] entityNames)
-                    let eventTrace = EventTrace.debug "World" "publishEntityChange" "BodyPropertiesAffecting" EventTrace.empty
-                    World.publishPlus changeData changeEventAddress eventTrace entity false false world
+                // OPTIMIZATION: this works together with RigidBodyFacet and LayoutFacet to reduce the bookkeeping
+                // footprint of their subscriptions. This does have some run-time performance cost associated with it,
+                // however.
+                let mutable flags = 0
+                if PropertiesAffectingFlags.TryGetValue (propertyName, &flags) then
+                    if flags &&& 1 <> 0 then
+                        let changeEventAddress = rtoa<ChangeData> (Array.append [|Constants.Lens.ChangeName; "BodyPropertiesAffecting"; Constants.Lens.EventName|] entityNames)
+                        let eventTrace = EventTrace.debug "World" "publishEntityChange" "BodyPropertiesAffecting" EventTrace.empty
+                        World.publishPlus changeData changeEventAddress eventTrace entity false false world
+                    if flags &&& 2 <> 0 then
+                        let changeEventAddress = rtoa<ChangeData> (Array.append [|Constants.Lens.ChangeName; "LayoutPropertiesAffecting"; Constants.Lens.EventName|] entityNames)
+                        let eventTrace = EventTrace.debug "World" "publishEntityChange" "LayoutPropertiesAffecting" EventTrace.empty
+                        World.publishPlus changeData changeEventAddress eventTrace entity false false world
                 let changeEventAddress = rtoa<ChangeData> (Array.append [|Constants.Lens.ChangeName; propertyName; Constants.Lens.EventName|] entityNames)
                 let eventTrace = EventTrace.debug "World" "publishEntityChange" "" EventTrace.empty
                 World.publishPlus changeData changeEventAddress eventTrace entity false false world
@@ -633,7 +654,7 @@ module WorldModuleEntity =
 
                 // publish life cycle event unconditionally
                 let eventTrace = EventTrace.debug "World" "setEntityMount" "" EventTrace.empty
-                World.publishPlus (MountOptChangeData (previous, value, entity)) (Events.LifeCycleEvent (nameof Entity) --> Nu.Game.Handle) eventTrace entity false false world
+                World.publishPlus (MountOptChangeData (previous, value, entity)) EntityLifeCycleEventAddress eventTrace entity false false world
                 true
 
             else false
@@ -1512,6 +1533,8 @@ module WorldModuleEntity =
                 let boundsOld = entityState.Bounds
                 match entityOpt with
                 | Some entity ->
+                    let eventTrace = EventTrace.debug "World" "tryRemoveFacet" "FacetRemoving" EventTrace.empty
+                    World.publishPlus facetName (Events.FacetRemovingEvent --> entity) eventTrace entity false false world
                     facet.Unregister (entity, world)
                     if WorldModuleInternal.getSelected entity world then facet.UnregisterPhysics (entity, world)
                 | None -> ()
@@ -1611,6 +1634,8 @@ module WorldModuleEntity =
                     let facetNames = World.getEntityFacetNamesReflectively entityState
                     Overlayer.applyOverlay6 overlayName overlayName facetNames entityState overlayerOld overlayer
                     World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
+                    if entityState.FacetNames <> facetNamesOld then
+                        World.publishEntityChange Constants.Engine.FacetNamesPropertyName facetNamesOld entityState.FacetNames true entity world
                 | Left error -> Log.info ("There was an issue in applying a reloaded overlay: " + error)
             | None -> ()
 
@@ -1972,13 +1997,13 @@ module WorldModuleEntity =
             for eventAddress in eventAddresses do
                 World.publishPlus () eventAddress eventTrace entity false false world
             let eventTrace = EventTrace.debug "World" "registerEntity" "LifeCycle" EventTrace.empty
-            World.publishPlus (RegisterData entity) (Events.LifeCycleEvent (nameof Entity) --> Nu.Game.Handle) eventTrace entity false false world
+            World.publishPlus (RegisterData entity) EntityLifeCycleEventAddress eventTrace entity false false world
 
         static member internal unregisterEntity (entity : Entity) world =
 
             // publish related events
             let eventTrace = EventTrace.debug "World" "unregisterEntity" "LifeCycle" EventTrace.empty
-            World.publishPlus (UnregisteringData entity) (Events.LifeCycleEvent (nameof Entity) --> Nu.Game.Handle) eventTrace entity false false world
+            World.publishPlus (UnregisteringData entity) EntityLifeCycleEventAddress eventTrace entity false false world
             let eventTrace = EventTrace.debug "World" "unregister" "Unregistering" EventTrace.empty
             let eventAddresses = EventGraph.getEventAddresses1 (Events.UnregisteringEvent --> entity)
             for eventAddress in eventAddresses do
@@ -2182,9 +2207,6 @@ module WorldModuleEntity =
                 then World.destroyEntityImmediate entity world
                 else failwith ("Entity '" + scstring entity + "' already exists and cannot be created.")
             World.addEntity entityState entity world
-
-            // update publish update flag
-            World.updateEntityPublishUpdateFlag entity world |> ignore<bool>
 
             // update presence property from override
             World.updateEntityPresenceOverride entity world
@@ -2391,9 +2413,6 @@ module WorldModuleEntity =
                 then World.destroyEntityImmediateInternal true entity world
                 else failwith ("Entity '" + scstring entity + "' already exists and cannot be created.")
             World.addEntity entityState entity world
-
-            // update publish update flag
-            World.updateEntityPublishUpdateFlag entity world |> ignore<bool>
 
             // update presence property from override
             World.updateEntityPresenceOverride entity world

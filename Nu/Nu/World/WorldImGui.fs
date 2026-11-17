@@ -103,11 +103,13 @@ module WorldImGui =
             let frustumView = world.Eye3dFrustumView
             let viewport = world.WindowViewport
             for segment in segments do
-                for segment' in Math.TryUnionSegmentAndFrustum' (segment, frustumView) do
+                match Math.TryUnionSegmentAndFrustum (segment, frustumView) with
+                | Some segment' ->
                     let color = computeColor segment'
                     let startInner = ImGui.Position3dToInner (windowPosition, windowSize, viewProjection, viewport, segment'.A)
                     let stopInner = ImGui.Position3dToInner (windowPosition, windowSize, viewProjection, viewport, segment'.B)
                     drawList.AddLine (startInner, stopInner, color.Abgr, thickness)
+                | None -> ()
 
         /// Render segments via ImGui in the current eye 3d space.
         static member imGuiSegments3d segments thickness color world =
@@ -133,10 +135,12 @@ module WorldImGui =
             let viewport = world.WindowViewport
             let segments = box.Segments
             for segment in segments do
-                for segment' in Math.TryUnionSegmentAndFrustum' (segment, frustum) do
+                match Math.TryUnionSegmentAndFrustum (segment, frustum) with
+                | Some segment' ->
                     let aInner = ImGui.Position3dToInner (windowPosition, windowSize, viewProjection, viewport, segment'.A)
                     let bInner = ImGui.Position3dToInner (windowPosition, windowSize, viewProjection, viewport, segment'.B)
                     drawList.AddLine (aInner, bInner, color.Abgr)
+                | None -> ()
 
         /// Edit a Box3 via ImGui in the current eye 3d space.
         static member imGuiEditBox3d snap box (world : World) =
@@ -701,13 +705,25 @@ module WorldImGui =
                     match index with
                     | 0 ->
                         match light with
-                        | PointLight radius ->
+                        | PointLight (radius, conesOpt) ->
                             let mutable radius = radius
                             ImGui.Indent ()
                             let radiusEdited = ImGui.DragFloat ("Radius via " + name, &radius, context.SnapDrag)
                             if ImGui.IsItemFocused () then context.FocusProperty ()
+                            let mutable conesEnabled = conesOpt.IsSome
+                            let conesEnabledEdited = ImGui.Checkbox ("Cones via " + name, &conesEnabled)
+                            if ImGui.IsItemFocused () then context.FocusProperty ()
+                            let (conesEdited, conesOpt) =
+                                if conesEnabled then
+                                    let mutable (innerCone, outerCone) = Option.defaultValue (0.9f, 1.0f) conesOpt
+                                    let innerConeEdited = ImGui.DragFloat ("InnerCone via " + name, &innerCone, context.SnapDrag)
+                                    if ImGui.IsItemFocused () then context.FocusProperty ()
+                                    let outerConeEdited = ImGui.DragFloat ("OuterCone via " + name, &outerCone, context.SnapDrag)
+                                    if ImGui.IsItemFocused () then context.FocusProperty ()
+                                    (innerConeEdited || outerConeEdited, Some (innerCone, outerCone))
+                                else (false, None)
                             ImGui.Unindent ()
-                            (edited || radiusEdited, PointLight radius)
+                            (edited || radiusEdited || conesEnabledEdited || conesEdited, PointLight (radius, conesOpt))
                         | SpotLight (_, _, _) | DirectionalLight _ | CascadedLight -> failwithumf ()
                     | 1 ->
                         match light with
@@ -1564,11 +1580,9 @@ type JoltDebugRendererImGui () =
     override this.DrawText3D (_, _, _, _) =
         () // TODO: implement.
 
-    /// Actually render all the stored drawing commands.
-    member this.Flush (world : World) =
-        let distanceMaxSquared =
-            Constants.Render.Body3dSegmentRenderDistanceMax *
-            Constants.Render.Body3dSegmentRenderDistanceMax
+    /// Actually render all the stored drawing commands that are within the given distance of the eye.
+    member this.Flush (segmentDistanceMax : single, world : World) =
+        let distanceMaxSquared = segmentDistanceMax * segmentDistanceMax
         for struct (color, segmentList) in segments.Pairs' do
             let segmentsNear = segmentList |> Seq.filter (fun segment -> ((segment.A + segment.Vector * 0.5f) - world.Eye3dCenter).MagnitudeSquared < distanceMaxSquared)
             World.imGuiSegments3d segmentsNear 1.0f color world
@@ -1594,8 +1608,9 @@ module WorldImGui2 =
                 World.imGuiCircles2d false circleList radius false color world
                 circleList.Clear ()
 
-        /// Render the 3D physics via ImGui using the given settings.
-        static member imGuiRenderPhysics3d (settings : DrawSettings) world =
+        /// Render the 3D physics via ImGui using the given settings, rendering bodies within the given distance of
+        /// the eye, and optionally rendering height fields.
+        static member imGuiRenderPhysics3dPlus (settings : DrawSettings) (distanceMax : single) heightFieldsRendered world =
             match World.getRendererPhysics3dOpt world with
             | Some debugRenderer ->
                 let physicsEngine3d = World.getPhysicsEngine3d world
@@ -1604,7 +1619,21 @@ module WorldImGui2 =
                     { DebugRenderer = joltRenderer
                       DrawSettings = settings
                       EyeCenter = world.Eye3dCenter
-                      EyeFrustum = world.Eye3dFrustumView }
+                      EyeFrustum = world.Eye3dFrustumView
+                      RenderDistanceMax = distanceMax
+                      HeightFieldsRendered = heightFieldsRendered }
                 physicsEngine3d.TryRender renderContext
-                joltRenderer.Flush world
+
+                // segments of bodies are allowed past the body distance in proportion to the default distances so
+                // that bodies near the edge of the distance aren't cut off
+                let segmentDistanceMax =
+                    distanceMax *
+                    Constants.Render.Body3dSegmentRenderDistanceMax /
+                    Constants.Render.Body3dRenderDistanceMax
+                joltRenderer.Flush (segmentDistanceMax, world)
+
             | None -> ()
+
+        /// Render the 3D physics via ImGui using the given settings.
+        static member imGuiRenderPhysics3d (settings : DrawSettings) world =
+            World.imGuiRenderPhysics3dPlus settings Constants.Render.Body3dRenderDistanceMax false world

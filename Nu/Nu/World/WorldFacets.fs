@@ -902,6 +902,9 @@ module FillBarFacetExtensions =
         member this.GetFillInset world : single = this.Get (nameof this.FillInset) world
         member this.SetFillInset (value : single) world = this.Set (nameof this.FillInset) value world
         member this.FillInset = lens (nameof this.FillInset) this this.GetFillInset this.SetFillInset
+        member this.GetFillDirection world : FillDirection = this.Get (nameof this.FillDirection) world
+        member this.SetFillDirection (value : FillDirection) world = this.Set (nameof this.FillDirection) value world
+        member this.FillDirection = lens (nameof this.FillDirection) this this.GetFillDirection this.SetFillDirection
         member this.GetFillColor world : Color = this.Get (nameof this.FillColor) world
         member this.SetFillColor (value : Color) world = this.Set (nameof this.FillColor) value world
         member this.FillColor = lens (nameof this.FillColor) this this.GetFillColor this.SetFillColor
@@ -926,6 +929,7 @@ type FillBarFacet () =
          define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
          define Entity.Fill 0.0f
          define Entity.FillInset 0.0f
+         define Entity.FillDirection FillFromLeft
          define Entity.FillColor Color.Red
          define Entity.FillImage Assets.Default.White
          define Entity.BorderColor Color.White
@@ -945,13 +949,23 @@ type FillBarFacet () =
         World.renderGuiSpriteSliced transform.Absolute transform.Perimeter sliceMargin borderImage pipelineName transform.Offset elevation borderImageColor userDefinedSettings world
 
         // fill sprite
-        let fillSize = transform.Perimeter.Size
-        let fillInset = fillSize.X * entity.GetFillInset world * 0.5f
-        let fillWidth = (fillSize.X - fillInset * 2.0f) * (entity.GetFill world |> min 1.0f |> max 0.0f)
-        let fillPosition = transform.Perimeter.Left + v3 (fillWidth * 0.5f) 0.0f 0.0f + v3 fillInset 0.0f 0.0f
-        let fillHeight = fillSize.Y - fillInset * 2.0f
-        let fillSize = v3 fillWidth fillHeight 0.0f
-        let fillPerimeter = box3 (fillPosition - fillSize * 0.5f) fillSize
+        let perimeter = transform.Perimeter
+        let fillInset = perimeter.Size.X * entity.GetFillInset world * 0.5f
+        let fill = entity.GetFill world |> min 1.0f |> max 0.0f
+        let innerMin = v3 (perimeter.Min.X + fillInset) (perimeter.Min.Y + fillInset) perimeter.Center.Z
+        let innerSize = v3 (perimeter.Size.X - fillInset * 2.0f) (perimeter.Size.Y - fillInset * 2.0f) 0.0f
+        let fillPerimeter =
+            match entity.GetFillDirection world with
+            | FillFromLeft ->
+                box3 innerMin (v3 (innerSize.X * fill) innerSize.Y 0.0f)
+            | FillFromRight ->
+                let fillWidth = innerSize.X * fill
+                box3 (innerMin + v3 (innerSize.X - fillWidth) 0.0f 0.0f) (v3 fillWidth innerSize.Y 0.0f)
+            | FillFromBottom ->
+                box3 innerMin (v3 innerSize.X (innerSize.Y * fill) 0.0f)
+            | FillFromTop ->
+                let fillHeight = innerSize.Y * fill
+                box3 (innerMin + v3 0.0f (innerSize.Y - fillHeight) 0.0f) (v3 innerSize.X fillHeight 0.0f)
         let fillImageColor = entity.GetFillColor world * color
         let fillImage = entity.GetFillImage world
         World.renderGuiSpriteSliced transform.Absolute fillPerimeter sliceMargin fillImage pipelineName transform.Offset transform.Elevation fillImageColor userDefinedSettings world
@@ -1523,66 +1537,11 @@ type RigidBodyFacet () =
         Cascade
 
     static let unsubscribePhysicsPropagation (entity : Entity) world =
-        World.unsubscribe4 (nameof propagatePhysicsCenter) (entity.ChangeEvent (nameof entity.Transform)) entity world
-        World.unsubscribe4 (nameof propagatePhysicsRotation) (entity.ChangeEvent (nameof entity.Rotation)) entity world
-        World.unsubscribe4 (nameof propagatePhysicsLinearVelocity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world
-        World.unsubscribe4 (nameof propagatePhysicsAngularVelocity) (entity.ChangeEvent (nameof entity.AngularVelocity)) entity world
-        World.unsubscribe4 (nameof propagatePhysicsAffected) (entity.ChangeEvent "BodyPropertiesAffecting") entity world
-
-    static let handleFacetNamesChange (evt : Event<ChangeData, Entity>) (world : World) =
-        if  Set.contains (nameof RigidBodyFacet) (evt.Data.Previous :?> string Set) &&
-            not (Set.contains (nameof RigidBodyFacet) (evt.Data.Value :?> string Set)) then
-            unsubscribePhysicsPropagation evt.Subscriber world
-        Cascade
-
-    static let handleUnregistering (evt : Event<unit, Entity>) (world : World) =
-        unsubscribePhysicsPropagation evt.Subscriber world
-        Cascade
-
-    static let createVehiclePropertiesBox2D () =
-        VehiclePropertiesBox2d
-
-    static let createVehiclePropertiesJolt () =
-
-        let createWheelSettingsWV front position =
-            let settings = new JoltPhysicsSharp.WheelSettingsWV ()
-            settings.Position <- position
-            settings.WheelForward <- v3Forward
-            if front then
-                settings.MaxBrakeTorque <- 0.0f
-                settings.MaxHandBrakeTorque <- 4000.0f
-            else
-                settings.MaxBrakeTorque <- 4000.0f
-                settings.MaxHandBrakeTorque <- 4000.0f
-                settings.MaxSteerAngle <- 0.0f
-            settings
-
-        // vehicle controller config
-        let mutable differential = JoltPhysicsSharp.VehicleDifferentialSettings (LeftWheel = 0, RightWheel = 1)
-        let wheeledVehicleControllerSettings = new JoltPhysicsSharp.WheeledVehicleControllerSettings ()
-        wheeledVehicleControllerSettings.DifferentialsCount <- 1
-        wheeledVehicleControllerSettings.SetDifferential (0, differential)
-
-        // vehicle wheels config
-        let wheelSettings =
-            [|for i in 0 .. dec 4 do
-                let position =
-                    match i with
-                    | 0 -> v3 -0.8f -0.3f -3.0f // front left
-                    | 1 -> v3 0.8f -0.3f -3.0f // front right
-                    | 2 -> v3 -0.8f -0.3f 1.5f // back left
-                    | 3 -> v3 0.8f -0.3f 1.5f // back right
-                    | _ -> failwithumf ()
-                createWheelSettingsWV (i < 2) position :> JoltPhysicsSharp.WheelSettings|]
-
-        // vehicle constraint config
-        let vehicleConstraintSettings = new JoltPhysicsSharp.VehicleConstraintSettings ()
-        vehicleConstraintSettings.Forward <- v3Forward
-        vehicleConstraintSettings.Wheels <- wheelSettings
-        vehicleConstraintSettings.Controller <- wheeledVehicleControllerSettings
-
-        // fin
-        VehiclePropertiesJolt vehicleConstraintSettings
+        World.unsubscribeFacet5 (nameof propagatePhysicsCenter) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof RigidBodyFacet) world
+        World.unsubscribeFacet5 (nameof propagatePhysicsRotation) (entity.ChangeEvent (nameof entity.Rotation)) entity (nameof RigidBodyFacet) world
+        World.unsubscribeFacet5 (nameof propagatePhysicsLinearVelocity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity (nameof RigidBodyFacet) world
+        World.unsubscribeFacet5 (nameof propagatePhysicsAngularVelocity) (entity.ChangeEvent (nameof entity.AngularVelocity)) entity (nameof RigidBodyFacet) world
+        World.unsubscribeFacet5 (nameof propagatePhysicsAffected) (entity.ChangeEvent "BodyPropertiesAffecting") entity (nameof RigidBodyFacet) world
 
     static member Properties =
         [define Entity.BodyEnabled true
@@ -1601,7 +1560,7 @@ type RigidBodyFacet () =
          define Entity.Substance (Mass 1.0f)
          define Entity.Gravity GravityWorld
          define Entity.CharacterProperties (StairSteppingCharacterProperties StairSteppingCharacterProperties.defaultProperties)
-         nonPersistent Entity.VehicleProperties VehiclePropertiesAbsent
+         define Entity.VehicleProperties (VehiclePropertiesJolt WheeledVehicleProperties.defaultProperties)
          define Entity.CollisionDetection Discrete
          define Entity.CollisionGroup 0
          define Entity.CollisionCategories "1"
@@ -1614,16 +1573,18 @@ type RigidBodyFacet () =
 
     override this.Register (entity, world) =
 
-        // OPTIMIZATION: using manual unsubscription in order to use less live objects for subscriptions.
+        // OPTIMIZATION: using manual unsubscription (in Unregister, which also runs when the facet is removed) in
+        // order to use less live objects for subscriptions.
         // OPTIMIZATION: using special BodyPropertiesAffecting change event to reduce subscription count.
         World.subscribeFacetPlus Gen.id64 (nameof propagatePhysicsCenter) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof RigidBodyFacet) world |> ignore
         World.subscribeFacetPlus Gen.id64 (nameof propagatePhysicsRotation) (entity.ChangeEvent (nameof entity.Rotation)) entity (nameof RigidBodyFacet) world |> ignore
         World.subscribeFacetPlus Gen.id64 (nameof propagatePhysicsLinearVelocity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity (nameof RigidBodyFacet) world |> ignore
         World.subscribeFacetPlus Gen.id64 (nameof propagatePhysicsAngularVelocity) (entity.ChangeEvent (nameof entity.AngularVelocity)) entity (nameof RigidBodyFacet) world |> ignore
         World.subscribeFacetPlus Gen.id64 (nameof propagatePhysicsAffected) (entity.ChangeEvent "BodyPropertiesAffecting") entity (nameof RigidBodyFacet) world |> ignore
-        World.sense (nameof handleFacetNamesChange) entity.FacetNames.ChangeEvent entity (nameof RigidBodyFacet) world
-        World.sense (nameof handleUnregistering) entity.UnregisteringEvent entity (nameof RigidBodyFacet) world
         entity.SetAwakeTimeStamp world.UpdateTime world
+
+    override this.Unregister (entity, world) =
+        unsubscribePhysicsPropagation entity world
 
     override this.RegisterPhysics (entity, world) =
         let frozen = entity.GetBodyFrozen world
@@ -1635,7 +1596,7 @@ type RigidBodyFacet () =
                 match entity.GetBodyType world with
                 | Vehicle ->
                     match entity.GetVehicleProperties world with
-                    | VehiclePropertiesAbsent -> if is2d then createVehiclePropertiesBox2D () else createVehiclePropertiesJolt ()
+                    | VehiclePropertiesAbsent -> if is2d then VehiclePropertiesBox2d else VehiclePropertiesJolt WheeledVehicleProperties.defaultProperties
                     | _ as properties -> properties
                 | _ -> VehiclePropertiesAbsent
             let bodyProperties =
@@ -1679,7 +1640,12 @@ type RigidBodyFacet () =
         match (op, entity.GetBodyType world) with
         | (ViewportOverlay _, Vehicle) ->
             let bodyId = entity.GetBodyId world
-            for i in 0 .. dec 4 do
+            let wheelsCount =
+                match entity.GetVehicleProperties world with
+                | VehiclePropertiesJolt properties -> properties.VehicleWheels.Length
+                | VehiclePropertiesAbsent -> WheeledVehicleProperties.defaultProperties.VehicleWheels.Length
+                | VehiclePropertiesBox2d -> 0
+            for i in 0 .. dec wheelsCount do
                 let wheelModelMatrix = World.getBodyWheelModelMatrix v3Right v3Up i bodyId world
                 World.imGuiCircle3d wheelModelMatrix.Translation 5.0f false Color.Yellow world
         | (_, _) -> ()
@@ -2702,16 +2668,19 @@ type LayoutFacet () =
         performLayout entity world
         Cascade
 
-    static let handleLayoutPlus (evt : Event<ChangeData, Entity>) (world : World) =
+    static let handleLayoutPropertiesAffecting (evt : Event<ChangeData, Entity>) (world : World) =
         let entity = evt.Subscriber : Entity
-        performLayoutPlus entity world
+        let propertyName = evt.Data.Name
+        if propertyName = nameof Entity.Size || propertyName = nameof Entity.LayoutOrder
+        then performLayoutPlus entity world
+        else performLayout entity world
         Cascade
 
     static let unsubscribeMounterChanges (entity : Entity) (mounter : Entity) world =
-        World.unsubscribe4 (nameof handleLayout) (Entity.Order.ChangeEvent --> mounter) entity world
-        World.unsubscribe4 (nameof handleLayout) (Entity.LayoutOrder.ChangeEvent --> mounter) entity world
-        World.unsubscribe4 (nameof handleLayout) (Entity.DockType.ChangeEvent --> mounter) entity world
-        World.unsubscribe4 (nameof handleLayout) (Entity.GridPosition.ChangeEvent --> mounter) entity world
+        World.unsubscribeFacet5 (nameof handleLayout) (Entity.Order.ChangeEvent --> mounter) entity (nameof LayoutFacet) world
+        World.unsubscribeFacet5 (nameof handleLayout) (Entity.LayoutOrder.ChangeEvent --> mounter) entity (nameof LayoutFacet) world
+        World.unsubscribeFacet5 (nameof handleLayout) (Entity.DockType.ChangeEvent --> mounter) entity (nameof LayoutFacet) world
+        World.unsubscribeFacet5 (nameof handleLayout) (Entity.GridPosition.ChangeEvent --> mounter) entity (nameof LayoutFacet) world
 
     static let unsubscribeMountersChanges (entity : Entity) world =
         for mounter in World.getEntityMounters entity world do
@@ -2738,15 +2707,11 @@ type LayoutFacet () =
         performLayout entity world
         Cascade
 
-    static let handleFacetNamesChange (evt : Event<ChangeData, Entity>) (world : World) =
-        if  Set.contains (nameof LayoutFacet) (evt.Data.Previous :?> string Set) &&
-            not (Set.contains (nameof LayoutFacet) (evt.Data.Value :?> string Set)) then
-            unsubscribeMountersChanges evt.Subscriber world
-        Cascade
-
-    static let handleUnregistering (evt : Event<unit, Entity>) (world : World) =
-        unsubscribeMountersChanges evt.Subscriber world
-        Cascade
+    static let unsubscribeLayout (entity : Entity) world =
+        unsubscribeMountersChanges entity world
+        World.unsubscribeFacet5 (nameof handleMount) entity.MountEvent entity (nameof LayoutFacet) world
+        World.unsubscribeFacet5 (nameof handleUnmount) entity.UnmountEvent entity (nameof LayoutFacet) world
+        World.unsubscribeFacet5 (nameof handleLayoutPropertiesAffecting) (entity.ChangeEvent "LayoutPropertiesAffecting") entity (nameof LayoutFacet) world
 
     static member Properties =
         [define Entity.Layout Manual
@@ -2756,16 +2721,17 @@ type LayoutFacet () =
          define Entity.GridPosition v2iZero]
 
     override this.Register (entity, world) =
+
+        // OPTIMIZATION: using manual unsubscription (in Unregister, which also runs when the facet is removed) in
+        // order to use less live objects for subscriptions.
+        // OPTIMIZATION: using special LayoutPropertiesAffecting change event to reduce subscription count.
         performLayout entity world
-        World.sense (nameof handleMount) entity.MountEvent entity (nameof LayoutFacet) world
-        World.sense (nameof handleUnmount) entity.UnmountEvent entity (nameof LayoutFacet) world
-        World.sense (nameof handleFacetNamesChange) entity.FacetNames.ChangeEvent entity (nameof LayoutFacet) world
-        World.sense (nameof handleUnregistering) entity.UnregisteringEvent entity (nameof LayoutFacet) world
-        World.sense (nameof handleLayoutPlus) entity.Size.ChangeEvent entity (nameof LayoutFacet) world
-        World.sense (nameof handleLayout) entity.Perimeter.ChangeEvent entity (nameof LayoutFacet) world
-        World.sense (nameof handleLayout) entity.Layout.ChangeEvent entity (nameof LayoutFacet) world
-        World.sense (nameof handleLayout) entity.LayoutMargin.ChangeEvent entity (nameof LayoutFacet) world
-        World.sense (nameof handleLayoutPlus) entity.LayoutOrder.ChangeEvent entity (nameof LayoutFacet) world
+        World.subscribeFacetPlus Gen.id64 (nameof handleMount) entity.MountEvent entity (nameof LayoutFacet) world |> ignore
+        World.subscribeFacetPlus Gen.id64 (nameof handleUnmount) entity.UnmountEvent entity (nameof LayoutFacet) world |> ignore
+        World.subscribeFacetPlus Gen.id64 (nameof handleLayoutPropertiesAffecting) (entity.ChangeEvent "LayoutPropertiesAffecting") entity (nameof LayoutFacet) world |> ignore
+
+    override this.Unregister (entity, world) =
+        unsubscribeLayout entity world
 
 [<AutoOpen>]
 module SkyBoxFacetExtensions =
@@ -2817,6 +2783,9 @@ module LightProbeFacetExtensions =
         member this.GetProbeBounds world : Box3 = this.Get (nameof this.ProbeBounds) world
         member this.SetProbeBounds (value : Box3) world = this.Set (nameof this.ProbeBounds) value world
         member this.ProbeBounds = lens (nameof this.ProbeBounds) this this.GetProbeBounds this.SetProbeBounds
+        member this.GetProbeBoundsCoupled world : bool = this.Get (nameof this.ProbeBoundsCoupled) world
+        member this.SetProbeBoundsCoupled (value : bool) world = this.Set (nameof this.ProbeBoundsCoupled) value world
+        member this.ProbeBoundsCoupled = lens (nameof this.ProbeBoundsCoupled) this this.GetProbeBoundsCoupled this.SetProbeBoundsCoupled
         member this.GetProbeStale world : bool = this.Get (nameof this.ProbeStale) world
         member this.SetProbeStale (value : bool) world = this.Set (nameof this.ProbeStale) value world
         member this.ProbeStale = lens (nameof this.ProbeStale) this this.GetProbeStale this.SetProbeStale
@@ -2835,6 +2804,7 @@ module LightProbeFacetExtensions =
             if Option.isSome (this.GetMountOpt world)
             then this.SetPositionLocal probeBounds.Center world
             else this.SetPosition probeBounds.Center world
+            this.SetProbeBounds probeBounds world // keep the bounds in place even when coupled
 
 /// Augments an entity with a light probe.
 type LightProbeFacet () =
@@ -2849,6 +2819,71 @@ type LightProbeFacet () =
         if evt.Data.Value :?> bool then World.requestLightMapRender world
         Cascade
 
+    static let handlePositionChange (evt : Event<ChangeData, Entity>) world =
+        // NOTE: coupled bounds follow every probe move. uncoupled bounds still follow moves made by the probe's mount,
+        // which are found by subscribing to the mount's position, rotation, and scale changes. each of those computes
+        // the probe's resulting move from its mount's old and new value since the probe's position is computed as
+        // rotation * (scale * positionLocal) + position. when rotation and scale change at once, the result is off by
+        // the second-order term (rotationNew - rotationOld) * (scaleNew - scaleOld) * positionLocal. This kludge is
+        // due to the unavailability of a previous value in a Transform change event.
+        let entity = evt.Subscriber
+        if entity.GetProbeBoundsCoupled world then
+            let delta = (evt.Data.Value :?> Vector3) - (evt.Data.Previous :?> Vector3)
+            entity.ProbeBounds.Map (fun bounds -> bounds.Translate delta) world
+        Cascade
+
+    static let handleMountPositionChange (evt : Event<ChangeData, Entity>) world =
+        let entity = evt.Subscriber
+        if not (entity.GetProbeBoundsCoupled world) then
+            let delta = (evt.Data.Value :?> Vector3) - (evt.Data.Previous :?> Vector3)
+            entity.ProbeBounds.Map (fun bounds -> bounds.Translate delta) world
+        Cascade
+
+    static let handleMountRotationChange (evt : Event<ChangeData, Entity>) world =
+        let entity = evt.Subscriber
+        if not (entity.GetProbeBoundsCoupled world) then
+            match evt.Publisher with
+            | :? Entity as mount ->
+                let scaled = mount.GetScale world * entity.GetPositionLocal world
+                let delta = scaled.Transform (evt.Data.Value :?> Quaternion) - scaled.Transform (evt.Data.Previous :?> Quaternion)
+                entity.ProbeBounds.Map (fun bounds -> bounds.Translate delta) world
+            | _ -> ()
+        Cascade
+
+    static let handleMountScaleChange (evt : Event<ChangeData, Entity>) world =
+        let entity = evt.Subscriber
+        if not (entity.GetProbeBoundsCoupled world) then
+            match evt.Publisher with
+            | :? Entity as mount ->
+                let rotation = mount.GetRotation world
+                let positionLocal = entity.GetPositionLocal world
+                let delta = ((evt.Data.Value :?> Vector3) * positionLocal).Transform rotation - ((evt.Data.Previous :?> Vector3) * positionLocal).Transform rotation
+                entity.ProbeBounds.Map (fun bounds -> bounds.Translate delta) world
+            | _ -> ()
+        Cascade
+
+    static let subscribeMount (entity : Entity) (mountOpt : Entity Address option) world =
+        match Option.bind (flip tryResolve entity) mountOpt with
+        | Some (mount : Entity) ->
+            World.subscribeFacetPlus Gen.id64 (nameof handleMountPositionChange) mount.Position.ChangeEvent entity (nameof LightProbeFacet) world |> ignore
+            World.subscribeFacetPlus Gen.id64 (nameof handleMountRotationChange) mount.Rotation.ChangeEvent entity (nameof LightProbeFacet) world |> ignore
+            World.subscribeFacetPlus Gen.id64 (nameof handleMountScaleChange) mount.Scale.ChangeEvent entity (nameof LightProbeFacet) world |> ignore
+        | None -> ()
+
+    static let unsubscribeMount (entity : Entity) (mountOpt : Entity Address option) world =
+        match Option.bind (flip tryResolve entity) mountOpt with
+        | Some (mount : Entity) ->
+            World.unsubscribeFacet5 (nameof handleMountPositionChange) mount.Position.ChangeEvent entity (nameof LightProbeFacet) world
+            World.unsubscribeFacet5 (nameof handleMountRotationChange) mount.Rotation.ChangeEvent entity (nameof LightProbeFacet) world
+            World.unsubscribeFacet5 (nameof handleMountScaleChange) mount.Scale.ChangeEvent entity (nameof LightProbeFacet) world
+        | None -> ()
+
+    static let handleMountOptChange (evt : Event<ChangeData, Entity>) world =
+        let entity = evt.Subscriber
+        unsubscribeMount entity (evt.Data.Previous :?> Entity Address option) world
+        subscribeMount entity (evt.Data.Value :?> Entity Address option) world
+        Cascade
+
     static member Properties =
         [define Entity.Size (v3Dup 0.25f)
          define Entity.Presence Omnipresent
@@ -2857,6 +2892,7 @@ type LightProbeFacet () =
          define Entity.AmbientColor Color.White
          define Entity.AmbientBrightness 0.5f
          define Entity.ExcludeGlobalLights false
+         define Entity.ProbeBoundsCoupled false
          define Entity.ProbeBounds (box3 (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f) (v3Dup Constants.Render.LightProbeSizeDefault))
          nonPersistent Entity.ProbeStale false]
 
@@ -2864,7 +2900,13 @@ type LightProbeFacet () =
         World.sense (nameof handleProbeVisibleChange) entity.Group.Editing.ChangeEvent entity (nameof LightProbeFacet) world
         World.sense (nameof handleProbeVisibleChange) entity.Visible.ChangeEvent entity (nameof LightProbeFacet) world
         World.sense (nameof handleProbeStaleChange) entity.ProbeStale.ChangeEvent entity (nameof LightProbeFacet) world
+        World.sense (nameof handlePositionChange) entity.Position.ChangeEvent entity (nameof LightProbeFacet) world
+        World.sense (nameof handleMountOptChange) entity.MountOpt.ChangeEvent entity (nameof LightProbeFacet) world
+        subscribeMount entity (entity.GetMountOpt world) world // NOTE: unsubscribed in Unregister.
         entity.SetProbeStale true world
+
+    override this.Unregister (entity, world) =
+        unsubscribeMount entity (entity.GetMountOpt world) world
 
     override this.Render (renderPass, entity, world) =
         let id = entity.GetId world
@@ -2888,10 +2930,7 @@ type LightProbeFacet () =
             if ImGui.Button "Rerender Light Map" then entity.SetProbeStale true world // this isn't undoable
             if ImGui.Button "Recenter in Probe Bounds" then
                 append.EditContext.Snapshot RencenterInProbeBounds world
-                let probeBounds = entity.GetProbeBounds world
-                if Option.isSome (entity.GetMountOpt world)
-                then entity.SetPositionLocal probeBounds.Center world
-                else entity.SetPosition probeBounds.Center world
+                entity.RecenterInProbeBounds world
             if ImGui.Button "Reset Probe Bounds" then
                 append.EditContext.Snapshot ResetProbeBounds world
                 entity.ResetProbeBounds world
@@ -2988,6 +3027,17 @@ module Light3dFacetExtensions =
             let shadowProjection = this.ComputeShadowProjection world
             Frustum (shadowView * shadowProjection)
 
+        /// Compute the frustum of a cone of the given outer angle shining from the light, as a spot light's shadow
+        /// frustum would be.
+        member this.ComputeConeFrustum (coneOuter : single) world =
+            let coneOrigin = this.ComputeLightOrigin world
+            let coneForward = (this.GetRotation world).Down
+            let coneView = Matrix4x4.CreateLookAt (coneOrigin, coneOrigin + coneForward, coneForward.OrthonormalUp)
+            let coneFov = max (min coneOuter Constants.Render.ShadowFovMax) 0.01f
+            let coneCutoff = max (this.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
+            let coneProjection = Matrix4x4.CreatePerspectiveFieldOfView (coneFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, coneCutoff)
+            Frustum (coneView * coneProjection)
+
 /// Augments an entity with a 3d light.
 type Light3dFacet () =
     inherit Facet (false, false, true)
@@ -3026,7 +3076,7 @@ type Light3dFacet () =
          define Entity.AutoAttenuate true
          define Entity.Specularity 1.0f
          define Entity.LightCutoff Constants.Render.LightCutoffDefault
-         define Entity.LightType (PointLight 0.0f)
+         define Entity.LightType (PointLight (0.0f, None))
          define Entity.ShadowingType NoShadowing
          define Entity.DesireFog false]
 
@@ -3089,8 +3139,11 @@ type Light3dFacet () =
                 entity.SetAttenuationLinear (1.0f / (brightness * lightCutoff)) world
                 entity.SetAttenuationQuadratic (1.0f / (brightness * lightCutoff * lightCutoff)) world
         | ViewportOverlay _ ->
-            let shadowFrustum = entity.ComputeShadowFrustum world
-            for segment in shadowFrustum.Segments do
+            let frustum =
+                match entity.GetLightType world with
+                | PointLight (_, Some (_, coneOuter)) -> entity.ComputeConeFrustum coneOuter world
+                | PointLight (_, None) | SpotLight (_, _, _) | DirectionalLight _ | CascadedLight -> entity.ComputeShadowFrustum world
+            for segment in frustum.Segments do
                 World.imGuiSegment3d segment 1.0f Color.Yellow world
         | _ -> ()
 
@@ -3145,11 +3198,7 @@ type StaticBillboardFacet () =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-            World.enqueueRenderMessage3d
-                (RenderBillboard
-                    { CastShadow = castShadow; Presence = presence; ModelMatrix = affineMatrix; InsetOpt = insetOpt; OrientUp = orientUp; Planar = planar;
-                      Material = material; MaterialProperties = properties; ShadowOffset = shadowOffset; RenderType = renderType; RenderPass = renderPass })
-                world
+            World.renderBillboardFast (&affineMatrix, castShadow, presence, ValueOption.ofOption insetOpt, orientUp, planar, material, properties, shadowOffset, renderType, renderPass, world)
 
     override this.RayCast (ray, entity, world) =
         // TODO: P1: intersect against oriented quad rather than bounds.
@@ -3215,11 +3264,7 @@ type AnimatedBillboardFacet () =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-            World.enqueueRenderMessage3d
-                (RenderBillboard
-                    { CastShadow = castShadow; Presence = presence; ModelMatrix = affineMatrix; InsetOpt = insetOpt; OrientUp = orientUp; Planar = planar;
-                      Material = material; MaterialProperties = properties; ShadowOffset = shadowOffset; RenderType = renderType; RenderPass = renderPass })
-                world
+            World.renderBillboardFast (&affineMatrix, castShadow, presence, ValueOption.ofOption insetOpt, orientUp, planar, material, properties, shadowOffset, renderType, renderPass, world)
 
     override this.RayCast (ray, entity, world) =
         // TODO: P1: intersect against oriented quad rather than bounds.
@@ -4239,11 +4284,15 @@ module TraversalInterpolatedFacetExtensions =
             if FQueue.notEmpty rotationHistory then
 
                 // interpolate rotation using time-weighted slerp between all pairs
+                // NOTE: q and -q describe the same rotation, so each one is first brought into the current rotation's
+                // hemisphere since summing midpoints of opposite signs would partially cancel them out.
                 let gameTime = if this.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
                 let history = rotationHistory |> FQueue.conj (gameTime, rotation)
+                let current = rotation
                 let (sum, totalTime, _) =
                     history |> FQueue.fold
                         (fun (sum, totalTime, prevOpt) (time, rotation) ->
+                            let rotation = if Quaternion.Dot (rotation, current) < 0.0f then -rotation else rotation
                             match prevOpt with
                             | ValueSome (previousTime, previousRotation) ->
                                 let deltaTime = time - previousTime
@@ -4347,7 +4396,7 @@ type NavBodyFacet () =
         World.subscribeFacetPlus Gen.id64 (nameof handlePropagateNavBody) (entity.ChangeEvent (nameof entity.Bounds)) entity (nameof NavBodyFacet) world |> ignore
 
     static let unsubscribeBoundsChange (entity : Entity) world =
-        World.unsubscribe4 (nameof handlePropagateNavBody) (entity.ChangeEvent (nameof entity.Bounds)) entity world
+        World.unsubscribeFacet5 (nameof handlePropagateNavBody) (entity.ChangeEvent (nameof entity.Bounds)) entity (nameof NavBodyFacet) world
 
     static let handleNavShapeChange (evt : Event<ChangeData, Entity>) (world : World) =
         let entity = evt.Subscriber
@@ -4369,30 +4418,18 @@ type NavBodyFacet () =
         propagateNavBody entity world
         Cascade
 
-    static let handleFacetNamesChange (evt : Event<ChangeData, Entity>) (world : World) =
-        if  Set.contains (nameof NavBodyFacet) (evt.Data.Previous :?> string Set) &&
-            not (Set.contains (nameof NavBodyFacet) (evt.Data.Value :?> string Set)) then
-            unsubscribeBoundsChange evt.Subscriber world
-        Cascade
-
-    static let handleUnregistering (evt : Event<unit, Entity>) (world : World) =
-        unsubscribeBoundsChange evt.Subscriber world
-        Cascade
-
     static member Properties =
         [define Entity.NavShape ContourNavShape
          define Entity.NavEnabled true]
 
     override this.Register (entity, world) =
 
-        // OPTIMIZATION: conditionally subscribe to bounds change event.
+        // OPTIMIZATION: conditionally subscribe to bounds change event (unsubscribed in Unregister).
         match entity.GetNavShape world with
         | EmptyNavShape -> ()
         | _ -> subscribeBoundsChange entity world
         World.sense (nameof handleNavShapeChange) (entity.ChangeEvent (nameof entity.NavShape)) entity (nameof NavBodyFacet) world
         World.sense (nameof handleNavEnabledChange) (entity.ChangeEvent (nameof entity.NavEnabled)) entity (nameof NavBodyFacet) world
-        World.sense (nameof handleFacetNamesChange) entity.FacetNames.ChangeEvent entity (nameof NavBodyFacet) world
-        World.sense (nameof handleUnregistering) entity.UnregisteringEvent entity (nameof NavBodyFacet) world
 
         // unconditional registration behavior
         World.sense (nameof handlePropagateNavBody) (entity.ChangeEvent (nameof entity.StaticModel)) entity (nameof NavBodyFacet) world
@@ -4401,6 +4438,7 @@ type NavBodyFacet () =
         propagateNavBody entity world
 
     override this.Unregister (entity, world) =
+        unsubscribeBoundsChange entity world
         let navId = { NavIndex = -1; NavEntity = entity }
         if entity.GetIs2d world
         then () // TODO: implement for 2d navigation when it's available.

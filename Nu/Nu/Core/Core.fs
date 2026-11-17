@@ -8,6 +8,7 @@ namespace Nu
 open System
 open System.Diagnostics
 open System.Runtime
+open System.Threading
 open Prime
 
 /// Provides core operations for basic Nu functionality.
@@ -22,14 +23,19 @@ module Core =
     let getTimeStamp () =
         Stopwatch.GetTimestamp ()
 
-    /// Get a unique time stamp, spinning until the time stamp advances if need be.
+    /// Get a unique, monotonically increasing time stamp.
     /// Thread-safe.
     let getTimeStampUnique () =
-        lock LastTimeStampLock $ fun () ->
-            let mutable nextStamp = getTimeStamp ()
-            while nextStamp = LastTimeStamp do nextStamp <- getTimeStamp ()
-            LastTimeStamp <- nextStamp
-            nextStamp
+        let mutable result = 0L
+        let mutable going = true
+        while going do
+            let last = Volatile.Read &LastTimeStamp
+            let now = getTimeStamp ()
+            let next = if now > last then now else last + 1L
+            if Interlocked.CompareExchange (&LastTimeStamp, next, last) = last then
+                result <- next
+                going <- false
+        result
 
     /// Do a full garbage collection pass, optionally also compacting the LOH.
     /// Thread-safe.

@@ -106,7 +106,9 @@ type JoltPhysicsEngineRenderContext =
     { EyeCenter : Vector3
       EyeFrustum : Frustum
       DebugRenderer : DebugRenderer
-      DrawSettings : DrawSettings }
+      DrawSettings : DrawSettings
+      RenderDistanceMax : single
+      HeightFieldsRendered : bool }
     interface PhysicsEngineRenderContext
 
 /// The Jolt implementation of PhysicsEngine.
@@ -668,8 +670,116 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         | DynamicCharacter -> Choice2Of3 characterProperties
         | Vehicle ->
             match vehicleProperties with
-            | VehiclePropertiesJolt vehicleConstraintSettings -> Choice3Of3 vehicleConstraintSettings
+            | VehiclePropertiesJolt wheeledVehicleProperties -> Choice3Of3 wheeledVehicleProperties
             | _ -> Choice1Of3 ()
+
+    static member private createLinearCurve (points : Vector2 array) =
+        let curve = new LinearCurve ()
+        for point in points do curve.AddPoint (point.X, point.Y)
+        curve
+
+    static member private createVehicleConstraintSettings (properties : WheeledVehicleProperties) =
+
+        // wheels config
+        let wheelSettings =
+            [|for wheel in properties.VehicleWheels do
+                let settings = new WheelSettingsWV ()
+                settings.Position <- wheel.WheelPosition
+                match wheel.WheelSuspensionForcePointOpt with
+                | Some suspensionForcePoint ->
+                    settings.EnableSuspensionForcePoint <- true
+                    settings.SuspensionForcePoint <- suspensionForcePoint
+                | None -> settings.EnableSuspensionForcePoint <- false
+                settings.SuspensionDirection <- wheel.WheelSuspensionDirection
+                settings.SteeringAxis <- wheel.WheelSteeringAxis
+                settings.WheelUp <- wheel.WheelUp
+                settings.WheelForward <- wheel.WheelForward
+                settings.SuspensionMinLength <- wheel.WheelSuspensionMinLength
+                settings.SuspensionMaxLength <- wheel.WheelSuspensionMaxLength
+                settings.SuspensionPreloadLength <- wheel.WheelSuspensionPreloadLength
+                let mutable spring = settings.SuspensionSpring
+                match wheel.WheelSuspensionSpring with
+                | FrequencyAndDampingSpring (frequency, damping) ->
+                    spring.Mode <- SpringMode.FrequencyAndDamping
+                    spring.FrequencyOrStiffness <- frequency
+                    spring.Damping <- damping
+                | StiffnessAndDampingSpring (stiffness, damping) ->
+                    spring.Mode <- SpringMode.StiffnessAndDamping
+                    spring.FrequencyOrStiffness <- stiffness
+                    spring.Damping <- damping
+                settings.SuspensionSpring <- spring
+                settings.Radius <- wheel.WheelRadius
+                settings.Width <- wheel.WheelWidth
+                settings.Inertia <- wheel.WheelInertia
+                settings.MaxSteerAngle <- wheel.WheelMaxSteerAngle
+                settings.LongitudinalFriction <- JoltPhysicsEngine.createLinearCurve wheel.WheelLongitudinalFriction
+                settings.LateralFriction <- JoltPhysicsEngine.createLinearCurve wheel.WheelLateralFriction
+                settings.MaxBrakeTorque <- wheel.WheelMaxBrakeTorque
+                settings.MaxHandBrakeTorque <- wheel.WheelMaxHandBrakeTorque
+                settings :> WheelSettings|]
+
+        // controller config
+        let controllerSettings = new WheeledVehicleControllerSettings ()
+        let mutable engineSettings = controllerSettings.Engine
+        let engine = properties.VehicleEngine
+        engineSettings.MaxTorque <- engine.EngineMaxTorque
+        engineSettings.MinRPM <- engine.EngineMinRpm
+        engineSettings.MaxRPM <- engine.EngineMaxRpm
+        engineSettings.NormalizedTorque <- JoltPhysicsEngine.createLinearCurve engine.EngineNormalizedTorque
+        engineSettings.Inertia <- engine.EngineInertia
+        engineSettings.AngularDamping <- engine.EngineAngularDamping
+        controllerSettings.Engine <- engineSettings
+        let transmissionSettings = controllerSettings.Transmission
+        let transmission = properties.VehicleTransmission
+        transmissionSettings.Mode <-
+            match transmission.TransmissionMode with
+            | AutomaticTransmission -> TransmissionMode.Auto
+            | ManualTransmission -> TransmissionMode.Manual
+        transmissionSettings.GearRatios <- Span<single> transmission.TransmissionGearRatios
+        transmissionSettings.ReverseGearRatios <- Span<single> transmission.TransmissionReverseGearRatios
+        transmissionSettings.SwitchTime <- transmission.TransmissionSwitchTime
+        transmissionSettings.ClutchReleaseTime <- transmission.TransmissionClutchReleaseTime
+        transmissionSettings.SwitchLatency <- transmission.TransmissionSwitchLatency
+        transmissionSettings.ShiftUpRPM <- transmission.TransmissionShiftUpRpm
+        transmissionSettings.ShiftDownRPM <- transmission.TransmissionShiftDownRpm
+        transmissionSettings.ClutchStrength <- transmission.TransmissionClutchStrength
+        controllerSettings.Transmission <- transmissionSettings
+        controllerSettings.DifferentialsCount <- properties.VehicleDifferentials.Length
+        for i in 0 .. dec properties.VehicleDifferentials.Length do
+            let differential = properties.VehicleDifferentials[i]
+            let differentialSettings =
+                VehicleDifferentialSettings
+                    (LeftWheel = differential.DifferentialLeftWheel,
+                     RightWheel = differential.DifferentialRightWheel,
+                     DifferentialRatio = differential.DifferentialRatio,
+                     LeftRightSplit = differential.DifferentialLeftRightSplit,
+                     LimitedSlipRatio = differential.DifferentialLimitedSlipRatio,
+                     EngineTorqueRatio = differential.DifferentialEngineTorqueRatio)
+            controllerSettings.SetDifferential (i, differentialSettings)
+        controllerSettings.DifferentialLimitedSlipRatio <- properties.VehicleDifferentialLimitedSlipRatio
+
+        // constraint config
+        let constraintSettings = new VehicleConstraintSettings ()
+        constraintSettings.Up <- properties.VehicleUp
+        constraintSettings.Forward <- properties.VehicleForward
+        constraintSettings.MaxPitchRollAngle <- properties.VehicleMaxPitchRollAngle
+        constraintSettings.Wheels <- wheelSettings
+        if properties.VehicleAntiRollBars.Length > 0 then // NOTE: leaving unset when empty as jolt's default is null.
+            constraintSettings.AntiRollBars <-
+                [|for antiRollBar in properties.VehicleAntiRollBars do
+                    VehicleAntiRollBar
+                        (LeftWheel = antiRollBar.AntiRollBarLeftWheel,
+                         RightWheel = antiRollBar.AntiRollBarRightWheel,
+                         Stiffness = antiRollBar.AntiRollBarStiffness)|]
+        constraintSettings.Controller <- controllerSettings
+        constraintSettings
+
+    static member private createVehicleCollisionTester objectLayer (properties : WheeledVehicleProperties) : JoltPhysicsSharp.VehicleCollisionTester =
+        let mutable up = properties.VehicleUp
+        match properties.VehicleCollisionTester with
+        | CastCylinderCollisionTester convexRadiusFraction -> new VehicleCollisionTesterCastCylinder (objectLayer, convexRadiusFraction)
+        | CastSphereCollisionTester (radius, maxSlopeAngle) -> new VehicleCollisionTesterCastSphere (objectLayer, radius, &up, maxSlopeAngle)
+        | RayCollisionTester maxSlopeAngle -> new VehicleCollisionTesterRay (objectLayer, up, maxSlopeAngle)
 
     static member private createBody3 (bodyId : BodyId) (bodyProperties : BodyProperties) (physicsEngine : JoltPhysicsEngine) =
 
@@ -791,10 +901,10 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             physicsEngine.CharacterUserData.Add (character.ID, characterUserData)
             physicsEngine.Characters.Add (bodyId, character)
 
-        | Choice3Of3 vehicleConstraintSettings ->
+        | Choice3Of3 wheeledVehicleProperties ->
 
             // create vehicle offset COM shape
-            let offset = v3Down * 1.25f // TODO: P1: expose this as parameter.
+            let offset = wheeledVehicleProperties.VehicleCenterOfMassOffset
             use offsetComShapeSettings = new OffsetCenterOfMassShapeSettings (&offset, scShapeSettings)
 
             // create vehicle body, setting up body for disposal
@@ -802,8 +912,9 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             use body = body
             
             // create vehicle constraint
+            let vehicleConstraintSettings = JoltPhysicsEngine.createVehicleConstraintSettings wheeledVehicleProperties
             let vehicleConstraint = new VehicleConstraint (body, vehicleConstraintSettings)
-            vehicleConstraint.SetVehicleCollisionTester (new VehicleCollisionTesterCastCylinder (objectLayer, 1.0f))
+            vehicleConstraint.SetVehicleCollisionTester (JoltPhysicsEngine.createVehicleCollisionTester objectLayer wheeledVehicleProperties)
             physicsEngine.VehicleConstraints.Add (bodyId, vehicleConstraint)
             physicsEngine.PhysicsContext.AddConstraint vehicleConstraint
 
@@ -816,6 +927,64 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         if physicsEngine.BodyUnoptimizedCreationCount = Constants.Physics.Collision3dBodyUnoptimizedCreationMax then
             physicsEngine.PhysicsContext.OptimizeBroadPhase ()
             physicsEngine.BodyUnoptimizedCreationCount <- 0
+
+    /// Get a wheel's world transform, mapping the given wheel model right and up vectors to the wheel's axle and up.
+    /// NOTE: JoltPhysicsSharp returns this matrix in column-vector form (translation in M14, M24 and M34), so we
+    /// transpose it to System.Numerics' row-vector form.
+    static member private getWheelWorldTransform (vehicleConstraint : VehicleConstraint) wheelIndex wheelModelRight wheelModelUp =
+        let mutable wheelModelRight = wheelModelRight
+        let mutable wheelModelUp = wheelModelUp
+        Matrix4x4.Transpose (vehicleConstraint.GetWheelWorldTransform (wheelIndex, &wheelModelRight, &wheelModelUp))
+
+    /// Check that bounds are within the render distance of the eye and intersect its frustum.
+    static member private getBoundsRenderable (renderer : JoltPhysicsEngineRenderContext) distanceMaxSquared (min : Vector3) (max : Vector3) =
+        let eyeToBounds = Vector3.Clamp (renderer.EyeCenter, min, max) - renderer.EyeCenter
+        eyeToBounds.MagnitudeSquared < distanceMaxSquared &&
+        renderer.EyeFrustum.Intersects (Box3 (min, max - min))
+
+    static member private renderVehicleWheels (renderer : JoltPhysicsEngineRenderContext) distanceMaxSquared physicsEngine =
+        let debugRenderer = renderer.DebugRenderer
+        let contactColor = JoltColor (0, 255, 0, 255)
+        let airborneColor = JoltColor (255, 0, 0, 255)
+        let contactPointColor = JoltColor (255, 255, 0, 255)
+        let rimSegments = 16
+        for vehicleConstraint in physicsEngine.VehicleConstraints.Values do
+            let vehicleBounds = vehicleConstraint.VehicleBody.WorldSpaceBounds
+            if JoltPhysicsEngine.getBoundsRenderable renderer distanceMaxSquared vehicleBounds.Min vehicleBounds.Max then
+                for i in 0 .. dec vehicleConstraint.WheelsCount do
+
+                    // compute wheel transform such that local x is the axle and the wheel spins in local yz
+                    let wheel = vehicleConstraint.GetWheel i
+                    let radius = wheel.Settings.Radius
+                    let halfWidth = wheel.Settings.Width * 0.5f
+                    let wheelTransform = JoltPhysicsEngine.getWheelWorldTransform vehicleConstraint i v3Right v3Up
+                    let rimPoint side j =
+                        let angle = single j / single rimSegments * MathF.TWO_PI
+                        (v3 side (cos angle * radius) (sin angle * radius)).Transform wheelTransform
+
+                    // draw rims, treads (which show spin and steering), and axle, colored by ground contact
+                    let color = if wheel.HasContact then contactColor else airborneColor
+                    for side in [|-halfWidth; halfWidth|] do
+                        for j in 0 .. dec rimSegments do
+                            let start = rimPoint side j
+                            let stop = rimPoint side (inc j)
+                            debugRenderer.DrawLine (&start, &stop, color)
+                    for j in 0 .. rimSegments / 4 .. dec rimSegments do
+                        let start = rimPoint -halfWidth j
+                        let stop = rimPoint halfWidth j
+                        debugRenderer.DrawLine (&start, &stop, color)
+                    let axleStart = (v3 -halfWidth 0.0f 0.0f).Transform wheelTransform
+                    let axleStop = (v3 halfWidth 0.0f 0.0f).Transform wheelTransform
+                    debugRenderer.DrawLine (&axleStart, &axleStop, color)
+
+                    // draw contact point
+                    if wheel.HasContact then
+                        let contactPosition = wheel.ContactPosition
+                        let markerHalfSize = radius * 0.25f
+                        for axis in [|v3Right; v3Up; v3Forward|] do
+                            let start = contactPosition - axis * markerHalfSize
+                            let stop = contactPosition + axis * markerHalfSize
+                            debugRenderer.DrawLine (&start, &stop, contactPointColor)
 
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
 
@@ -1424,15 +1593,13 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
 
         member physicsEngine.GetBodyWheelModelMatrix (wheelModelRight, wheelModelUp, wheelIndex, bodyId) =
             match physicsEngine.VehicleConstraints.TryGetValue bodyId with
-            | (true, vehicleConstraint) when wheelIndex >= 0 && vehicleConstraint.WheelsCount >= wheelIndex ->
-                let mutable wheelModelRight = wheelModelRight
-                let mutable wheelModelUp = wheelModelUp
-                vehicleConstraint.GetWheelWorldTransform (wheelIndex, &wheelModelRight, &wheelModelUp)
+            | (true, vehicleConstraint) when wheelIndex >= 0 && wheelIndex < vehicleConstraint.WheelsCount ->
+                JoltPhysicsEngine.getWheelWorldTransform vehicleConstraint wheelIndex wheelModelRight wheelModelUp
             | (_, _) -> m4Identity
 
         member physicsEngine.GetBodyWheelAngularVelocity (wheelIndex, bodyId) =
             match physicsEngine.VehicleConstraints.TryGetValue bodyId with
-            | (true, vehicleConstraint) when wheelIndex >= 0 && vehicleConstraint.WheelsCount >= wheelIndex ->
+            | (true, vehicleConstraint) when wheelIndex >= 0 && wheelIndex < vehicleConstraint.WheelsCount ->
                 let wheel = vehicleConstraint.GetWheel<WheelWV> wheelIndex
                 wheel.AngularVelocity
             | (_, _) -> 0.0f
@@ -1627,20 +1794,18 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         member physicsEngine.TryRender renderContext =
             match renderContext with
             | :? JoltPhysicsEngineRenderContext as renderer ->
-                let distanceMaxSquared =
-                    Constants.Render.Body3dRenderDistanceMax *
-                    Constants.Render.Body3dRenderDistanceMax
+                let distanceMaxSquared = renderer.RenderDistanceMax * renderer.RenderDistanceMax
                 use drawBodyFilter =
                     new BodyDrawFilterLambda (fun body ->
-                        let bodyCenter = body.WorldSpaceBounds.Center
-                        let bodyDistanceSquared = (bodyCenter - renderer.EyeCenter).MagnitudeSquared
-                        body.Shape.Type <> ShapeType.HeightField && // NOTE: eliding terrain because without LOD, it's currently too expensive.
-                        bodyDistanceSquared < distanceMaxSquared &&
-                        renderer.EyeFrustum.Contains bodyCenter <> ContainmentType.Disjoint)
+                        // NOTE: height fields are optional since, without LOD, they're expensive to render.
+                        let bounds = body.WorldSpaceBounds
+                        (renderer.HeightFieldsRendered || body.Shape.Type <> ShapeType.HeightField) &&
+                        JoltPhysicsEngine.getBoundsRenderable renderer distanceMaxSquared bounds.Min bounds.Max)
                 let eyeCenter = renderer.EyeCenter
                 renderer.DebugRenderer.SetCameraPosition &eyeCenter
                 let drawSettings = renderer.DrawSettings
                 physicsEngine.PhysicsContext.DrawBodies (&drawSettings, renderer.DebugRenderer, drawBodyFilter)
+                JoltPhysicsEngine.renderVehicleWheels renderer distanceMaxSquared physicsEngine
             | _ -> ()
 
         member physicsEngine.ClearInternal () =
