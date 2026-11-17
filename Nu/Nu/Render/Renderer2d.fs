@@ -72,6 +72,7 @@ type [<Struct>] TextValue =
       mutable FontStyling : FontStyle Set
       mutable Color : Color
       mutable Justification : Justification
+      mutable LineSpacing : single
       mutable CaretOpt : int option
       mutable UserDefinedSettings : UserDefinedSettings }
 
@@ -143,6 +144,7 @@ type TextDescriptor =
       FontStyling : FontStyle Set
       Color : Color
       Justification : Justification
+      LineSpacing : single
       CaretOpt : int option
       UserDefinedSettings : UserDefinedSettings }
 
@@ -798,6 +800,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
          fontStyling : FontStyle Set,
          color : Color inref,
          justification : Justification,
+         lineSpacing : single,
          caretOpt : int option,
          userDefinedSettings : UserDefinedSettings inref,
          eyeCenter : Vector2,
@@ -847,7 +850,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                         // attempt to find or create text texture
                         // NOTE: because of the hacky way the caret is shown, texture is recreated every blink on / off.
                         let textTextureOpt =
-                            let textTextureKey = (perimeter, text, font, fontSize, fontStyling, color, justification)
+                            let textTextureKey = (perimeter, text, font, fontSize, fontStyling, color, justification, lineSpacing)
                             match renderer.TextTextures.TryGetValue textTextureKey with
                             | (false, _) ->
                         
@@ -877,34 +880,49 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                         else TTF_FontStyleFlags.TTF_STYLE_NORMAL
                                     SDL3_ttf.TTF_SetFontStyle (font, styleSdl)
 
+                                    // configure sdl font line skip as a multiple of the font's own line skip, remembering
+                                    // the font's own line skip to restore after rendering since the font is shared
+                                    let fontLineSkipDefault = SDL3_ttf.TTF_GetFontLineSkip font
+                                    if lineSpacing <> 1.0f then
+                                        // NOTE: line spacing is clamped at zero since sdl fails to render a negative line skip.
+                                        let fontLineSkip = single fontLineSkipDefault * max lineSpacing 0.0f
+                                        SDL3_ttf.TTF_SetFontLineSkip (font, int (round fontLineSkip))
+
                                     // render text to surface
-                                    match justification with
-                                    | Unjustified wrapped ->
-                                        let textSurfacePtr =
-                                            if wrapped
-                                            then SDL3_ttf.TTF_RenderText_Blended_Wrapped (font, text, 0un, colorSdl, int size.X)
-                                            else SDL3_ttf.TTF_RenderText_Blended (font, text, 0un, colorSdl)
-                                        let textSurface = NativePtr.toByRef textSurfacePtr
-                                        let textSurfaceHeight = single textSurface.h
-                                        let offsetY = size.Y - textSurfaceHeight
-                                        (v2 0.0f offsetY, textSurfacePtr)
-                                    | Justified (h, v) ->
-                                        let mutable width = 0
-                                        let mutable height = 0
-                                        SDL3_ttf.TTF_GetStringSize (font, text, 0un, &&width, &&height) |> ignore<SDLBool>
-                                        let textSurfacePtr = SDL3_ttf.TTF_RenderText_Blended (font, text, 0un, colorSdl)
-                                        let offsetX =
-                                            match h with
-                                            | JustifyLeft -> 0.0f
-                                            | JustifyCenter -> floor ((size.X - single width) * 0.5f)
-                                            | JustifyRight -> size.X - single width
-                                        let offsetY =
-                                            match v with
-                                            | JustifyTop -> size.Y - single height
-                                            | JustifyMiddle -> floor ((size.Y - single height) * 0.5f)
-                                            | JustifyBottom -> 0.0f
-                                        let offset = v2 offsetX offsetY
-                                        (offset, textSurfacePtr)
+                                    let offsetAndTextSurfacePtr =
+                                        match justification with
+                                        | Unjustified wrapped ->
+                                            let textSurfacePtr =
+                                                if wrapped
+                                                then SDL3_ttf.TTF_RenderText_Blended_Wrapped (font, text, 0un, colorSdl, int size.X)
+                                                else SDL3_ttf.TTF_RenderText_Blended (font, text, 0un, colorSdl)
+                                            if NativePtr.notNullPtr textSurfacePtr then
+                                                let textSurface = NativePtr.toByRef textSurfacePtr
+                                                let textSurfaceHeight = single textSurface.h
+                                                let offsetY = size.Y - textSurfaceHeight
+                                                (v2 0.0f offsetY, textSurfacePtr)
+                                            else (v2Zero, textSurfacePtr)
+                                        | Justified (h, v) ->
+                                            let mutable width = 0
+                                            let mutable height = 0
+                                            SDL3_ttf.TTF_GetStringSize (font, text, 0un, &&width, &&height) |> ignore<SDLBool>
+                                            let textSurfacePtr = SDL3_ttf.TTF_RenderText_Blended (font, text, 0un, colorSdl)
+                                            let offsetX =
+                                                match h with
+                                                | JustifyLeft -> 0.0f
+                                                | JustifyCenter -> floor ((size.X - single width) * 0.5f)
+                                                | JustifyRight -> size.X - single width
+                                            let offsetY =
+                                                match v with
+                                                | JustifyTop -> size.Y - single height
+                                                | JustifyMiddle -> floor ((size.Y - single height) * 0.5f)
+                                                | JustifyBottom -> 0.0f
+                                            let offset = v2 offsetX offsetY
+                                            (offset, textSurfacePtr)
+
+                                    // restore the font's own line skip
+                                    if lineSpacing <> 1.0f then SDL3_ttf.TTF_SetFontLineSkip (font, fontLineSkipDefault)
+                                    offsetAndTextSurfacePtr
 
                                 // render only when a valid surface was created
                                 if NativePtr.notNullPtr textSurfacePtr then
@@ -931,7 +949,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                     Some (textSurfaceWidth, textSurfaceHeight, offset, textTexture)
 
                                 // error
-                                else None
+                                else Log.infoOnce ("Failed to render text '" + text + "' due to: " + SDL3.SDL_GetError ()); None
 
                             // already exists, so mark as used and reuse
                             | (true, (used, (textSurfaceWidth, textSurfaceHeight, offset, textTexture))) ->
@@ -1005,7 +1023,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         | RenderText descriptor ->
             VulkanRenderer2d.renderText
                 (&descriptor.Transform, &descriptor.ClipOpt, descriptor.PipelineName, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling,
-                 &descriptor.Color, descriptor.Justification, descriptor.CaretOpt, &descriptor.UserDefinedSettings, eyeCenter, eyeSize, resolveTexture, renderer)
+                 &descriptor.Color, descriptor.Justification, descriptor.LineSpacing, descriptor.CaretOpt, &descriptor.UserDefinedSettings, eyeCenter, eyeSize, resolveTexture, renderer)
         | RenderTiles descriptor ->
             VulkanRenderer2d.renderTiles
                 (&descriptor.Transform, &descriptor.ClipOpt, &descriptor.Color, &descriptor.Emission, descriptor.PipelineName,
