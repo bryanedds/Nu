@@ -2776,17 +2776,45 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // render as appropriate
         match renderPass with
-        | ShadowPass (_, _, _, _, shadowRotation, _) ->
+        | ShadowPass (_, shadowFaceInfoOpt, shadowLightType, _, shadowRotation, _) ->
 
-            // compute billboard rotation
-            let lookRotation = shadowRotation * Quaternion.CreateFromAxisAngle (v3Right, -MathF.PI_OVER_2)
-            let billboardRotation = Matrix4x4.CreateFromQuaternion lookRotation
+            // compute the direction toward the light, taking it from a point light's position since each of its
+            // cube map faces has its own rotation, and otherwise from the light's rotation (which is exact for
+            // directional lights and approximates spot lights by their axis)
+            let toLight =
+                match (shadowLightType, shadowFaceInfoOpt) with
+                | (PointLight _, Some (_, shadowView, _)) ->
+                    let toLight = shadowView.Inverted.Translation - model.Translation
+                    if toLight.MagnitudeSquared > 0.000001f then toLight.Normalized else shadowRotation.Up
+                | (_, _) -> shadowRotation.Up
 
-            // add render task as appropriate
+            // compute billboard rotation to face the light as the camera-view billboard faces the eye, respecting
+            // orient up and planarness. NOTE: with a single direction toward the light per billboard, planar and
+            // non-planar billboards orient alike.
+            let billboardRotation =
+                if orientUp then
+                    let toLightFlat = toLight.WithY 0.0f
+                    if toLightFlat.MagnitudeSquared > 0.000001f then
+                        let forward = toLightFlat.Normalized
+                        let right = Vector3.Cross (v3Up, forward)
+                        (right, v3Up, forward)
+                        |> Matrix4x4.CreateRotation
+                        |> Matrix4x4.Transpose
+                    else m4Identity // light directly above or below, where any yaw casts the same shadow
+                else
+                    let forward = toLight
+                    let upHint = if abs (forward.Dot v3Up) < 0.999f then v3Up else v3Forward
+                    let right = (Vector3.Cross (upHint, forward)).Normalized
+                    let up = Vector3.Cross (forward, right)
+                    (right, up, forward)
+                    |> Matrix4x4.CreateRotation
+                    |> Matrix4x4.Transpose
+
+            // add render task as appropriate, offsetting away from the light
             let mutable affineRotation = model
             affineRotation.Translation <- v3Zero
             let mutable billboardMatrix = model * billboardRotation
-            billboardMatrix.Translation <- model.Translation + lookRotation.Forward * shadowOffset
+            billboardMatrix.Translation <- model.Translation - toLight * shadowOffset
             match renderType with
             | DeferredRenderType ->
                 if not billboardSurface.SurfaceMaterial.Clipped then
