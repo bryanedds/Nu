@@ -17,8 +17,8 @@ layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
 layout(set = 0, binding = 1) uniform texture2D depthTexture;
 layout(set = 0, binding = 2) uniform texture2D normalPlusTexture;
 layout(set = 0, binding = 3) uniform texture2D lightMappingTexture;
-layout(set = 0, binding = 4) uniform textureCube irradianceMap;
-layout(set = 0, binding = 5) uniform textureCube irradianceMaps[LIGHT_MAPS_MAX];
+layout(set = 0, binding = 4) uniform texture2D irradianceMap;
+layout(set = 0, binding = 5) uniform texture2D irradianceMaps[LIGHT_MAPS_MAX];
 
 layout(set = 1, binding = 0) uniform sampler unfilteredSampler;
 layout(set = 1, binding = 1) uniform sampler filteredSampler;
@@ -34,6 +34,24 @@ vec4 depthToPosition(float depth, vec2 texCoords)
     rayView /= rayView.w;
     vec3 positionView = rayView.xyz * (depth / -rayView.z);
     return eye.viewInverse * vec4(positionView, 1.0);
+}
+
+// The irradiance (divided by pi) in a direction from an irradiance map, the spherical harmonic coefficients (bands 0
+// through 2) of a light map's irradiance, one per texel.
+vec3 computeIrradiance(texture2D irradianceMap, vec3 direction)
+{
+    vec3 d = normalize(direction);
+    vec3 irradiance =
+        texelFetch(sampler2D(irradianceMap, unfilteredSampler), ivec2(0, 0), 0).rgb * 0.282095 +
+        texelFetch(sampler2D(irradianceMap, unfilteredSampler), ivec2(1, 0), 0).rgb * 0.488603 * d.y +
+        texelFetch(sampler2D(irradianceMap, unfilteredSampler), ivec2(2, 0), 0).rgb * 0.488603 * d.z +
+        texelFetch(sampler2D(irradianceMap, unfilteredSampler), ivec2(3, 0), 0).rgb * 0.488603 * d.x +
+        texelFetch(sampler2D(irradianceMap, unfilteredSampler), ivec2(4, 0), 0).rgb * 1.092548 * d.x * d.y +
+        texelFetch(sampler2D(irradianceMap, unfilteredSampler), ivec2(5, 0), 0).rgb * 1.092548 * d.y * d.z +
+        texelFetch(sampler2D(irradianceMap, unfilteredSampler), ivec2(6, 0), 0).rgb * 0.315392 * (3.0 * d.z * d.z - 1.0) +
+        texelFetch(sampler2D(irradianceMap, unfilteredSampler), ivec2(7, 0), 0).rgb * 1.092548 * d.x * d.z +
+        texelFetch(sampler2D(irradianceMap, unfilteredSampler), ivec2(8, 0), 0).rgb * 0.546274 * (d.x * d.x - d.y * d.y);
+    return max(irradiance, vec3(0.0));
 }
 
 void main()
@@ -58,20 +76,20 @@ void main()
     vec3 irradiance = vec3(0.0);
     if (lm1 == -1 && lm2 == -1)
     {
-        irradiance = texture(samplerCube(irradianceMap, filteredSampler), normal).rgb;
+        irradiance = computeIrradiance(irradianceMap, normal);
     }
     else if (lm2 == -1)
     {
         // compute blended irradiance
-        vec3 irradiance1 = texture(samplerCube(irradianceMaps[lm1], filteredSampler), normal).rgb;
-        vec3 irradiance2 = texture(samplerCube(irradianceMap, filteredSampler), normal).rgb;
+        vec3 irradiance1 = computeIrradiance(irradianceMaps[lm1], normal);
+        vec3 irradiance2 = computeIrradiance(irradianceMap, normal);
         irradiance = mix(irradiance1, irradiance2, lmRatio);
     }
     else
     {
         // compute blended irradiance
-        vec3 irradiance1 = texture(samplerCube(irradianceMaps[lm1], filteredSampler), normal).rgb;
-        vec3 irradiance2 = texture(samplerCube(irradianceMaps[lm2], filteredSampler), normal).rgb;
+        vec3 irradiance1 = computeIrradiance(irradianceMaps[lm1], normal);
+        vec3 irradiance2 = computeIrradiance(irradianceMaps[lm2], normal);
         irradiance = mix(irradiance1, irradiance2, lmRatio);
     }
 

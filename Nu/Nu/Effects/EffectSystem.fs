@@ -528,6 +528,7 @@ module EffectSystem =
                       FontStyling = fontStyling
                       Color = slice.Color
                       Justification = Justified (JustifyCenter, JustifyMiddle)
+                      LineSpacing = 1.0f
                       CaretOpt = None
                       UserDefinedSettings = slice.UserDefinedSettings }
                 let textToken = TextToken (transform.Elevation, transform.Horizon, font, text)

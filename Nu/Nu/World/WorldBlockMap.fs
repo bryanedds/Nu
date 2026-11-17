@@ -40,9 +40,9 @@ module WorldBlockMap =
             | (true, (volume, fn)) ->
                 BlockMap.BlockMap.mapChunk (fun chunk ->
                     let mutable chunk = chunk
-                    for i in inc -volume.X .. dec (chunk.BoundsI.Size.X + dec volume.X) do
-                        for j in inc -volume.Y .. dec (chunk.BoundsI.Size.Y + dec volume.Y) do
-                            for k in inc -volume.Z .. dec (chunk.BoundsI.Size.Z + dec volume.Z) do
+                    for i in inc -volume.X .. dec chunk.BoundsI.Size.X do
+                        for j in inc -volume.Y .. dec chunk.BoundsI.Size.Y do
+                            for k in inc -volume.Z .. dec chunk.BoundsI.Size.Z do
                                 let positionI = v3i i j k
                                 let chunkBounds = box3i positionI volume
                                 let blocks =
@@ -52,16 +52,14 @@ module WorldBlockMap =
                                                 let positionI = v3i x y z
                                                 let positionI' = chunkBounds.Min + positionI
                                                 match Chunk.getBlockOpt positionI' chunk with
-                                                | Some block -> (positionI, block)
+                                                | Some block -> (positionI, { block with PositionI = positionI })
                                                 | None -> ()|]
                                     |> Map.ofArray
                                 let affine =
-                                    let parentPosition = parent.GetPosition world
-                                    let blockMapBounds = BlockMap.getBounds parentPosition blockMap
-                                    let translation = parentPosition + affine.Translation + positionI.V3 * blockMap.Scale - blockMapBounds.Size * 0.5f + blockMap.Scale * 0.5f
+                                    let translation = affine.Translation + positionI.V3 * blockMap.Scale - blockMap.Size * 0.5f + blockMap.Scale * 0.5f
                                     Affine.makeTranslation translation
                                 let subchunk =
-                                    BlockMap.Chunk.make chunkBounds blocks
+                                    BlockMap.Chunk.make (box3i v3iZero volume) blocks
                                 let subchunk' =
                                     match fn volume affine processor.ProcessParams consumer subchunk with
                                     | Some (effect, subchunk') -> effect parent world; subchunk'
@@ -126,15 +124,16 @@ type BlockMapDispatcher () =
                     AlbedoImageOpt = ValueSome Assets.Default.Albedo
                     NormalImageOpt = ValueSome Assets.Default.Normal }
             for struct (positionI, block) in chunk.Blocks.Pairs' do
-                match BlockMap.tryGetBlockColor block blockMap with
-                | Some color ->
-                    let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f
-                    let modelMatrix = Matrix4x4.CreateTranslation position
-                    let properties = { MaterialProperties.empty with AlbedoOpt = ValueSome color }
-                    World.renderStaticModelSurfaceFast
-                        (&modelMatrix, blockMap.Config.CastShadows, Omnipresent, ValueNone, material, properties,
-                         Assets.Default.StaticModel, 0, DeferredRenderType, renderPass, world)
-                | None -> ()
+                if positionI.Y < blockMap.LayersVisible then
+                    match BlockMap.tryGetBlockColor block blockMap with
+                    | Some color ->
+                        let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f
+                        let modelMatrix = Matrix4x4.CreateTranslation position
+                        let properties = { MaterialProperties.empty with AlbedoOpt = ValueSome color }
+                        World.renderStaticModelSurfaceFast
+                            (&modelMatrix, blockMap.Config.CastShadows, Omnipresent, ValueNone, material, properties,
+                             Assets.Default.StaticModel, 0, DeferredRenderType, renderPass, world)
+                    | None -> ()
 
             // render cursor when needed
             let io = ImGui.GetIO ()
@@ -275,8 +274,8 @@ type BlockMapDispatcher () =
                     if  ImGui.IsItemHovered () &&
                         ImGui.IsMouseClicked ImGuiMouseButton.Right &&
                         i >= 24 then
-                        let palette = Palette.removeStyle i blockMap.Palette
-                        blockMap <- BlockMap.setPalette palette blockMap
+                        viewportOverlay.EditContext.Snapshot RemoveBlockStyle world
+                        blockMap <- BlockMap.removeStyle i blockMap
 
                 // augment palette
                 if ImGui.Button "Add Style" then
@@ -296,7 +295,7 @@ type BlockMapDispatcher () =
 
                 // edit visible layers
                 let mutable layersVisible = blockMap.LayersVisible
-                if ImGui.SliderInt ("Layers Visible", &layersVisible, 0, 64) then
+                if ImGui.SliderInt ("Layers Visible", &layersVisible, 0, blockMap.Chunk.BoundsI.Size.Y) then
                     blockMap <- BlockMap.setLayersVisible layersVisible blockMap
 
                 // actions

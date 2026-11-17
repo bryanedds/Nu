@@ -33,6 +33,7 @@ module WorldDataToken =
                       FontStyling = text.FontStyling
                       Color = text.Color
                       Justification = text.Justification
+                      LineSpacing = text.LineSpacing
                       CaretOpt = None
                       UserDefinedSettings = text.UserDefinedSettings }
                 World.enqueueLayeredOperation2d { Elevation = elevation; Horizon = horizon; AssetTag = assetTag; RenderOperation2d = RenderText renderText } world
