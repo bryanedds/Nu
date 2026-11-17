@@ -1676,7 +1676,7 @@ module WorldModule2 =
                                 | Imposter -> frustumImposter.Intersects shadowFrustum
                                 | Omnipresent -> true
                             if shadowInView then
-                                let distanceSquared = eyeCenter.DistanceSquared (light.GetPosition world)
+                                let distanceSquared = eyeCenter.DistanceSquared (light.ComputeLightOrigin world)
                                 (distanceSquared :> IComparable, (shadowFrustum, light))|] // OPTIMIZATION: boxing here to avoid it downstream.
 
                 // sort shadow pass descriptors
@@ -1731,25 +1731,9 @@ module WorldModule2 =
                             World.renderSimulantsInternal false (ShadowPass (light.GetId world, None, lightType, shadowingType.IsDynamicShadowing, light.GetRotation world, shadowFrustum)) world
                             shadowTexturesCount <- inc shadowTexturesCount
 
-                    | DirectionalLight offsetForwardScalar ->
+                    | DirectionalLight _ ->
                         if shadowTexturesCount < Constants.Render.ShadowTexturesMax then
-
-                            // compute cull frustum
-                            let shadowRotation = light.GetRotation world
-                            let shadowCutoff = light.GetLightCutoff world
-                            let shadowOrigin = Light3dModule.getDirectionalLightOrigin shadowRotation shadowCutoff offsetForwardScalar world
-                            let shadowForward = shadowRotation.Down
-                            let shadowUp = shadowForward.OrthonormalUp
-                            let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior
-                            let shadowFarDistance = max shadowCutoff (shadowNearDistance * 2.0f)
-                            let cullView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
-                            let cullProjection = Matrix4x4.CreateOrthographic (shadowFarDistance * +2.0f, shadowFarDistance * +2.0f, shadowFarDistance * -1.0f, shadowFarDistance * +1.0f)
-                            let cullFrustum = Frustum (cullView * cullProjection)
-
-                            // render
-                            World.renderSimulantsInternal false (ShadowPass (light.GetId world, None, lightType, shadowingType.IsDynamicShadowing, light.GetRotation world, cullFrustum)) world
-
-                            // fin
+                            World.renderSimulantsInternal false (ShadowPass (light.GetId world, None, lightType, shadowingType.IsDynamicShadowing, light.GetRotation world, shadowFrustum)) world
                             shadowTexturesCount <- inc shadowTexturesCount
 
                     | CascadedLight ->

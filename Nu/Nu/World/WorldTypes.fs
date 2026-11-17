@@ -769,7 +769,7 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
 and [<DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods ||| DynamicallyAccessedMemberTypes.NonPublicMethods)>]
     Facet (physical, lightProbe, light) =
 
-    /// The presence override, if any.-
+    /// The presence override, if any.
     abstract PresenceOverride : Presence voption
     default this.PresenceOverride = ValueNone
 
