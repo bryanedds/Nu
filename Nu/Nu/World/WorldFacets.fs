@@ -3027,6 +3027,17 @@ module Light3dFacetExtensions =
             let shadowProjection = this.ComputeShadowProjection world
             Frustum (shadowView * shadowProjection)
 
+        /// Compute the frustum of a cone of the given outer angle shining from the light, as a spot light's shadow
+        /// frustum would be.
+        member this.ComputeConeFrustum (coneOuter : single) world =
+            let coneOrigin = this.ComputeLightOrigin world
+            let coneForward = (this.GetRotation world).Down
+            let coneView = Matrix4x4.CreateLookAt (coneOrigin, coneOrigin + coneForward, coneForward.OrthonormalUp)
+            let coneFov = max (min coneOuter Constants.Render.ShadowFovMax) 0.01f
+            let coneCutoff = max (this.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
+            let coneProjection = Matrix4x4.CreatePerspectiveFieldOfView (coneFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, coneCutoff)
+            Frustum (coneView * coneProjection)
+
 /// Augments an entity with a 3d light.
 type Light3dFacet () =
     inherit Facet (false, false, true)
@@ -3065,7 +3076,7 @@ type Light3dFacet () =
          define Entity.AutoAttenuate true
          define Entity.Specularity 1.0f
          define Entity.LightCutoff Constants.Render.LightCutoffDefault
-         define Entity.LightType (PointLight 0.0f)
+         define Entity.LightType (PointLight (0.0f, None))
          define Entity.ShadowingType NoShadowing
          define Entity.DesireFog false]
 
@@ -3128,8 +3139,11 @@ type Light3dFacet () =
                 entity.SetAttenuationLinear (1.0f / (brightness * lightCutoff)) world
                 entity.SetAttenuationQuadratic (1.0f / (brightness * lightCutoff * lightCutoff)) world
         | ViewportOverlay _ ->
-            let shadowFrustum = entity.ComputeShadowFrustum world
-            for segment in shadowFrustum.Segments do
+            let frustum =
+                match entity.GetLightType world with
+                | PointLight (_, Some (_, coneOuter)) -> entity.ComputeConeFrustum coneOuter world
+                | PointLight (_, None) | SpotLight (_, _, _) | DirectionalLight _ | CascadedLight -> entity.ComputeShadowFrustum world
+            for segment in frustum.Segments do
                 World.imGuiSegment3d segment 1.0f Color.Yellow world
         | _ -> ()
 

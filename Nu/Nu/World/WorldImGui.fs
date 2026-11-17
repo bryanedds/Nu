@@ -705,13 +705,25 @@ module WorldImGui =
                     match index with
                     | 0 ->
                         match light with
-                        | PointLight radius ->
+                        | PointLight (radius, conesOpt) ->
                             let mutable radius = radius
                             ImGui.Indent ()
                             let radiusEdited = ImGui.DragFloat ("Radius via " + name, &radius, context.SnapDrag)
                             if ImGui.IsItemFocused () then context.FocusProperty ()
+                            let mutable conesEnabled = conesOpt.IsSome
+                            let conesEnabledEdited = ImGui.Checkbox ("Cones via " + name, &conesEnabled)
+                            if ImGui.IsItemFocused () then context.FocusProperty ()
+                            let (conesEdited, conesOpt) =
+                                if conesEnabled then
+                                    let mutable (innerCone, outerCone) = Option.defaultValue (0.9f, 1.0f) conesOpt
+                                    let innerConeEdited = ImGui.DragFloat ("InnerCone via " + name, &innerCone, context.SnapDrag)
+                                    if ImGui.IsItemFocused () then context.FocusProperty ()
+                                    let outerConeEdited = ImGui.DragFloat ("OuterCone via " + name, &outerCone, context.SnapDrag)
+                                    if ImGui.IsItemFocused () then context.FocusProperty ()
+                                    (innerConeEdited || outerConeEdited, Some (innerCone, outerCone))
+                                else (false, None)
                             ImGui.Unindent ()
-                            (edited || radiusEdited, PointLight radius)
+                            (edited || radiusEdited || conesEnabledEdited || conesEdited, PointLight (radius, conesOpt))
                         | SpotLight (_, _, _) | DirectionalLight _ | CascadedLight -> failwithumf ()
                     | 1 ->
                         match light with

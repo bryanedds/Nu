@@ -1950,8 +1950,8 @@ type UserDefinedPipeline3dDescriptor =
       UserDefinedSettingNames : string array }
 
 /// Type of light.
-type [<DefaultValue "[PointLight 0]">] LightType =
-    | PointLight of Radius : single
+type [<DefaultValue "[PointLight 0 None]">] LightType =
+    | PointLight of Radius : single * ConesOpt : (single * single) option
     | SpotLight of Radius : single * ConeInner : single * ConeOuter : single
     | DirectionalLight of OffsetForwardScalar : single
     | CascadedLight
@@ -1982,7 +1982,7 @@ type [<DefaultValue "[PointLight 0]">] LightType =
 
     member this.Radius =
         match this with
-        | PointLight radius -> radius
+        | PointLight (radius, _) -> radius
         | SpotLight (radius, _, _) -> radius
         | DirectionalLight _ -> 0.0f
         | CascadedLight -> 0.0f
@@ -2002,7 +2002,7 @@ type [<DefaultValue "[PointLight 0]">] LightType =
     /// Make a light type from an enumeration value that can be utilized by a shader.
     static member makeFromEnumeration enumeration =
         match enumeration with
-        | 0 -> PointLight 0.0f
+        | 0 -> PointLight (0.0f, None)
         | 1 -> SpotLight (0.0f, 0.9f, 1.0f)
         | 2 -> DirectionalLight 0.0f
         | 3 -> CascadedLight

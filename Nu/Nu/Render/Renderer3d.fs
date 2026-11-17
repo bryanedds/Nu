@@ -1572,6 +1572,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           TextureServer : TextureServer
           TextureDumpster : TextureDumpster }
 
+    /// Compute a light's inner and outer cones, which are full circles for lights that don't have cones.
+    static member private computeLightCones lightType =
+        match lightType with
+        | PointLight (_, Some (coneInner, coneOuter)) | SpotLight (_, coneInner, coneOuter) ->
+            let coneOuter = min coneOuter MathF.TWO_PI
+            struct (min coneInner coneOuter, coneOuter)
+        | PointLight (_, None) | DirectionalLight _ | CascadedLight -> struct (MathF.TWO_PI, MathF.TWO_PI)
+
     static member private handleRenderAssetUnavailable (assetTag : AssetTag) renderer =
         if assetTag.PackageName = Assets.Default.PackageName && assetTag.AssetName = Assets.Default.ImageName then
             ValueSome (TextureAsset renderer.ImageTexture)
@@ -3118,8 +3126,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter false presence lightBounds
                         | _ -> false
                     if unculled then
-                        let coneOuter = match light.LightType with SpotLight (_, _, coneOuter) -> min coneOuter MathF.TWO_PI | _ -> MathF.TWO_PI
-                        let coneInner = match light.LightType with SpotLight (_, coneInner, _) -> min coneInner coneOuter | _ -> MathF.TWO_PI
+                        let struct (coneInner, coneOuter) = VulkanRenderer3d.computeLightCones light.LightType
                         let light =
                             { SortableLightId = 0UL
                               SortableLightOrigin = lightMatrix.Translation
@@ -3581,8 +3588,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | RenderLight3d rl ->
                 let direction = rl.Rotation.Down
                 let renderTasks = VulkanRenderer3d.getRenderTasks rl.RenderPass renderer
-                let coneOuter = match rl.LightType with SpotLight (_, _, coneOuter) -> min coneOuter MathF.TWO_PI | _ -> MathF.TWO_PI
-                let coneInner = match rl.LightType with SpotLight (_, coneInner, _) -> min coneInner coneOuter | _ -> MathF.TWO_PI
+                let struct (coneInner, coneOuter) = VulkanRenderer3d.computeLightCones rl.LightType
                 let light =
                     { SortableLightId = rl.LightId
                       SortableLightOrigin = rl.Origin
@@ -4379,7 +4385,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderTasks.ForwardSorted.Add struct (model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface)
 
         // actually render to shadow cube map face
-        VulkanRenderer3d.renderShadow lightOrigin shadowView shadowProjection shadowFrustum (PointLight 0.0f) lightCutoff shadowResolution colorAttachment depthAttachment renderTasks renderer
+        VulkanRenderer3d.renderShadow lightOrigin shadowView shadowProjection shadowFrustum (PointLight (0.0f, None)) lightCutoff shadowResolution colorAttachment depthAttachment renderTasks renderer
 
     static member private renderShadowCascade
         (lightOrigin : Vector3)

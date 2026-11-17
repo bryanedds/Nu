@@ -1,6 +1,7 @@
 #version 450 core
 
 const float PI = 3.141592654;
+const float TWO_PI = PI * 2.0;
 const float PI_OVER_2 = PI / 2.0;
 const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 64;
@@ -606,10 +607,10 @@ void main()
 
                 // attempt to compute half-cone scalar
                 float halfConeScalar = 1.0;
-                if (lightSpot)
+                if (lightSpot || light.coneOuter < TWO_PI)
                 {
-                    // skip spot light when outside its outer cone (where cone scalar would be zero), comparing cosines to
-                    // avoid acos, then compute cone scalar only for spot lights since it's always one for point lights
+                    // skip light when outside its outer cone (where cone scalar would be zero), comparing cosines to
+                    // avoid acos, then compute cone scalar only for lights with cones since it's otherwise always one
                     float halfConeOuter = light.coneOuter * 0.5;
                     float cosAngle = dot(l, -light.direction);
                     if (cosAngle <= cos(halfConeOuter)) continue;
