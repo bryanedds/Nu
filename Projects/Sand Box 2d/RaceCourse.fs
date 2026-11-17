@@ -109,7 +109,7 @@ type RaceCourseDispatcher () =
                      Entity.Elevation .= 0.1f] world |> ignore
                 let (bodyJointId, _) =
                     World.doBodyJoint2d $"Wheel {relation} Joint"
-                        [Entity.BodyJoint |= Box2dNetBodyJoint { CreateBodyJoint = fun _ _ car wheel world ->
+                        [Entity.BodyJoint |= Box2dNetBodyJoint { CreateBodyJoint = fun car wheel world ->
                             // a wheel joint fixes relative position of two bodies, labelled body A and body B,
                             // where body B is positionally anchored relative to body A, can exhibit
                             // spring movement along an axis (i.e. wheel suspension), and can rotate freely.
@@ -124,7 +124,7 @@ type RaceCourseDispatcher () =
                             jointDef.enableSpring <- true
                             jointDef.hertz <- frequency
                             jointDef.dampingRatio <- Geometrics.CarWheelDampingRatio
-                            jointDef.maxMotorTorque <- maxTorque * Geometrics.SourceTorqueScale
+                            jointDef.maxMotorTorque <- maxTorque * Geometrics.SourceJointTorqueScale
                             B2Joints.b2CreateWheelJoint (world, &jointDef) }
                          Entity.BodyJointTarget .= Address.makeFromString "^/Car"
                          Entity.BodyJointTarget2 .= Address.makeFromString $"^/Wheel {relation}"
@@ -156,7 +156,7 @@ type RaceCourseDispatcher () =
                      Entity.CollisionDetection .= Continuous] world
             let teeterInitializing = world.DeclaredInitializing
             World.doBodyJoint2d "Teeter Joint"
-                [Entity.BodyJoint |= Box2dNetBodyJoint { CreateBodyJoint = fun _ _ a b world ->
+                [Entity.BodyJoint |= Box2dNetBodyJoint { CreateBodyJoint = fun a b world ->
                     let mutable jointDef = B2Joints.b2DefaultRevoluteJointDef ()
                     jointDef.``base``.bodyIdA <- a
                     jointDef.``base``.bodyIdB <- b
@@ -189,11 +189,12 @@ type RaceCourseDispatcher () =
                          Entity.Substance .= Density 1f] world |> ignore
                 World.doBodyJoint2d $"Bridge {i} Link"
                     [Entity.BodyJoint |= Box2dNetBodyJoint {
-                        CreateBodyJoint = fun _ toPhysicsV2 a b world ->
+                        CreateBodyJoint = fun a b world ->
                             let p =
-                                if i = 0 then toPhysicsV2 (fst bridgeEndpoints[0])
-                                elif i = Geometrics.BridgeLinkCount then toPhysicsV2 (snd bridgeEndpoints[i - 1])
-                                else toPhysicsV2 (snd bridgeEndpoints[i - 1])
+                                if i = 0 then fst bridgeEndpoints[0]
+                                elif i = Geometrics.BridgeLinkCount then snd bridgeEndpoints[i - 1]
+                                else snd bridgeEndpoints[i - 1]
+                            let p = B2Vec2 (p.X, p.Y)
                             let mutable jointDef = B2Joints.b2DefaultRevoluteJointDef ()
                             jointDef.``base``.bodyIdA <- a
                             jointDef.``base``.bodyIdB <- b
