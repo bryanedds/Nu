@@ -54,6 +54,7 @@ module Gaia =
     let mutable private TimelineChanged = false
     let mutable private ManipulationActive = false
     let mutable private ManipulationScalePrevious = v3One // the selection's scale as last manipulated, starting at one
+    let mutable private ManipulationPositionStart = v3Zero // the entity's position when manipulation was taken up
     let mutable private ManipulationOperation = OPERATION.TRANSLATE
     let mutable private ExpandEntityHierarchy = false
     let mutable private CollapseEntityHierarchy = false
@@ -2676,10 +2677,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             else entity.GetAffineMatrix world
                         let affine = affineMatrix.ToArray ()
                         let (p, r, s) =
-                            if ManipulationWorld then // currently only snapping absolute transformations
-                                if not Snaps2dSelected && ImGui.IsCtrlUp ()
-                                then Snaps3d
-                                else (0.0f, 0.0f, 0.0f)
+                            if not Snaps2dSelected && ImGui.IsCtrlUp ()
+                            then Snaps3d
                             else (0.0f, 0.0f, 0.0f)
                         let mutable copying = false
                         if not ManipulationActive then
@@ -2762,15 +2761,33 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                     ManipulationActive <- true
                                     true
                                 else false
+                            if manipulationAwaken then ManipulationPositionStart <- entity.GetPosition world
                             let affine' = Matrix4x4.CreateFromArray affine
                             let mutable (position, rotation, degrees, scale) = (v3Zero, quatIdentity, v3Zero, v3One)
                             if Matrix4x4.Decompose (affine', &scale, &rotation, &position) then
                                 let delta = Matrix4x4.CreateFromArray delta
                                 let translation = delta.Translation
                                 let epsilon = 0.0001f // NOTE: making this any higher can create false negatives and leave entities positioned at random offsets.
-                                if not (Math.ApproximatelyEqual (translation.X, 0.0f, epsilon)) then position.X <- Math.SnapF (p, position.X)
-                                if not (Math.ApproximatelyEqual (translation.Y, 0.0f, epsilon)) then position.Y <- Math.SnapF (p, position.Y)
-                                if not (Math.ApproximatelyEqual (translation.Z, 0.0f, epsilon)) then position.Z <- Math.SnapF (p, position.Z)
+                                if ManipulationWorld then
+
+                                    // snap in world space, aligning each moved coordinate to the world grid
+                                    if not (Math.ApproximatelyEqual (translation.X, 0.0f, epsilon)) then position.X <- Math.SnapF (p, position.X)
+                                    if not (Math.ApproximatelyEqual (translation.Y, 0.0f, epsilon)) then position.Y <- Math.SnapF (p, position.Y)
+                                    if not (Math.ApproximatelyEqual (translation.Z, 0.0f, epsilon)) then position.Z <- Math.SnapF (p, position.Z)
+
+                                else
+
+                                    // snap in object space, moving the entity from where it was taken up by
+                                    // whole snaps along each of its own axes that it was moved along
+                                    let rotationObject = entity.GetRotation world
+                                    let rotationObjectInverse = rotationObject.Inverted
+                                    let translationObject = translation.Transform rotationObjectInverse
+                                    let mutable offsetObject = (position - ManipulationPositionStart).Transform rotationObjectInverse
+                                    if not (Math.ApproximatelyEqual (translationObject.X, 0.0f, epsilon)) then offsetObject.X <- Math.SnapF (p, offsetObject.X)
+                                    if not (Math.ApproximatelyEqual (translationObject.Y, 0.0f, epsilon)) then offsetObject.Y <- Math.SnapF (p, offsetObject.Y)
+                                    if not (Math.ApproximatelyEqual (translationObject.Z, 0.0f, epsilon)) then offsetObject.Z <- Math.SnapF (p, offsetObject.Z)
+                                    position <- ManipulationPositionStart + offsetObject.Transform rotationObject
+
                                 rotation <- rotation.Normalized // try to avoid weird angle combinations
                                 let rollPitchYaw = rotation.RollPitchYaw
                                 degrees.X <- radToDegF rollPitchYaw.X
