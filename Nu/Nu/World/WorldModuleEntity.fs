@@ -2523,9 +2523,6 @@ module WorldModuleEntity =
                 else failwith ("Entity '" + scstring entity + "' already exists and cannot be created.")
             World.addEntity entityState entity world
 
-            // update publish update flag
-            World.updateEntityPublishUpdateFlag entity world |> ignore<bool>
-
             // update presence property from override
             World.updateEntityPresenceOverride entity world
 
@@ -2739,9 +2736,6 @@ module WorldModuleEntity =
                 then World.destroyEntityImmediateInternal true entity world
                 else failwith ("Entity '" + scstring entity + "' already exists and cannot be created.")
             World.addEntity entityState entity world
-
-            // update publish update flag
-            World.updateEntityPublishUpdateFlag entity world |> ignore<bool>
 
             // update presence property from override
             World.updateEntityPresenceOverride entity world
