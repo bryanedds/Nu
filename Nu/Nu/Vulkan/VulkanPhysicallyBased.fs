@@ -3725,6 +3725,7 @@ module PhysicallyBased =
 
     /// Draw a batch of physically-based deferred shadow surfaces.
     let drawPhysicallyBasedShadowSurfaces
+        (cubeMapFace : bool)
         (bones : Matrix4x4 array)
         (surfacesCount : int)
         (instanceFields : single array)
@@ -3738,7 +3739,9 @@ module PhysicallyBased =
         if surfacesCount > 0 then
 
             // only draw when required vkPipeline exists
-            match Pipeline.tryGetVkPipeline VulkanUnblended material.CullMode pipeline.Pipeline with
+            // NOTE: we invert cull mode when rendering to a cube map face since it lacks a flipped projection!
+            let cullMode = if cubeMapFace then material.CullMode.Inverted else material.CullMode
+            match Pipeline.tryGetVkPipeline VulkanUnblended cullMode pipeline.Pipeline with
             | Some vkPipeline ->
 
                 // specify instancing
@@ -4055,7 +4058,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 shaderFilePath
-                [|VulkanUnblended|] [|CullBack|] TerrainVertices
+                [|VulkanUnblended|] [|CullBack; CullFront|] TerrainVertices
                 [|Pipeline.descriptorSet<int * int>
                     [|Pipeline.descriptor 0 UniformBuffer VertexAndFragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer VertexAndFragmentStage 1|] // terrain
@@ -4133,7 +4136,9 @@ module PhysicallyBased =
         DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended CullBack pipeline.Pipeline with
+        // NOTE: we invert cull mode when rendering to a shadow cube map face since it lacks a flipped projection!
+        let cullMode = if shadowCubeMapFace then CullFront else CullBack
+        match Pipeline.tryGetVkPipeline VulkanUnblended cullMode pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify uniforms

@@ -3667,7 +3667,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             cubeMapFace eyeCenter view projection lightShadowExponent colorClearValue colorAttachment depthAttachment resolution renderPassIndex pipeline renderer.VulkanContext
 
     static member private renderPhysicallyBasedShadowSurfaces
-        bones (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List) (surface : PhysicallyBasedSurface)
+        cubeMapFace bones (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List) (surface : PhysicallyBasedSurface)
         uniformsDescriptorSet pipeline renderer =
 
         // ensure we have a large enough instance fields array
@@ -3683,7 +3683,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // draw deferred surfaces
         PhysicallyBased.drawPhysicallyBasedShadowSurfaces
-            bones parameters.Count renderer.InstanceFields surface.SurfaceMaterial surface.PhysicallyBasedGeometry
+            cubeMapFace bones parameters.Count renderer.InstanceFields surface.SurfaceMaterial surface.PhysicallyBasedGeometry
             uniformsDescriptorSet pipeline renderer.VulkanContext
 
         // track geometry instancing
@@ -3713,7 +3713,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // draw shadow surfaces
         PhysicallyBased.drawPhysicallyBasedShadowSurfaces
-            bones i renderer.InstanceFields surface.SurfaceMaterial surface.PhysicallyBasedGeometry
+            shadowLightType.ShadowsUseCubeMap bones i renderer.InstanceFields surface.SurfaceMaterial surface.PhysicallyBasedGeometry
             uniformsDescriptorSet pipeline renderer.VulkanContext
 
         // track geometry instancing
@@ -4046,14 +4046,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 // render fallback irradiance and env filter maps
                 if Option.isNone irradianceAndEnvironmentMapsOptRef.Value then
 
-                    // special handling for flipped-ness of fallback
-                    let fallbackFlipped = false
-
                     // render fallback irradiance map
                     let irradianceMap =
                         LightMap.createIrradianceMap
                             Constants.Render.IrradianceMapResolution
-                            (CubeMapSurface.make (not fallbackFlipped) cubeMap renderer.CubeMapGeometry)
+                            (CubeMapSurface.make cubeMap renderer.CubeMapGeometry)
                             renderer.FilteredSampler
                             renderer.IrradianceMap.ImageFormat
                             renderer.IrradiancePipeline
@@ -4065,7 +4062,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     let environmentFilterMap =
                         LightMap.createEnvironmentFilterMap
                             Constants.Render.EnvironmentFilterResolution
-                            (CubeMapSurface.make fallbackFlipped cubeMap renderer.CubeMapGeometry)
+                            (CubeMapSurface.make cubeMap renderer.CubeMapGeometry)
                             renderer.FilteredSampler
                             renderer.EnvironmentFilterMap.ImageFormat
                             renderer.EnvironmentFilterPipeline
@@ -4096,7 +4093,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     match renderTasks.LightProbes.TryGetValue lightProbeId with
                     | (true, struct (lightProbeEnabled, lightProbeOrigin, lightProbeAmbientColor, lightProbeAmbientBrightness, lightProbeBounds)) ->
 
-                        // create reflection map (this will be flipped)
+                        // create reflection map
                         let reflectionMap =
                             LightMap.createReflectionMap
                                 (VulkanRenderer3d.renderGeometry frustumInterior frustumExterior frustumImposter renderPass (VulkanRenderer3d.getRenderTasks renderPass renderer) renderer)
@@ -4111,7 +4108,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         let irradianceMap =
                             LightMap.createIrradianceMap
                                 Constants.Render.IrradianceMapResolution
-                                (CubeMapSurface.make false reflectionMap renderer.CubeMapGeometry)
+                                (CubeMapSurface.make reflectionMap renderer.CubeMapGeometry)
                                 renderer.FilteredSampler
                                 renderer.IrradianceMap.ImageFormat
                                 renderer.IrradiancePipeline
@@ -4123,7 +4120,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         let environmentFilterMap =
                             LightMap.createEnvironmentFilterMap
                                 Constants.Render.EnvironmentFilterResolution
-                                (CubeMapSurface.make true reflectionMap renderer.CubeMapGeometry)
+                                (CubeMapSurface.make reflectionMap renderer.CubeMapGeometry)
                                 renderer.FilteredSampler
                                 renderer.EnvironmentFilterMap.ImageFormat
                                 renderer.EnvironmentFilterPipeline
@@ -4202,7 +4199,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // deferred render static surface shadows
         for item in renderTasks.DeferredStatic.Values do
             for entry in item do
-                VulkanRenderer3d.renderPhysicallyBasedShadowSurfaces [||] entry.Value entry.Key uniformsDescriptorSet shadowStaticPipeline renderer
+                VulkanRenderer3d.renderPhysicallyBasedShadowSurfaces lightType.ShadowsUseCubeMap [||] entry.Value entry.Key uniformsDescriptorSet shadowStaticPipeline renderer
                 advanceBatch entry.Value.Count
         
         // deferred render static surface pre-batches shadows
@@ -4214,7 +4211,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // deferred render static surface clipped shadows (TODO: consider implementing clipped shadow rendering.)
         for item in renderTasks.DeferredStaticClipped.Values do
             for entry in item do
-                VulkanRenderer3d.renderPhysicallyBasedShadowSurfaces [||] entry.Value entry.Key uniformsDescriptorSet shadowStaticPipeline renderer
+                VulkanRenderer3d.renderPhysicallyBasedShadowSurfaces lightType.ShadowsUseCubeMap [||] entry.Value entry.Key uniformsDescriptorSet shadowStaticPipeline renderer
                 advanceBatch entry.Value.Count
 
         // deferred render static surface pre-batches clipped shadows (TODO: consider implementing clipped shadow rendering.)
@@ -4238,7 +4235,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 let surfaceKey = entry.Key
                 let parameters = entry.Value
                 VulkanRenderer3d.renderPhysicallyBasedShadowSurfaces
-                    surfaceKey.BoneTransforms parameters surfaceKey.AnimatedSurface uniformsDescriptorSet shadowAnimatedPipeline renderer
+                    lightType.ShadowsUseCubeMap surfaceKey.BoneTransforms parameters surfaceKey.AnimatedSurface uniformsDescriptorSet shadowAnimatedPipeline renderer
         
         // end shadow animated pipeline
         VulkanRenderer3d.endPhysicallyBasedShadowSurfaces shadowAnimatedPipeline renderer.VulkanContext
@@ -4287,7 +4284,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     | ValueSome boneTransforms -> (boneTransforms, shadowAnimatedPipeline)
                 checkBatch forwardPipeline
                 VulkanRenderer3d.renderPhysicallyBasedShadowSurfaces
-                    boneTransforms (List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
+                    lightType.ShadowsUseCubeMap boneTransforms (List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
                     surface uniformsDescriptorSet forwardPipeline renderer
                 advanceBatch 1
         
@@ -5170,7 +5167,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 Texture.recordTransitionLayout ColorAttachmentRead TransferSrc upSampleColorTexture renderer.VulkanContext.RenderCommandBuffer
                 Texture.recordTransitionLayout ColorAttachmentRead TransferDst fogAccumTexture renderer.VulkanContext.RenderCommandBuffer
                 let bounds = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
-                let mutable region = Hl.makeBlit 0 0 0 0 bounds bounds
+                let mutable region = Hl.makeBlit false 0 0 0 0 bounds bounds
                 DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, upSampleColorTexture.Image, TransferSrc.VkImageLayout, fogAccumTexture.Image, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
                 Texture.recordTransitionLayout TransferSrc ColorAttachmentRead upSampleColorTexture renderer.VulkanContext.RenderCommandBuffer
                 Texture.recordTransitionLayout TransferDst ColorAttachmentRead fogAccumTexture renderer.VulkanContext.RenderCommandBuffer
@@ -5398,7 +5395,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             Texture.recordTransitionLayout ColorAttachmentRead TransferSrc bloomApplyTexture renderer.VulkanContext.RenderCommandBuffer
             Texture.recordTransitionLayout ColorAttachmentRead TransferDst compositionTexture renderer.VulkanContext.RenderCommandBuffer
             let bounds = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
-            let mutable region = Hl.makeBlit 0 0 0 0 bounds bounds
+            let mutable region = Hl.makeBlit false 0 0 0 0 bounds bounds
             DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, bloomApplyTexture.Image, TransferSrc.VkImageLayout, compositionTexture.Image, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
             Texture.recordTransitionLayout TransferSrc ColorAttachmentRead bloomApplyTexture renderer.VulkanContext.RenderCommandBuffer
             Texture.recordTransitionLayout TransferDst ColorAttachmentRead compositionTexture renderer.VulkanContext.RenderCommandBuffer
@@ -5412,7 +5409,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             Texture.recordTransitionLayout ColorAttachmentRead TransferDst colorHalf0Texture renderer.VulkanContext.RenderCommandBuffer
             let boundsSrc = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
             let boundsDst = VkRect2D (0, 0, uint geometryResolution.X / 2u, uint geometryResolution.Y / 2u)
-            let mutable region = Hl.makeBlit 0 0 0 0 boundsSrc boundsDst
+            let mutable region = Hl.makeBlit false 0 0 0 0 boundsSrc boundsDst
             DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, compositionTexture.Image, TransferSrc.VkImageLayout, colorHalf0Texture.Image, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Linear)
             Texture.recordTransitionLayout TransferSrc ColorAttachmentRead compositionTexture renderer.VulkanContext.RenderCommandBuffer
             Texture.recordTransitionLayout TransferDst ColorAttachmentRead colorHalf0Texture renderer.VulkanContext.RenderCommandBuffer
@@ -5448,7 +5445,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             Texture.recordTransitionLayout ColorAttachmentRead TransferSrc colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
             Texture.recordTransitionLayout ColorAttachmentRead TransferDst compositionTexture renderer.VulkanContext.RenderCommandBuffer
             let bounds = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
-            let mutable region = Hl.makeBlit 0 0 0 0 bounds bounds
+            let mutable region = Hl.makeBlit false 0 0 0 0 bounds bounds
             DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, colorFull0Texture.Image, TransferSrc.VkImageLayout, compositionTexture.Image, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
             Texture.recordTransitionLayout TransferSrc ColorAttachmentRead colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
             Texture.recordTransitionLayout TransferDst ColorAttachmentRead compositionTexture renderer.VulkanContext.RenderCommandBuffer
@@ -5478,7 +5475,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             Texture.recordTransitionLayout ColorAttachmentWrite TransferSrc colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
             Texture.recordTransitionLayout ColorAttachmentRead TransferDst toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
             let bounds = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
-            let mutable region = Hl.makeBlit 0 0 0 0 bounds bounds
+            let mutable region = Hl.makeBlit false 0 0 0 0 bounds bounds
             DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, colorFull0Texture.Image, TransferSrc.VkImageLayout, toneMappingTexture.Image, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
             Texture.recordTransitionLayout TransferSrc ColorAttachmentRead colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
             Texture.recordTransitionLayout TransferDst ColorAttachmentRead toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
@@ -5498,7 +5495,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             Texture.recordTransitionLayout ColorAttachmentWrite TransferSrc colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
             Texture.recordTransitionLayout ColorAttachmentRead TransferDst toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
             let bounds = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
-            let mutable region = Hl.makeBlit 0 0 0 0 bounds bounds
+            let mutable region = Hl.makeBlit false 0 0 0 0 bounds bounds
             DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, colorFull0Texture.Image, TransferSrc.VkImageLayout, toneMappingTexture.Image, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
             Texture.recordTransitionLayout TransferSrc ColorAttachmentRead colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
             Texture.recordTransitionLayout TransferDst ColorAttachmentRead toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
@@ -5528,10 +5525,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 gammaCorrectionTexture
             else toneMappingTexture
 
-        // blit from intermediate texture to target image with filtering when extents don't match
+        // blit from intermediate texture to target image with filtering when extents don't match. Geometry is rendered
+        // with a flipped projection so that it presents upright, which leaves rows top-down. A cube map face (rendered
+        // when not top-level) needs GL's bottom-up rows to match the cube map sampling convention, so we invert it here.
         Texture.recordTransitionLayout ColorAttachmentRead TransferSrc intermediateTexture renderer.VulkanContext.RenderCommandBuffer
         Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color ColorAttachmentWrite TransferDst targetImage renderer.VulkanContext.RenderCommandBuffer
-        let mutable region = Hl.makeBlit 0 0 0 targetLayer (VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)) targetBounds
+        let geometryBounds = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
+        let mutable region = Hl.makeBlit (not topLevelRender) 0 0 0 targetLayer geometryBounds targetBounds
         let filter = if uint geometryResolution.X = targetBounds.extent.width && uint geometryResolution.Y = targetBounds.extent.height then VkFilter.Nearest else VkFilter.Linear
         DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, intermediateTexture.Image, TransferSrc.VkImageLayout, targetImage, TransferDst.VkImageLayout, 1u, &&region, filter)
         Texture.recordTransitionLayout TransferSrc ColorAttachmentRead intermediateTexture renderer.VulkanContext.RenderCommandBuffer
@@ -5741,7 +5741,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let irradianceMap =
             LightMap.createIrradianceMap
                 Constants.Render.IrradianceMapResolution
-                (CubeMapSurface.make false cubeMap cubeMapGeometry)
+                (CubeMapSurface.make cubeMap cubeMapGeometry)
                 filteredSampler
                 irradianceFormat
                 irradiancePipeline
@@ -5751,7 +5751,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let environmentFilterMap =
             LightMap.createEnvironmentFilterMap
                 Constants.Render.EnvironmentFilterResolution
-                (CubeMapSurface.make true cubeMap cubeMapGeometry)
+                (CubeMapSurface.make cubeMap cubeMapGeometry)
                 filteredSampler
                 environmentFilterFormat
                 environmentFilterPipeline

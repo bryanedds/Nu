@@ -650,12 +650,14 @@ module Hl =
         range.size <- uint size
         range
 
-    /// Make a VkImageBlit.
-    let makeBlit srcMipLevel dstMipLevel srcLayer dstLayer (srcRect : VkRect2D) (dstRect : VkRect2D) =
+    /// Make a VkImageBlit, optionally inverting the destination vertically.
+    let makeBlit invertY srcMipLevel dstMipLevel srcLayer dstLayer (srcRect : VkRect2D) (dstRect : VkRect2D) =
+        let dstTop = dstRect.offset.y
+        let dstBottom = dstRect.offset.y + int dstRect.extent.height
         let srcOffsetMin = VkOffset3D (srcRect.offset.x, srcRect.offset.y, 0)
-        let dstOffsetMin = VkOffset3D (dstRect.offset.x, dstRect.offset.y, 0)
+        let dstOffsetMin = VkOffset3D (dstRect.offset.x, (if invertY then dstBottom else dstTop), 0)
         let srcOffsetMax = VkOffset3D (srcRect.offset.x + int srcRect.extent.width, srcRect.offset.y + int srcRect.extent.height, 1)
-        let dstOffsetMax = VkOffset3D (dstRect.offset.x + int dstRect.extent.width, dstRect.offset.y + int dstRect.extent.height, 1)
+        let dstOffsetMax = VkOffset3D (dstRect.offset.x + int dstRect.extent.width, (if invertY then dstTop else dstBottom), 1)
         let mutable blit = VkImageBlit ()
         blit.srcSubresource <- makeSubresourceLayers srcMipLevel srcLayer VkImageAspectFlags.Color
         blit.srcOffsets <- NativePtr.writeArrayToFixedBuffer [|srcOffsetMin; srcOffsetMax|] blit.srcOffsets
@@ -1092,7 +1094,7 @@ module Hl =
             let nextHeight = if mipHeight > 1 then mipHeight / 2 else 1
             let mutable blit =
                 makeBlit
-                    (i - 1) i layer layer
+                    false (i - 1) i layer layer
                     (VkRect2D (0, 0, uint mipWidth, uint mipHeight))
                     (VkRect2D (0, 0, uint nextWidth, uint nextHeight))
             DeviceApi.vkCmdBlitImage (commandBuffer, vkImage, TransferSrc.VkImageLayout, vkImage, TransferDst.VkImageLayout, 1u, &&blit, VkFilter.Linear)
