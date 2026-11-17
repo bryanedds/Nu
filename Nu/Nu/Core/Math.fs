@@ -1921,6 +1921,13 @@ type [<Struct>] CullMode =
     | CullFront
     | CullBack
 
+    /// The cull mode that culls the opposite facing.
+    member this.Inverted =
+        match this with
+        | CullNone -> CullNone
+        | CullFront -> CullBack
+        | CullBack -> CullFront
+
 /// The blend mode of a sprite or surface.
 type [<Struct>] Blend =
     | Unblended

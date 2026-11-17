@@ -132,7 +132,7 @@ module LightMap =
             let (eyeForward, eyeUp) = eyeRotations[i]
             let view = Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)
             CubeMap.drawCubeMap
-                eyeCenter view projection cubeMapSurface.Flipped cubeMapSurface.CubeMap sampler
+                eyeCenter view projection cubeMapSurface.CubeMap sampler
                 cubeMapSurface.Geometry resolution cubeMap.SubViews[0, i]
                 irradiancePipeline getCommandBuffer advanceCommandBufferWhenNeeded context
 
@@ -179,10 +179,9 @@ module LightMap =
     let drawEnvironmentFilter
         (eyeCenter : Vector3)
         (view : Matrix4x4)
-        (projectionUnflipped : Matrix4x4)
+        (projection : Matrix4x4)
         (roughness : single)
         (resolution : single)
-        (flipped : bool)
         (cubeMap : Texture)
         (sampler : Sampler)
         (geometry : CubeMapGeometry)
@@ -192,9 +191,8 @@ module LightMap =
         (advanceCommandBufferWhenNeeded : unit -> unit)
         (context : VulkanContext) =
 
-        // compute vulkan-appropriate matrices
+        // compute matrices
         let viewInverse = view.Inverted
-        let projection = if flipped then projectionUnflipped.Flipped else projectionUnflipped
         let projectionInverse = projection.Inverted
         let viewProjection = view * projection
 
@@ -299,7 +297,7 @@ module LightMap =
                 let eyeCenter = v3Zero // assuming origin
                 let view = views[i]
                 drawEnvironmentFilter
-                    eyeCenter view projection mipRoughness mipResolution environmentFilterSurface.Flipped environmentFilterSurface.CubeMap sampler
+                    eyeCenter view projection mipRoughness mipResolution environmentFilterSurface.CubeMap sampler
                     environmentFilterSurface.Geometry cubeMap.SubViews[mip, i]
                     environmentFilterPipeline getCommandBuffer advanceCommandBufferWhenNeeded context
 
