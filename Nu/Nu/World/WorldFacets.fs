@@ -2777,6 +2777,9 @@ module LightProbeFacetExtensions =
         member this.GetProbeBounds world : Box3 = this.Get (nameof this.ProbeBounds) world
         member this.SetProbeBounds (value : Box3) world = this.Set (nameof this.ProbeBounds) value world
         member this.ProbeBounds = lens (nameof this.ProbeBounds) this this.GetProbeBounds this.SetProbeBounds
+        member this.GetProbeBoundsCoupled world : bool = this.Get (nameof this.ProbeBoundsCoupled) world
+        member this.SetProbeBoundsCoupled (value : bool) world = this.Set (nameof this.ProbeBoundsCoupled) value world
+        member this.ProbeBoundsCoupled = lens (nameof this.ProbeBoundsCoupled) this this.GetProbeBoundsCoupled this.SetProbeBoundsCoupled
         member this.GetProbeStale world : bool = this.Get (nameof this.ProbeStale) world
         member this.SetProbeStale (value : bool) world = this.Set (nameof this.ProbeStale) value world
         member this.ProbeStale = lens (nameof this.ProbeStale) this this.GetProbeStale this.SetProbeStale
@@ -2795,6 +2798,7 @@ module LightProbeFacetExtensions =
             if Option.isSome (this.GetMountOpt world)
             then this.SetPositionLocal probeBounds.Center world
             else this.SetPosition probeBounds.Center world
+            this.SetProbeBounds probeBounds world // keep the bounds in place even when coupled
 
 /// Augments an entity with a light probe.
 type LightProbeFacet () =
@@ -2809,6 +2813,81 @@ type LightProbeFacet () =
         if evt.Data.Value :?> bool then World.requestLightMapRender world
         Cascade
 
+    static let handlePositionChange (evt : Event<ChangeData, Entity>) world =
+        // NOTE: coupled bounds follow every probe move. uncoupled bounds still follow moves made by the probe's mount,
+        // which are found by subscribing to the mount's position, rotation, and scale changes. each of those computes
+        // the probe's resulting move from its mount's old and new value since the probe's position is computed as
+        // rotation * (scale * positionLocal) + position. when rotation and scale change at once, the result is off by
+        // the second-order term (rotationNew - rotationOld) * (scaleNew - scaleOld) * positionLocal. This kludge is
+        // due to the unavailability of a previous value in a Transform change event.
+        let entity = evt.Subscriber
+        if entity.GetProbeBoundsCoupled world then
+            let delta = (evt.Data.Value :?> Vector3) - (evt.Data.Previous :?> Vector3)
+            entity.ProbeBounds.Map (fun bounds -> bounds.Translate delta) world
+        Cascade
+
+    static let handleMountPositionChange (evt : Event<ChangeData, Entity>) world =
+        let entity = evt.Subscriber
+        if not (entity.GetProbeBoundsCoupled world) then
+            let delta = (evt.Data.Value :?> Vector3) - (evt.Data.Previous :?> Vector3)
+            entity.ProbeBounds.Map (fun bounds -> bounds.Translate delta) world
+        Cascade
+
+    static let handleMountRotationChange (evt : Event<ChangeData, Entity>) world =
+        let entity = evt.Subscriber
+        if not (entity.GetProbeBoundsCoupled world) then
+            match evt.Publisher with
+            | :? Entity as mount ->
+                let scaled = mount.GetScale world * entity.GetPositionLocal world
+                let delta = scaled.Transform (evt.Data.Value :?> Quaternion) - scaled.Transform (evt.Data.Previous :?> Quaternion)
+                entity.ProbeBounds.Map (fun bounds -> bounds.Translate delta) world
+            | _ -> ()
+        Cascade
+
+    static let handleMountScaleChange (evt : Event<ChangeData, Entity>) world =
+        let entity = evt.Subscriber
+        if not (entity.GetProbeBoundsCoupled world) then
+            match evt.Publisher with
+            | :? Entity as mount ->
+                let rotation = mount.GetRotation world
+                let positionLocal = entity.GetPositionLocal world
+                let delta = ((evt.Data.Value :?> Vector3) * positionLocal).Transform rotation - ((evt.Data.Previous :?> Vector3) * positionLocal).Transform rotation
+                entity.ProbeBounds.Map (fun bounds -> bounds.Translate delta) world
+            | _ -> ()
+        Cascade
+
+    static let subscribeMount (entity : Entity) (mountOpt : Entity Address option) world =
+        match Option.bind (flip tryResolve entity) mountOpt with
+        | Some (mount : Entity) ->
+            World.subscribeFacetPlus Gen.id64 (nameof handleMountPositionChange) mount.Position.ChangeEvent entity (nameof LightProbeFacet) world |> ignore
+            World.subscribeFacetPlus Gen.id64 (nameof handleMountRotationChange) mount.Rotation.ChangeEvent entity (nameof LightProbeFacet) world |> ignore
+            World.subscribeFacetPlus Gen.id64 (nameof handleMountScaleChange) mount.Scale.ChangeEvent entity (nameof LightProbeFacet) world |> ignore
+        | None -> ()
+
+    static let unsubscribeMount (entity : Entity) (mountOpt : Entity Address option) world =
+        match Option.bind (flip tryResolve entity) mountOpt with
+        | Some (mount : Entity) ->
+            World.unsubscribe4 (nameof handleMountPositionChange) mount.Position.ChangeEvent entity world
+            World.unsubscribe4 (nameof handleMountRotationChange) mount.Rotation.ChangeEvent entity world
+            World.unsubscribe4 (nameof handleMountScaleChange) mount.Scale.ChangeEvent entity world
+        | None -> ()
+
+    static let handleMountOptChange (evt : Event<ChangeData, Entity>) world =
+        let entity = evt.Subscriber
+        unsubscribeMount entity (evt.Data.Previous :?> Entity Address option) world
+        subscribeMount entity (evt.Data.Value :?> Entity Address option) world
+        Cascade
+
+    static let handleFacetNamesChange (evt : Event<ChangeData, Entity>) world =
+        if  Set.contains (nameof LightProbeFacet) (evt.Data.Previous :?> string Set) &&
+            not (Set.contains (nameof LightProbeFacet) (evt.Data.Value :?> string Set)) then
+            unsubscribeMount evt.Subscriber (evt.Subscriber.GetMountOpt world) world
+        Cascade
+
+    static let handleUnregistering (evt : Event<unit, Entity>) world =
+        unsubscribeMount evt.Subscriber (evt.Subscriber.GetMountOpt world) world
+        Cascade
+
     static member Properties =
         [define Entity.Size (v3Dup 0.25f)
          define Entity.Presence Omnipresent
@@ -2817,6 +2896,7 @@ type LightProbeFacet () =
          define Entity.AmbientColor Color.White
          define Entity.AmbientBrightness 0.5f
          define Entity.ExcludeGlobalLights false
+         define Entity.ProbeBoundsCoupled false
          define Entity.ProbeBounds (box3 (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f) (v3Dup Constants.Render.LightProbeSizeDefault))
          nonPersistent Entity.ProbeStale false]
 
@@ -2824,6 +2904,11 @@ type LightProbeFacet () =
         World.sense (nameof handleProbeVisibleChange) entity.Group.Editing.ChangeEvent entity (nameof LightProbeFacet) world
         World.sense (nameof handleProbeVisibleChange) entity.Visible.ChangeEvent entity (nameof LightProbeFacet) world
         World.sense (nameof handleProbeStaleChange) entity.ProbeStale.ChangeEvent entity (nameof LightProbeFacet) world
+        World.sense (nameof handlePositionChange) entity.Position.ChangeEvent entity (nameof LightProbeFacet) world
+        World.sense (nameof handleMountOptChange) entity.MountOpt.ChangeEvent entity (nameof LightProbeFacet) world
+        World.sense (nameof handleFacetNamesChange) entity.FacetNames.ChangeEvent entity (nameof LightProbeFacet) world
+        World.sense (nameof handleUnregistering) entity.UnregisteringEvent entity (nameof LightProbeFacet) world
+        subscribeMount entity (entity.GetMountOpt world) world
         entity.SetProbeStale true world
 
     override this.Render (renderPass, entity, world) =
@@ -2848,10 +2933,7 @@ type LightProbeFacet () =
             if ImGui.Button "Rerender Light Map" then entity.SetProbeStale true world // this isn't undoable
             if ImGui.Button "Recenter in Probe Bounds" then
                 append.EditContext.Snapshot RencenterInProbeBounds world
-                let probeBounds = entity.GetProbeBounds world
-                if Option.isSome (entity.GetMountOpt world)
-                then entity.SetPositionLocal probeBounds.Center world
-                else entity.SetPosition probeBounds.Center world
+                entity.RecenterInProbeBounds world
             if ImGui.Button "Reset Probe Bounds" then
                 append.EditContext.Snapshot ResetProbeBounds world
                 entity.ResetProbeBounds world
