@@ -2165,7 +2165,7 @@ module EntityDispatcherModule =
     type [<AbstractClass>] EntityDispatcherImSim (is2d, physical, lightProbe, light) =
         inherit EntityDispatcher (is2d, physical, lightProbe, light)
 
-        override this.PresenceOverride =
+        override this.PresenceOverride (_, _) =
             ValueSome Omnipresent // by default, we presume Process may produce child entities that may be referred to unconditionally
 
         override this.TryProcess (zeroDelta, entity, world) =

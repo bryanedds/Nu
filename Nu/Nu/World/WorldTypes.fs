@@ -680,8 +680,8 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
          Define? PropagatedDescriptorOpt Option<EntityDescriptor>.None]
 
     /// The presence override, if any.
-    abstract PresenceOverride : Presence voption
-    default this.PresenceOverride = ValueNone
+    abstract PresenceOverride : entity : Entity * world : World -> Presence voption
+    default this.PresenceOverride (_, _) = ValueNone
 
     /// Register an entity when adding it to a group.
     abstract Register : entity : Entity * world : World -> unit
@@ -769,9 +769,9 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
 and [<DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods ||| DynamicallyAccessedMemberTypes.NonPublicMethods)>]
     Facet (physical, lightProbe, light) =
 
-    /// The presence override, if any.-
-    abstract PresenceOverride : Presence voption
-    default this.PresenceOverride = ValueNone
+    /// The presence override, if any.
+    abstract PresenceOverride : entity : Entity * world : World -> Presence voption
+    default this.PresenceOverride (_, _) = ValueNone
 
     /// Register a facet when adding it to an entity.
     abstract Register : entity : Entity * world : World -> unit
