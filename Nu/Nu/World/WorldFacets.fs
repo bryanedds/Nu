@@ -1539,51 +1539,6 @@ type RigidBodyFacet () =
         unsubscribePhysicsPropagation evt.Subscriber world
         Cascade
 
-    static let createVehiclePropertiesBox2D () =
-        VehiclePropertiesBox2d
-
-    static let createVehiclePropertiesJolt () =
-
-        let createWheelSettingsWV front position =
-            let settings = new JoltPhysicsSharp.WheelSettingsWV ()
-            settings.Position <- position
-            settings.WheelForward <- v3Forward
-            if front then
-                settings.MaxBrakeTorque <- 0.0f
-                settings.MaxHandBrakeTorque <- 4000.0f
-            else
-                settings.MaxBrakeTorque <- 4000.0f
-                settings.MaxHandBrakeTorque <- 4000.0f
-                settings.MaxSteerAngle <- 0.0f
-            settings
-
-        // vehicle controller config
-        let mutable differential = JoltPhysicsSharp.VehicleDifferentialSettings (LeftWheel = 0, RightWheel = 1)
-        let wheeledVehicleControllerSettings = new JoltPhysicsSharp.WheeledVehicleControllerSettings ()
-        wheeledVehicleControllerSettings.DifferentialsCount <- 1
-        wheeledVehicleControllerSettings.SetDifferential (0, differential)
-
-        // vehicle wheels config
-        let wheelSettings =
-            [|for i in 0 .. dec 4 do
-                let position =
-                    match i with
-                    | 0 -> v3 -0.8f -0.3f -3.0f // front left
-                    | 1 -> v3 0.8f -0.3f -3.0f // front right
-                    | 2 -> v3 -0.8f -0.3f 1.5f // back left
-                    | 3 -> v3 0.8f -0.3f 1.5f // back right
-                    | _ -> failwithumf ()
-                createWheelSettingsWV (i < 2) position :> JoltPhysicsSharp.WheelSettings|]
-
-        // vehicle constraint config
-        let vehicleConstraintSettings = new JoltPhysicsSharp.VehicleConstraintSettings ()
-        vehicleConstraintSettings.Forward <- v3Forward
-        vehicleConstraintSettings.Wheels <- wheelSettings
-        vehicleConstraintSettings.Controller <- wheeledVehicleControllerSettings
-
-        // fin
-        VehiclePropertiesJolt vehicleConstraintSettings
-
     static member Properties =
         [define Entity.BodyEnabled true
          define Entity.BodyFrozen false
@@ -1601,7 +1556,7 @@ type RigidBodyFacet () =
          define Entity.Substance (Mass 1.0f)
          define Entity.Gravity GravityWorld
          define Entity.CharacterProperties (StairSteppingCharacterProperties StairSteppingCharacterProperties.defaultProperties)
-         nonPersistent Entity.VehicleProperties VehiclePropertiesAbsent
+         define Entity.VehicleProperties (VehiclePropertiesJolt WheeledVehicleProperties.defaultProperties)
          define Entity.CollisionDetection Discrete
          define Entity.CollisionGroup 0
          define Entity.CollisionCategories "1"
@@ -1635,7 +1590,7 @@ type RigidBodyFacet () =
                 match entity.GetBodyType world with
                 | Vehicle ->
                     match entity.GetVehicleProperties world with
-                    | VehiclePropertiesAbsent -> if is2d then createVehiclePropertiesBox2D () else createVehiclePropertiesJolt ()
+                    | VehiclePropertiesAbsent -> if is2d then VehiclePropertiesBox2d else VehiclePropertiesJolt WheeledVehicleProperties.defaultProperties
                     | _ as properties -> properties
                 | _ -> VehiclePropertiesAbsent
             let bodyProperties =

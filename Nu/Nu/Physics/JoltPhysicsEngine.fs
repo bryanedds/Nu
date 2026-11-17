@@ -668,8 +668,116 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         | DynamicCharacter -> Choice2Of3 characterProperties
         | Vehicle ->
             match vehicleProperties with
-            | VehiclePropertiesJolt vehicleConstraintSettings -> Choice3Of3 vehicleConstraintSettings
+            | VehiclePropertiesJolt wheeledVehicleProperties -> Choice3Of3 wheeledVehicleProperties
             | _ -> Choice1Of3 ()
+
+    static member private createLinearCurve (points : Vector2 array) =
+        let curve = new LinearCurve ()
+        for point in points do curve.AddPoint (point.X, point.Y)
+        curve
+
+    static member private createVehicleConstraintSettings (properties : WheeledVehicleProperties) =
+
+        // wheels config
+        let wheelSettings =
+            [|for wheel in properties.VehicleWheels do
+                let settings = new WheelSettingsWV ()
+                settings.Position <- wheel.WheelPosition
+                match wheel.WheelSuspensionForcePointOpt with
+                | Some suspensionForcePoint ->
+                    settings.EnableSuspensionForcePoint <- true
+                    settings.SuspensionForcePoint <- suspensionForcePoint
+                | None -> settings.EnableSuspensionForcePoint <- false
+                settings.SuspensionDirection <- wheel.WheelSuspensionDirection
+                settings.SteeringAxis <- wheel.WheelSteeringAxis
+                settings.WheelUp <- wheel.WheelUp
+                settings.WheelForward <- wheel.WheelForward
+                settings.SuspensionMinLength <- wheel.WheelSuspensionMinLength
+                settings.SuspensionMaxLength <- wheel.WheelSuspensionMaxLength
+                settings.SuspensionPreloadLength <- wheel.WheelSuspensionPreloadLength
+                let mutable spring = settings.SuspensionSpring
+                match wheel.WheelSuspensionSpring with
+                | FrequencyAndDampingSpring (frequency, damping) ->
+                    spring.Mode <- SpringMode.FrequencyAndDamping
+                    spring.FrequencyOrStiffness <- frequency
+                    spring.Damping <- damping
+                | StiffnessAndDampingSpring (stiffness, damping) ->
+                    spring.Mode <- SpringMode.StiffnessAndDamping
+                    spring.FrequencyOrStiffness <- stiffness
+                    spring.Damping <- damping
+                settings.SuspensionSpring <- spring
+                settings.Radius <- wheel.WheelRadius
+                settings.Width <- wheel.WheelWidth
+                settings.Inertia <- wheel.WheelInertia
+                settings.MaxSteerAngle <- wheel.WheelMaxSteerAngle
+                settings.LongitudinalFriction <- JoltPhysicsEngine.createLinearCurve wheel.WheelLongitudinalFriction
+                settings.LateralFriction <- JoltPhysicsEngine.createLinearCurve wheel.WheelLateralFriction
+                settings.MaxBrakeTorque <- wheel.WheelMaxBrakeTorque
+                settings.MaxHandBrakeTorque <- wheel.WheelMaxHandBrakeTorque
+                settings :> WheelSettings|]
+
+        // controller config
+        let controllerSettings = new WheeledVehicleControllerSettings ()
+        let mutable engineSettings = controllerSettings.Engine
+        let engine = properties.VehicleEngine
+        engineSettings.MaxTorque <- engine.EngineMaxTorque
+        engineSettings.MinRPM <- engine.EngineMinRpm
+        engineSettings.MaxRPM <- engine.EngineMaxRpm
+        engineSettings.NormalizedTorque <- JoltPhysicsEngine.createLinearCurve engine.EngineNormalizedTorque
+        engineSettings.Inertia <- engine.EngineInertia
+        engineSettings.AngularDamping <- engine.EngineAngularDamping
+        controllerSettings.Engine <- engineSettings
+        let transmissionSettings = controllerSettings.Transmission
+        let transmission = properties.VehicleTransmission
+        transmissionSettings.Mode <-
+            match transmission.TransmissionMode with
+            | AutomaticTransmission -> TransmissionMode.Auto
+            | ManualTransmission -> TransmissionMode.Manual
+        transmissionSettings.GearRatios <- Span<single> transmission.TransmissionGearRatios
+        transmissionSettings.ReverseGearRatios <- Span<single> transmission.TransmissionReverseGearRatios
+        transmissionSettings.SwitchTime <- transmission.TransmissionSwitchTime
+        transmissionSettings.ClutchReleaseTime <- transmission.TransmissionClutchReleaseTime
+        transmissionSettings.SwitchLatency <- transmission.TransmissionSwitchLatency
+        transmissionSettings.ShiftUpRPM <- transmission.TransmissionShiftUpRpm
+        transmissionSettings.ShiftDownRPM <- transmission.TransmissionShiftDownRpm
+        transmissionSettings.ClutchStrength <- transmission.TransmissionClutchStrength
+        controllerSettings.Transmission <- transmissionSettings
+        controllerSettings.DifferentialsCount <- properties.VehicleDifferentials.Length
+        for i in 0 .. dec properties.VehicleDifferentials.Length do
+            let differential = properties.VehicleDifferentials[i]
+            let differentialSettings =
+                VehicleDifferentialSettings
+                    (LeftWheel = differential.DifferentialLeftWheel,
+                     RightWheel = differential.DifferentialRightWheel,
+                     DifferentialRatio = differential.DifferentialRatio,
+                     LeftRightSplit = differential.DifferentialLeftRightSplit,
+                     LimitedSlipRatio = differential.DifferentialLimitedSlipRatio,
+                     EngineTorqueRatio = differential.DifferentialEngineTorqueRatio)
+            controllerSettings.SetDifferential (i, differentialSettings)
+        controllerSettings.DifferentialLimitedSlipRatio <- properties.VehicleDifferentialLimitedSlipRatio
+
+        // constraint config
+        let constraintSettings = new VehicleConstraintSettings ()
+        constraintSettings.Up <- properties.VehicleUp
+        constraintSettings.Forward <- properties.VehicleForward
+        constraintSettings.MaxPitchRollAngle <- properties.VehicleMaxPitchRollAngle
+        constraintSettings.Wheels <- wheelSettings
+        if properties.VehicleAntiRollBars.Length > 0 then // NOTE: leaving unset when empty as jolt's default is null.
+            constraintSettings.AntiRollBars <-
+                [|for antiRollBar in properties.VehicleAntiRollBars do
+                    VehicleAntiRollBar
+                        (LeftWheel = antiRollBar.AntiRollBarLeftWheel,
+                         RightWheel = antiRollBar.AntiRollBarRightWheel,
+                         Stiffness = antiRollBar.AntiRollBarStiffness)|]
+        constraintSettings.Controller <- controllerSettings
+        constraintSettings
+
+    static member private createVehicleCollisionTester objectLayer (properties : WheeledVehicleProperties) : JoltPhysicsSharp.VehicleCollisionTester =
+        let mutable up = properties.VehicleUp
+        match properties.VehicleCollisionTester with
+        | CastCylinderCollisionTester convexRadiusFraction -> new VehicleCollisionTesterCastCylinder (objectLayer, convexRadiusFraction)
+        | CastSphereCollisionTester (radius, maxSlopeAngle) -> new VehicleCollisionTesterCastSphere (objectLayer, radius, &up, maxSlopeAngle)
+        | RayCollisionTester maxSlopeAngle -> new VehicleCollisionTesterRay (objectLayer, up, maxSlopeAngle)
 
     static member private createBody3 (bodyId : BodyId) (bodyProperties : BodyProperties) (physicsEngine : JoltPhysicsEngine) =
 
@@ -791,10 +899,10 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             physicsEngine.CharacterUserData.Add (character.ID, characterUserData)
             physicsEngine.Characters.Add (bodyId, character)
 
-        | Choice3Of3 vehicleConstraintSettings ->
+        | Choice3Of3 wheeledVehicleProperties ->
 
             // create vehicle offset COM shape
-            let offset = v3Down * 1.25f // TODO: P1: expose this as parameter.
+            let offset = wheeledVehicleProperties.VehicleCenterOfMassOffset
             use offsetComShapeSettings = new OffsetCenterOfMassShapeSettings (&offset, scShapeSettings)
 
             // create vehicle body, setting up body for disposal
@@ -802,8 +910,9 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             use body = body
             
             // create vehicle constraint
+            let vehicleConstraintSettings = JoltPhysicsEngine.createVehicleConstraintSettings wheeledVehicleProperties
             let vehicleConstraint = new VehicleConstraint (body, vehicleConstraintSettings)
-            vehicleConstraint.SetVehicleCollisionTester (new VehicleCollisionTesterCastCylinder (objectLayer, 1.0f))
+            vehicleConstraint.SetVehicleCollisionTester (JoltPhysicsEngine.createVehicleCollisionTester objectLayer wheeledVehicleProperties)
             physicsEngine.VehicleConstraints.Add (bodyId, vehicleConstraint)
             physicsEngine.PhysicsContext.AddConstraint vehicleConstraint
 
