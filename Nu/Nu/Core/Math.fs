@@ -1778,52 +1778,14 @@ module Math =
         Vector3 (SnapDegreeF (offset, v3.X), SnapDegreeF (offset, v3.Y), SnapDegreeF (offset, v3.Z))
 
     /// Find the union of a line segment and a frustum if one exists.
-    /// NOTE: there is a bug in here (https://github.com/bryanedds/Nu/issues/570) that keeps this from being usable on long segments.
     let TryUnionSegmentAndFrustum (segment : Segment3, frustum : Frustum) : Segment3 option =
         let start = segment.A
-        let stop = segment.B
-        let startContained = frustum.Contains start <> ContainmentType.Disjoint
-        let stopContained = frustum.Contains stop <> ContainmentType.Disjoint
-        if startContained || stopContained then
-            let start' =
-                if not startContained then
-                    let ray = Ray3 (start, (stop - start).Normalized)
-                    let tOpt = frustum.Intersects ray
-                    if tOpt.HasValue
-                    then Vector3.Lerp (start, stop, tOpt.Value / (stop - start).Magnitude)
-                    else start // TODO: figure out why intersection could fail here.
-                else start
-            let stop' =
-                if not stopContained then
-                    let ray = Ray3 (stop, (start' - stop).Normalized)
-                    let tOpt = frustum.Intersects ray
-                    if tOpt.HasValue
-                    then Vector3.Lerp (stop, start', tOpt.Value / (start' - stop).Magnitude)
-                    else stop // TODO: figure out why intersection could fail here.
-                else stop
-            Some (Segment3 (start', stop'))
+        let extent = segment.B - start
+        let mutable tStart = 0.0f
+        let mutable tStop = 1.0f
+        if frustum.TryClip (&start, &extent, &tStart, &tStop)
+        then Some (Segment3 (start + extent * tStart, start + extent * tStop))
         else None
-
-    /// Find the the union of a line segment and a frustum if one exists.
-    /// NOTE: this returns the union in parts in order to mostly workaround the bug in TryUnionSegmentAndFrustum.
-    let TryUnionSegmentAndFrustum' (segment : Segment3, frustum : Frustum) : Segment3 array =
-        let start = segment.A
-        let stop = segment.B
-        let extent = stop - start
-        let extentMagnitude = extent.Magnitude
-        let partMagnitude = 2.0f // NOTE: magic value that looks good enough in editor for most purposes but doesn't bog down perf TOO much...
-        if extentMagnitude > partMagnitude then
-            let partMax = 8 // NOTE: magic value that keeps too many operations from occurring, again for perf reasons...
-            let partCount = min partMax (int (ceil (extentMagnitude / partMagnitude)))
-            let partExtent = extent / single partCount
-            [|for i in 0 .. dec partCount do
-                let start' = start + partExtent * single i
-                let stop' = start' + partExtent
-                if frustum.Contains ((start' + stop') * 0.5f) <> ContainmentType.Disjoint then
-                    Segment3 (start', stop')|]
-        elif frustum.Contains ((start + stop) * 0.5f) <> ContainmentType.Disjoint then
-            [|segment|]
-        else [||]
 
     /// Check that a is aligned on b.
     let Aligned (a, b) =

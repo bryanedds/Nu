@@ -470,42 +470,41 @@ namespace System.Numerics
         /// <param name="result">Distance at which ray intersects with this <see cref="Frustum"/> or null if no intersection happens as an output parameter.</param>
         public void Intersects(in Ray3 ray, out float? result)
         {
-            // Start by finding intersection t with each plane
-            Near.Intersects(ray, out float? tNear);
-            Far.Intersects(ray, out float? tFar);
-            Left.Intersects(ray, out float? tLeft);
-            Right.Intersects(ray, out float? tRight);
-            Top.Intersects(ray, out float? tTop);
-            Bottom.Intersects(ray, out float? tBottom);
+            float tMin = 0.0f;
+            float tMax = float.PositiveInfinity;
+            result = TryClip(in ray.Origin, in ray.Direction, ref tMin, ref tMax) ? tMin : null;
+        }
 
-            // Initialize a list to store all valid intersection t values
-            List<float> validTs = new List<float>();
-
-            // Check the intersection t values for each plane
-            if (tNear.HasValue && tNear.Value >= 0) validTs.Add(tNear.Value);
-            if (tFar.HasValue && tFar.Value >= 0) validTs.Add(tFar.Value);
-            if (tLeft.HasValue && tLeft.Value >= 0) validTs.Add(tLeft.Value);
-            if (tRight.HasValue && tRight.Value >= 0) validTs.Add(tRight.Value);
-            if (tTop.HasValue && tTop.Value >= 0) validTs.Add(tTop.Value);
-            if (tBottom.HasValue && tBottom.Value >= 0) validTs.Add(tBottom.Value);
-
-            // Attempt to find nearest intersection point inside the frustum.
-            if (validTs.Count > 0)
+        /// <summary>
+        /// Attempt to clip the parametric range [tMin, tMax] of the line origin + direction * t to this frustum.
+        /// </summary>
+        /// <param name="origin">The origin of the line.</param>
+        /// <param name="direction">The direction of the line, which need not be normalized.</param>
+        /// <param name="tMin">The start of the range, raised to where the line enters this frustum.</param>
+        /// <param name="tMax">The end of the range, lowered to where the line leaves this frustum.</param>
+        /// <returns><c>true</c> if any of the range lies within this <see cref="Frustum"/>; <c>false</c> otherwise.</returns>
+        public bool TryClip(in Vector3 origin, in Vector3 direction, ref float tMin, ref float tMax)
+        {
+            // clip against each plane, whose normal points outward
+            for (var i = 0; i < PlaneCount; ++i)
             {
-                var nearest = validTs.Min();
-                var point = ray.Origin + ray.Direction * nearest;
-                if (Contains(point) != ContainmentType.Disjoint)
+                var plane = this._planes[i];
+                var originDistance = plane.DotCoordinate(origin); // positive when outside
+                var directionDistance = Vector3.Dot(plane.Normal, direction); // positive when heading outward
+                if (directionDistance == 0.0f)
                 {
-                    result = nearest;
-                    return;
+                    // parallel to plane, so either always inside or always outside of it
+                    if (originDistance > 0.0f) return false;
                 }
-
-                result = null;
-                return;
+                else
+                {
+                    var t = -originDistance / directionDistance;
+                    if (directionDistance > 0.0f) tMax = System.Math.Min(tMax, t); // leaving through plane
+                    else tMin = System.Math.Max(tMin, t); // entering through plane
+                    if (tMin > tMax) return false;
+                }
             }
-
-            result = null;
-            return;
+            return true;
         }
 
         /// <summary>

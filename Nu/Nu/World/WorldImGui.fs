@@ -103,11 +103,13 @@ module WorldImGui =
             let frustumView = world.Eye3dFrustumView
             let viewport = world.WindowViewport
             for segment in segments do
-                for segment' in Math.TryUnionSegmentAndFrustum' (segment, frustumView) do
+                match Math.TryUnionSegmentAndFrustum (segment, frustumView) with
+                | Some segment' ->
                     let color = computeColor segment'
                     let startInner = ImGui.Position3dToInner (windowPosition, windowSize, viewProjection, viewport, segment'.A)
                     let stopInner = ImGui.Position3dToInner (windowPosition, windowSize, viewProjection, viewport, segment'.B)
                     drawList.AddLine (startInner, stopInner, color.Abgr, thickness)
+                | None -> ()
 
         /// Render segments via ImGui in the current eye 3d space.
         static member imGuiSegments3d segments thickness color world =
@@ -133,10 +135,12 @@ module WorldImGui =
             let viewport = world.WindowViewport
             let segments = box.Segments
             for segment in segments do
-                for segment' in Math.TryUnionSegmentAndFrustum' (segment, frustum) do
+                match Math.TryUnionSegmentAndFrustum (segment, frustum) with
+                | Some segment' ->
                     let aInner = ImGui.Position3dToInner (windowPosition, windowSize, viewProjection, viewport, segment'.A)
                     let bInner = ImGui.Position3dToInner (windowPosition, windowSize, viewProjection, viewport, segment'.B)
                     drawList.AddLine (aInner, bInner, color.Abgr)
+                | None -> ()
 
         /// Edit a Box3 via ImGui in the current eye 3d space.
         static member imGuiEditBox3d snap box (world : World) =
