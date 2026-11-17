@@ -116,6 +116,8 @@ module Gaia =
     let mutable private AlternativeEyeTravelInput = false
     let mutable private PhysicsDebugRendering2d = false
     let mutable private PhysicsDebugRendering3d = false
+    let mutable private PhysicsDebugRenderingDistance3d = Constants.Render.Body3dRenderDistanceMax
+    let mutable private PhysicsDebugRenderingHeightMaps3d = false
     let mutable private ImGuiDebugWindow = false
     let mutable private EntityHierarchySearchStr = ""
     let mutable private PropagationSourcesSearchStr = ""
@@ -2567,7 +2569,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 // physics debug rendering
                 if PhysicsDebugRendering3d then
                     let mutable settings3d = DrawSettings (DrawShapeWireframe = true)
-                    World.imGuiRenderPhysics3d settings3d world
+                    World.imGuiRenderPhysics3dPlus settings3d PhysicsDebugRenderingDistance3d PhysicsDebugRenderingHeightMaps3d world
                 if PhysicsDebugRendering2d then
                     World.imGuiRenderPhysics2d world
 
@@ -3862,6 +3864,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.Text "Debug"
             ImGui.Checkbox ("Physics Debug Rendering (2d)", &PhysicsDebugRendering2d) |> ignore<bool>
             ImGui.Checkbox ("Physics Debug Rendering (3d)", &PhysicsDebugRendering3d) |> ignore<bool>
+            if PhysicsDebugRendering3d then
+                ImGui.Indent ()
+                ImGui.Text "Distance"
+                ImGui.SameLine ()
+                ImGui.DragFloat ("##physicsDebugRenderingDistance3d", &PhysicsDebugRenderingDistance3d, SnapDrag, 1.0f, Single.MaxValue, "%2.2f") |> ignore<bool>
+                ImGui.Checkbox ("Height Maps", &PhysicsDebugRenderingHeightMaps3d) |> ignore<bool>
+                ImGui.Unindent ()
             ImGui.Checkbox ("ImGui Debug Window", &ImGuiDebugWindow) |> ignore<bool>
         ImGui.End ()
 

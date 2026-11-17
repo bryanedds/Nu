@@ -1568,11 +1568,9 @@ type JoltDebugRendererImGui () =
     override this.DrawText3D (_, _, _, _) =
         () // TODO: implement.
 
-    /// Actually render all the stored drawing commands.
-    member this.Flush (world : World) =
-        let distanceMaxSquared =
-            Constants.Render.Body3dSegmentRenderDistanceMax *
-            Constants.Render.Body3dSegmentRenderDistanceMax
+    /// Actually render all the stored drawing commands that are within the given distance of the eye.
+    member this.Flush (segmentDistanceMax : single, world : World) =
+        let distanceMaxSquared = segmentDistanceMax * segmentDistanceMax
         for struct (color, segmentList) in segments.Pairs' do
             let segmentsNear = segmentList |> Seq.filter (fun segment -> ((segment.A + segment.Vector * 0.5f) - world.Eye3dCenter).MagnitudeSquared < distanceMaxSquared)
             World.imGuiSegments3d segmentsNear 1.0f color world
@@ -1598,8 +1596,9 @@ module WorldImGui2 =
                 World.imGuiCircles2d false circleList radius false color world
                 circleList.Clear ()
 
-        /// Render the 3D physics via ImGui using the given settings.
-        static member imGuiRenderPhysics3d (settings : DrawSettings) world =
+        /// Render the 3D physics via ImGui using the given settings, rendering bodies within the given distance of
+        /// the eye, and optionally rendering height fields.
+        static member imGuiRenderPhysics3dPlus (settings : DrawSettings) (distanceMax : single) heightFieldsRendered world =
             match World.getRendererPhysics3dOpt world with
             | Some debugRenderer ->
                 let physicsEngine3d = World.getPhysicsEngine3d world
@@ -1608,7 +1607,21 @@ module WorldImGui2 =
                     { DebugRenderer = joltRenderer
                       DrawSettings = settings
                       EyeCenter = world.Eye3dCenter
-                      EyeFrustum = world.Eye3dFrustumView }
+                      EyeFrustum = world.Eye3dFrustumView
+                      RenderDistanceMax = distanceMax
+                      HeightFieldsRendered = heightFieldsRendered }
                 physicsEngine3d.TryRender renderContext
-                joltRenderer.Flush world
+
+                // segments of bodies are allowed past the body distance in proportion to the default distances so
+                // that bodies near the edge of the distance aren't cut off
+                let segmentDistanceMax =
+                    distanceMax *
+                    Constants.Render.Body3dSegmentRenderDistanceMax /
+                    Constants.Render.Body3dRenderDistanceMax
+                joltRenderer.Flush (segmentDistanceMax, world)
+
             | None -> ()
+
+        /// Render the 3D physics via ImGui using the given settings.
+        static member imGuiRenderPhysics3d (settings : DrawSettings) world =
+            World.imGuiRenderPhysics3dPlus settings Constants.Render.Body3dRenderDistanceMax false world

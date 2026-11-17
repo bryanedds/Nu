@@ -106,7 +106,9 @@ type JoltPhysicsEngineRenderContext =
     { EyeCenter : Vector3
       EyeFrustum : Frustum
       DebugRenderer : DebugRenderer
-      DrawSettings : DrawSettings }
+      DrawSettings : DrawSettings
+      RenderDistanceMax : single
+      HeightFieldsRendered : bool }
     interface PhysicsEngineRenderContext
 
 /// The Jolt implementation of PhysicsEngine.
@@ -934,6 +936,12 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         let mutable wheelModelUp = wheelModelUp
         Matrix4x4.Transpose (vehicleConstraint.GetWheelWorldTransform (wheelIndex, &wheelModelRight, &wheelModelUp))
 
+    /// Check that bounds are within the render distance of the eye and intersect its frustum.
+    static member private getBoundsRenderable (renderer : JoltPhysicsEngineRenderContext) distanceMaxSquared (min : Vector3) (max : Vector3) =
+        let eyeToBounds = Vector3.Clamp (renderer.EyeCenter, min, max) - renderer.EyeCenter
+        eyeToBounds.MagnitudeSquared < distanceMaxSquared &&
+        renderer.EyeFrustum.Intersects (Box3 (min, max - min))
+
     static member private renderVehicleWheels (renderer : JoltPhysicsEngineRenderContext) distanceMaxSquared physicsEngine =
         let debugRenderer = renderer.DebugRenderer
         let contactColor = JoltColor (0, 255, 0, 255)
@@ -941,10 +949,8 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         let contactPointColor = JoltColor (255, 255, 0, 255)
         let rimSegments = 16
         for vehicleConstraint in physicsEngine.VehicleConstraints.Values do
-            let vehicleCenter = vehicleConstraint.VehicleBody.WorldSpaceBounds.Center
-            let vehicleDistanceSquared = (vehicleCenter - renderer.EyeCenter).MagnitudeSquared
-            if  vehicleDistanceSquared < distanceMaxSquared &&
-                renderer.EyeFrustum.Contains vehicleCenter <> ContainmentType.Disjoint then
+            let vehicleBounds = vehicleConstraint.VehicleBody.WorldSpaceBounds
+            if JoltPhysicsEngine.getBoundsRenderable renderer distanceMaxSquared vehicleBounds.Min vehicleBounds.Max then
                 for i in 0 .. dec vehicleConstraint.WheelsCount do
 
                     // compute wheel transform such that local x is the axle and the wheel spins in local yz
@@ -1788,16 +1794,13 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         member physicsEngine.TryRender renderContext =
             match renderContext with
             | :? JoltPhysicsEngineRenderContext as renderer ->
-                let distanceMaxSquared =
-                    Constants.Render.Body3dRenderDistanceMax *
-                    Constants.Render.Body3dRenderDistanceMax
+                let distanceMaxSquared = renderer.RenderDistanceMax * renderer.RenderDistanceMax
                 use drawBodyFilter =
                     new BodyDrawFilterLambda (fun body ->
-                        let bodyCenter = body.WorldSpaceBounds.Center
-                        let bodyDistanceSquared = (bodyCenter - renderer.EyeCenter).MagnitudeSquared
-                        body.Shape.Type <> ShapeType.HeightField && // NOTE: eliding terrain because without LOD, it's currently too expensive.
-                        bodyDistanceSquared < distanceMaxSquared &&
-                        renderer.EyeFrustum.Contains bodyCenter <> ContainmentType.Disjoint)
+                        // NOTE: height fields are optional since, without LOD, they're expensive to render.
+                        let bounds = body.WorldSpaceBounds
+                        (renderer.HeightFieldsRendered || body.Shape.Type <> ShapeType.HeightField) &&
+                        JoltPhysicsEngine.getBoundsRenderable renderer distanceMaxSquared bounds.Min bounds.Max)
                 let eyeCenter = renderer.EyeCenter
                 renderer.DebugRenderer.SetCameraPosition &eyeCenter
                 let drawSettings = renderer.DrawSettings
