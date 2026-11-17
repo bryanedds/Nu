@@ -902,6 +902,9 @@ module FillBarFacetExtensions =
         member this.GetFillInset world : single = this.Get (nameof this.FillInset) world
         member this.SetFillInset (value : single) world = this.Set (nameof this.FillInset) value world
         member this.FillInset = lens (nameof this.FillInset) this this.GetFillInset this.SetFillInset
+        member this.GetFillDirection world : FillDirection = this.Get (nameof this.FillDirection) world
+        member this.SetFillDirection (value : FillDirection) world = this.Set (nameof this.FillDirection) value world
+        member this.FillDirection = lens (nameof this.FillDirection) this this.GetFillDirection this.SetFillDirection
         member this.GetFillColor world : Color = this.Get (nameof this.FillColor) world
         member this.SetFillColor (value : Color) world = this.Set (nameof this.FillColor) value world
         member this.FillColor = lens (nameof this.FillColor) this this.GetFillColor this.SetFillColor
@@ -926,6 +929,7 @@ type FillBarFacet () =
          define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
          define Entity.Fill 0.0f
          define Entity.FillInset 0.0f
+         define Entity.FillDirection FillFromLeft
          define Entity.FillColor Color.Red
          define Entity.FillImage Assets.Default.White
          define Entity.BorderColor Color.White
@@ -945,13 +949,23 @@ type FillBarFacet () =
         World.renderGuiSpriteSliced transform.Absolute transform.Perimeter sliceMargin borderImage pipelineName transform.Offset elevation borderImageColor userDefinedSettings world
 
         // fill sprite
-        let fillSize = transform.Perimeter.Size
-        let fillInset = fillSize.X * entity.GetFillInset world * 0.5f
-        let fillWidth = (fillSize.X - fillInset * 2.0f) * (entity.GetFill world |> min 1.0f |> max 0.0f)
-        let fillPosition = transform.Perimeter.Left + v3 (fillWidth * 0.5f) 0.0f 0.0f + v3 fillInset 0.0f 0.0f
-        let fillHeight = fillSize.Y - fillInset * 2.0f
-        let fillSize = v3 fillWidth fillHeight 0.0f
-        let fillPerimeter = box3 (fillPosition - fillSize * 0.5f) fillSize
+        let perimeter = transform.Perimeter
+        let fillInset = perimeter.Size.X * entity.GetFillInset world * 0.5f
+        let fill = entity.GetFill world |> min 1.0f |> max 0.0f
+        let innerMin = v3 (perimeter.Min.X + fillInset) (perimeter.Min.Y + fillInset) perimeter.Center.Z
+        let innerSize = v3 (perimeter.Size.X - fillInset * 2.0f) (perimeter.Size.Y - fillInset * 2.0f) 0.0f
+        let fillPerimeter =
+            match entity.GetFillDirection world with
+            | FillFromLeft ->
+                box3 innerMin (v3 (innerSize.X * fill) innerSize.Y 0.0f)
+            | FillFromRight ->
+                let fillWidth = innerSize.X * fill
+                box3 (innerMin + v3 (innerSize.X - fillWidth) 0.0f 0.0f) (v3 fillWidth innerSize.Y 0.0f)
+            | FillFromBottom ->
+                box3 innerMin (v3 innerSize.X (innerSize.Y * fill) 0.0f)
+            | FillFromTop ->
+                let fillHeight = innerSize.Y * fill
+                box3 (innerMin + v3 0.0f (innerSize.Y - fillHeight) 0.0f) (v3 innerSize.X fillHeight 0.0f)
         let fillImageColor = entity.GetFillColor world * color
         let fillImage = entity.GetFillImage world
         World.renderGuiSpriteSliced transform.Absolute fillPerimeter sliceMargin fillImage pipelineName transform.Offset transform.Elevation fillImageColor userDefinedSettings world
