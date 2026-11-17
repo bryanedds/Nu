@@ -35,13 +35,11 @@ type CubeMapGeometry =
 
 /// Describes a renderable cube map surface.
 type [<Struct>] CubeMapSurface =
-    { Flipped : bool
-      CubeMap : Texture
+    { CubeMap : Texture
       Geometry : CubeMapGeometry }
 
-    static member make flipped cubeMap geometry =
-        { Flipped = flipped
-          CubeMap = cubeMap
+    static member make cubeMap geometry =
+        { CubeMap = cubeMap
           Geometry = geometry }
 
 /// Describes a cube map pipeline that's loaded into GPU.
@@ -277,8 +275,7 @@ module CubeMap =
     let drawCubeMap
         (eyeCenter : Vector3)
         (view : Matrix4x4)
-        (projectionUnflipped : Matrix4x4)
-        (flipped : bool)
+        (projection : Matrix4x4)
         (cubeMap : Texture)
         (sampler : Sampler)
         (geometry : CubeMapGeometry)
@@ -289,8 +286,7 @@ module CubeMap =
         (advanceCommandBufferWhenNeeded : unit -> unit)
         (context : VulkanContext) =
 
-        // compute vulkan-appropriate matrices
-        let projection = if flipped then projectionUnflipped.Flipped else projectionUnflipped
+        // compute matrices
         let viewInverse = view.Inverted
         let projectionInverse = projection.Inverted
         let viewProjection = view * projection
