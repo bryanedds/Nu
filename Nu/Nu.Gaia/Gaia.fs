@@ -2613,7 +2613,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         ImGui.SetNextWindowPos v2Zero
         ImGui.SetNextWindowSize io.DisplaySize
         if ImGui.IsKeyReleased ImGuiKey.Escape && not (modal ()) then ImGui.SetNextWindowFocus ()
-        if ImGui.Begin ("Viewport", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs ||| ImGuiWindowFlags.NoNav) then
+        if ImGui.Begin ("Viewport", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs) then
             if not ViewMode.IsCaptureMode then
 
                 // physics debug rendering
@@ -3191,7 +3191,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let mutable entityHierarchyFocused = false
             let windowName = "Entity Hierarchy"
             if ImGui.Begin windowName then
-                
+
                 // store focus
                 if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             
@@ -3321,33 +3321,49 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiGamePropertiesWindow world =
         let windowName = "Game Properties"
-        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
-            if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
-            imGuiEditProperties Game world
+        let focused =
+            if ImGui.Begin windowName then
+                if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
+                imGuiEditProperties Game world
+                ImGui.IsWindowFocused ImGuiFocusedFlags.RootAndChildWindows
+            else false
         ImGui.End ()
+        focused
 
     let private imGuiScreenPropertiesWindow world =
         let windowName = "Screen Properties"
-        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
-            if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
-            imGuiEditProperties SelectedScreen world
+        let focused =
+            if ImGui.Begin windowName then
+                if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
+                imGuiEditProperties SelectedScreen world
+                ImGui.IsWindowFocused ImGuiFocusedFlags.RootAndChildWindows
+            else false
         ImGui.End ()
+        focused
 
     let private imGuiGroupPropertiesWindow world =
         let windowName = "Group Properties"
-        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
-            if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
-            imGuiEditProperties SelectedGroup world
+        let focused =
+            if ImGui.Begin windowName then
+                if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
+                imGuiEditProperties SelectedGroup world
+                ImGui.IsWindowFocused ImGuiFocusedFlags.RootAndChildWindows
+            else false
         ImGui.End ()
+        focused
 
     let private imGuiEntityPropertiesWindow world =
         let windowName = "Entity Properties"
-        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
-            if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
-            match Seq.tryExactlyOne SelectedEntities with
-            | Some entity when entity.GetExists world && SelectedEntities.Count = 1 -> imGuiEditProperties entity world
-            | Some _ | None -> () // nothing for none, nor for several since they're not edited together
+        let focused =
+            if ImGui.Begin windowName then
+                if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
+                match Seq.tryExactlyOne SelectedEntities with
+                | Some entity when entity.GetExists world && SelectedEntities.Count = 1 -> imGuiEditProperties entity world
+                | Some _ | None -> () // nothing for none, nor for several since they're not edited together
+                ImGui.IsWindowFocused ImGuiFocusedFlags.RootAndChildWindows
+            else false
         ImGui.End ()
+        focused
 
     let private imGuiPropagationSourcesWindow world =
         let windowName = "Propagation Sources"
@@ -4681,10 +4697,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         let dockNodeFlags = ImGuiDockNodeFlags.NoDockingOverCentralNode ||| ImGuiDockNodeFlags.PassthruCentralNode
         let dockSpaceId = ImGui.DockSpaceOverViewport (0u, ImGui.GetMainViewport (), dockNodeFlags)
 
-        // enable keyboard nav in the windows that allow it (the entity hierarchy and the property windows), keeping alt
-        // from toggling the menu layer and alt+arrows from moving the nav cursor since gaia uses them (#603)
+        // enable keyboard nav in the windows that allow it (the entity hierarchy and the property windows)
         let io = ImGui.GetIO ()
         io.ConfigFlags <- io.ConfigFlags ||| ImGuiConfigFlags.NavEnableKeyboard
+        io.ConfigNavCaptureKeyboard <- false
         let keyOwnerId = ImGui.GetID "Gaia"
         ImGuiInternal.setKeyOwner ImGuiKey.LeftAlt keyOwnerId
         ImGuiInternal.setKeyOwner ImGuiKey.RightAlt keyOwnerId
@@ -4705,20 +4721,20 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             try imGuiViewportManipulation world
 
                 // windows
-                let entityHierarchyFocused =
+                let (entityHierarchyFocused, simulantPropertiesFocused) =
                     if not ViewMode.IsNormalMode then
                         imGuiFullScreenWindow world
-                        false
+                        (false, false)
                     else
                         imGuiMainMenuWindow world
                         let entityHierarchyFocused = imGuiHierarchyWindow world
                         ExpandEntityHierarchy <- false
                         CollapseEntityHierarchy <- false
                         imGuiTimelineWindow ()
-                        imGuiGamePropertiesWindow world 
-                        imGuiScreenPropertiesWindow world 
-                        imGuiGroupPropertiesWindow world 
-                        imGuiEntityPropertiesWindow world 
+                        let gamePropertiesFocused = imGuiGamePropertiesWindow world
+                        let screenPropertiesFocused = imGuiScreenPropertiesWindow world
+                        let groupPropertiesFocused = imGuiGroupPropertiesWindow world
+                        let entityPropertiesFocused = imGuiEntityPropertiesWindow world
                         imGuiEditPropertyWindow world
                         imGuiAssetGraphWindow ()
                         imGuiOverlayerWindow ()
@@ -4732,7 +4748,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         imGuiLogWindow world
                         imGuiAssetViewerWindow world // HACK: for some reason, this window must be processed last in order for it to be selected by default.
                         imGuiDebugWindow ()
-                        entityHierarchyFocused
+                        let simulantPropertiesFocused = gamePropertiesFocused || screenPropertiesFocused || groupPropertiesFocused || entityPropertiesFocused
+                        (entityHierarchyFocused, simulantPropertiesFocused)
 
                 // prompt dialogs
                 match MessageBoxOpt with
@@ -4759,7 +4776,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 // non-imgui input
                 updateEntityContext world // before the eye drag ends, so it sees whether a right drag's panned the eye
                 updateEyeDrag world
-                updateEyeTravel world
+                if  not entityHierarchyFocused &&
+                    not simulantPropertiesFocused then
+                    updateEyeTravel world
                 updateEntityDrag world
                 updateAssetDrag world
                 updateHotkeys entityHierarchyFocused world
