@@ -26,6 +26,19 @@ module private JoltApiFixes =
     extern [<return: MarshalAs (UnmanagedType.U1)>] bool JPH_CharacterVirtual_StickToFloor
         (nativeint character, Vector3& stepDown, uint layer, nativeint system, nativeint bodyFilter, nativeint shapeFilter)
 
+    /// Binds JPH_CompoundShape_GetNumSubShapes since JoltPhysicsSharp doesn't expose it.
+    [<DllImport "joltc">]
+    extern uint JPH_CompoundShape_GetNumSubShapes (nativeint shape)
+
+    /// Binds JPH_CompoundShape_GetSubShapeIndexFromID since JoltPhysicsSharp doesn't expose it.
+    [<DllImport "joltc">]
+    extern uint JPH_CompoundShape_GetSubShapeIndexFromID (nativeint shape, uint subShapeID, uint& remainder)
+
+    /// Binds JPH_CompoundShape_GetSubShape since JoltPhysicsSharp doesn't expose it.
+    [<DllImport "joltc">]
+    extern void JPH_CompoundShape_GetSubShape
+        (nativeint shape, uint index, nativeint& subShape, nativeint positionCOM, nativeint rotation, uint& userData)
+
 type [<Struct>] private CharacterUserData =
     { CharacterBodyId : BodyId
       CharacterCollisionGroup : int
@@ -236,6 +249,37 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
               BodyShapeTarget = { BodyId = body2Id; BodyShapeIndex = 0 }}
         let integrationMessage = BodySeparationMessage bodySeparationMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
+
+    /// Store the body shape index of a body's sole shape as its body shape's user data since Jolt creates a compound
+    /// shape of one sub-shape as just that sub-shape, losing the sub-shape's user data.
+    static member private setBodyShapeUserData (bodyProperties : BodyProperties) (shape : Shape) =
+        if shape.Type <> ShapeType.Compound then
+            let rec tryGetBodyShapeIndex (bodyShape : BodyShape) =
+                match bodyShape with
+                | EmptyShape -> None
+                | BodyShapes [bodyShape] -> tryGetBodyShapeIndex bodyShape
+                | BodyShapes _ -> None
+                | _ ->
+                    match bodyShape.PropertiesOpt with
+                    | Some properties -> Some properties.BodyShapeIndex
+                    | None -> Some bodyProperties.BodyIndex
+            let bodyShapeIndex = tryGetBodyShapeIndex bodyProperties.BodyShape |> Option.defaultValue Constants.Physics.InternalIndex
+            shape.UserData <- uint64 (uint32 bodyShapeIndex)
+
+    /// Recover the user-defined body shape index of the part of the given body that a sub-shape id refers to, which
+    /// is stored as the user data of the sub-shape of the body's compound shape, or of the body's shape otherwise.
+    static member private getBodyShapeIndex (body : Body) (subShapeID : uint) =
+        let shape = body.Shape
+        if shape.Type = ShapeType.Compound then
+            let mutable remainder = 0u
+            let index = JoltApiFixes.JPH_CompoundShape_GetSubShapeIndexFromID (shape.Handle, subShapeID, &remainder)
+            if index < JoltApiFixes.JPH_CompoundShape_GetNumSubShapes shape.Handle then
+                let mutable subShape = 0n
+                let mutable userData = 0u
+                JoltApiFixes.JPH_CompoundShape_GetSubShape (shape.Handle, index, &subShape, 0n, 0n, &userData)
+                int userData
+            else Constants.Physics.InternalIndex
+        else int (uint32 shape.UserData)
 
     static member private tryCreateShape (shape : BodyShape) =
         match shape with
@@ -627,6 +671,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             | Continuous -> MotionQuality.LinearCast
         bodyCreationSettings.IsSensor <- bodyProperties.Sensor
         let body = physicsEngine.PhysicsContext.BodyInterface.CreateBody bodyCreationSettings
+        JoltPhysicsEngine.setBodyShapeUserData bodyProperties body.Shape
         let bodyUserData =
             { BodyId = bodyId
               BodyEnabled = bodyProperties.Enabled
@@ -842,7 +887,9 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             // inner shape config (must be set after Shape property)
             use scShapeSettingsInner = new StaticCompoundShapeSettings ()
             JoltPhysicsEngine.attachBodyShape bodyProperties bodyProperties.BodyShape scShapeSettingsInner [] physicsEngine |> ignore<single list>
-            characterSettings.InnerBodyShape <- scShapeSettingsInner.Create ()
+            let innerBodyShape = scShapeSettingsInner.Create ()
+            JoltPhysicsEngine.setBodyShapeUserData bodyProperties innerBodyShape
+            characterSettings.InnerBodyShape <- innerBodyShape
 
             // create actual character
             let character = new CharacterVirtual (characterSettings, &bodyProperties.Center, &bodyProperties.Rotation, 0UL, physicsEngine.PhysicsContext)
@@ -1787,23 +1834,36 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                 let subShapeID = SubShapeID rayCastResult.subShapeID2
                 let position = ray.Position + ray.Direction * rayCastResult.Fraction
                 let mutable bodyLockRead = BodyLockRead ()
-                let normal =
+                let struct (normal, bodyShapeIndex) =
                     try physicsEngine.PhysicsContext.BodyLockInterface.LockRead (&rayCastResult.BodyID, &bodyLockRead)
-                        if bodyLockRead.Succeeded
-                        then bodyLockRead.Body.GetWorldSpaceSurfaceNormal (&subShapeID, &position)
-                        else Log.warnOnce "Failed to find expected body."; v3Up
+                        if bodyLockRead.Succeeded then
+                            let body = bodyLockRead.Body
+                            struct (body.GetWorldSpaceSurfaceNormal (&subShapeID, &position), JoltPhysicsEngine.getBodyShapeIndex body subShapeID.Value)
+                        else Log.warnOnce "Failed to find expected body."; struct (v3Up, Constants.Physics.InternalIndex)
                     finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockRead &bodyLockRead
-                let bodyShapeIndex = { BodyId = bodyId; BodyShapeIndex = Constants.Physics.InternalIndex } // TODO: P1: see if we can get the user-defined shape index.
+                let bodyShapeIndex = { BodyId = bodyId; BodyShapeIndex = bodyShapeIndex }
                 BodyIntersection.make bodyShapeIndex rayCastResult.Fraction position normal|]
 
         member physicsEngine.ShapeCast (shape, transformOpt, ray, collisionCategory, collisionMask, closestOnly) =
             match JoltPhysicsEngine.tryCreateShape shape with
             | Some (shape, shapeTransformOpt) ->
+
+                // compose the shape's transform with the given one, starting from the ray's origin as with Box2D, and
+                // transposing to the column-vector form that JoltPhysicsSharp expects
+                use shape = shape
+                let shapeAffine = Option.defaultValue Affine.Identity shapeTransformOpt
+                let castAffine = Option.defaultValue Affine.Identity transformOpt
+                let rotation = Quaternion.Multiply (shapeAffine.Rotation, castAffine.Rotation)
+                let scale = shapeAffine.Scale * castAffine.Scale |> JoltPhysicsEngine.sanitizeScale
+                let translation =
+                    ray.Origin +
+                    Vector3.Transform (shapeAffine.Translation * castAffine.Scale, castAffine.Rotation) +
+                    castAffine.Translation
                 let transformMatrix =
-                    Option.map2 Affine.combineAsMatrix shapeTransformOpt transformOpt
-                    |> Option.defaultValue m4Identity
-                    |> RMatrix4x4
-                let baseOffset = RVector3 &ray.Origin
+                    Matrix4x4.Transpose (Matrix4x4.CreateFromQuaternion rotation * Matrix4x4.CreateTranslation translation)
+                use shapeScaledOpt = if scale <> v3One then new ScaledShape (shape, &scale) else null
+                let shapeCast = if notNull shapeScaledOpt then shapeScaledOpt :> Shape else shape :> Shape
+                let baseOffset = ray.Origin
                 let collectionType =
                     if closestOnly
                     then CollisionCollectorType.ClosestHit
@@ -1821,20 +1881,21 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                 use bodyFilter = new BodyFilterLambda (bodyFilterID, bodyFilterInstance)
                 let rayCastResults = List ()
                 physicsEngine.PhysicsContext.NarrowPhaseQuery.CastShape
-                    (shape, &transformMatrix, &ray.Direction, &baseOffset, collectionType, rayCastResults, null, null, bodyFilter, null) |> ignore<bool>
+                    (shapeCast, &transformMatrix, &ray.Direction, &baseOffset, collectionType, rayCastResults, null, null, bodyFilter, null) |> ignore<bool>
                 [|for rayCastResult in rayCastResults do
                     let bodyID = rayCastResult.BodyID2 // second body since the first is the user-provided shape
                     let bodyId = physicsEngine.BodyUserData[bodyID].BodyId
                     let subShapeID = rayCastResult.SubShapeID2
                     let position = ray.Origin + ray.Direction * rayCastResult.Fraction
                     let mutable bodyLockRead = BodyLockRead ()
-                    let normal =
+                    let struct (normal, bodyShapeIndex) =
                         try physicsEngine.PhysicsContext.BodyLockInterface.LockRead (&bodyID, &bodyLockRead)
-                            if bodyLockRead.Succeeded
-                            then bodyLockRead.Body.GetWorldSpaceSurfaceNormal (&subShapeID, &position)
-                            else Log.warnOnce "Failed to find expected body."; v3Up
+                            if bodyLockRead.Succeeded then
+                                let body = bodyLockRead.Body
+                                struct (body.GetWorldSpaceSurfaceNormal (&subShapeID, &position), JoltPhysicsEngine.getBodyShapeIndex body subShapeID.Value)
+                            else Log.warnOnce "Failed to find expected body."; struct (v3Up, Constants.Physics.InternalIndex)
                         finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockRead &bodyLockRead
-                    let bodyShapeIndex = { BodyId = bodyId; BodyShapeIndex = Constants.Physics.InternalIndex } // TODO: P1: see if we can get the user-defined shape index.
+                    let bodyShapeIndex = { BodyId = bodyId; BodyShapeIndex = bodyShapeIndex }
                     BodyIntersection.make bodyShapeIndex rayCastResult.Fraction position normal|]
             | None ->
                 let shapeCaseName = getCaseName shape
