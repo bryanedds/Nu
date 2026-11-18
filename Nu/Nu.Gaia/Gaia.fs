@@ -106,6 +106,7 @@ module Gaia =
     let mutable private LogStr = ""
     let private EntityHierarchyIndexed = List<Entity> () // indexed lookup of hierarchy's displayed entities
     let private PropagationSourcesIndexed = List<Entity> () // indexed lookup of the propagation sources displayed
+    let private FsiSessionLateBindingTypes = HashSet<Type> HashIdentity.Reference
 
     (* Configuration States *)
 
@@ -1490,8 +1491,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         | Right (group, groupDescriptor) ->
             let worldStateOld = world.CurrentState
             try if not (group.GetExists world) || group.GetProtection world = Unprotected then
-                    if group.GetExists world then
-                        World.destroyGroupImmediate SelectedGroup world
+                    if group.GetExists world then World.destroyGroupImmediate SelectedGroup world
                     let group = World.readGroup groupDescriptor None SelectedScreen world
                     selectGroup true group
                     pruneEntitySelection world
@@ -1521,6 +1521,21 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             AssetGraphStr <- PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter
         | Left error ->
             MessageBoxOpt <- Some ("Asset reload error due to: " + error + "'.")
+
+    /// Note the facet and dispatcher types defined by the fsi session so far, returning whether any are new.
+    let private noteFsiSessionLateBindingTypes () =
+        let mutable noted = false
+        for assembly in FsiSession.DynamicAssemblies do
+            for ty in assembly.GetTypes () do
+                if  (ty.IsSubclassOf typeof<Facet> ||
+                     ty.IsSubclassOf typeof<EntityDispatcher> ||
+                     ty.IsSubclassOf typeof<GroupDispatcher> ||
+                     ty.IsSubclassOf typeof<ScreenDispatcher> ||
+                     ty.IsSubclassOf typeof<GameDispatcher>) &&
+                    not ty.IsAbstract &&
+                    FsiSessionLateBindingTypes.Add ty then
+                    noted <- true
+        noted
 
     let private tryReloadCode initializing world =
         if World.getAllowCodeReload world then
@@ -1628,6 +1643,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     // the new session won't contain project code until the reload script below succeeds
                     FsiSessionHasProjectCode <- false
 
+                    // clear the late binding types so that we can note them again after the reload script below succeeds
+                    FsiSessionLateBindingTypes.Clear ()
+
                     // create a new session for code reload
                     Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
                     let fsiArgs = if String.notEmpty fsprojDefineConstants then Array.add ("--define:" + fsprojDefineConstants) FsiArgs else FsiArgs
@@ -1641,6 +1659,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         Log.info "Updating code..."
                         focusPropertyOpt None world // drop any reference to old property type
                         World.updateLateBindings initializing FsiSession.DynamicAssemblies world // replace references to old types
+                        noteFsiSessionLateBindingTypes () |> ignore<bool>
                         FsiSessionHasProjectCode <- true
                         Log.info "Code updated."
                     | (Choice2Of2 exn, diags) ->
@@ -3783,6 +3802,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     if errorStr.Length > 0
                     then InteractiveOutputStr <- InteractiveOutputStr + errorStr
                     else InteractiveOutputStr <- InteractiveOutputStr + Environment.NewLine + outStr
+                    if noteFsiSessionLateBindingTypes () then // make any facets or dispatchers defined by the evaluation available, as with code reloading
+                        selectEntities true Set.empty world // NOTE: makes sure old dispatcher doesn't hang around in old cached entity state.
+                        focusPropertyOpt None world // drop any reference to old property type
+                        World.updateLateBindings false FsiSession.DynamicAssemblies world
                 | (Choice2Of2 exn, diags) ->
                     let exnStr = "Unhandled exception: " + scstring exn
                     InteractiveOutputStr <- InteractiveOutputStr + Environment.NewLine + exnStr

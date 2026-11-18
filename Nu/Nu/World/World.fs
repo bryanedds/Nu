@@ -362,7 +362,9 @@ module WorldModule4 =
             |> Array.cons (Facet (false, false, false))
             |> Map.ofArrayBy World.pairWithName
 
-        /// Update late bindings internally stored by the engine from types found in the given assemblies.
+        /// Update late bindings internally stored by the engine from types found in the given assemblies, adding any
+        /// facets and dispatchers that are new. The plugin is replaced only when the assemblies define one, so
+        /// assemblies that define only facets or dispatchers, such as those from an interactive session, can be given.
         static member updateLateBindings initializing (assemblies : Assembly array) world =
 
             // prepare for late-bound type updating
@@ -372,16 +374,19 @@ module WorldModule4 =
             World.clearEntityFromClipboard world // HACK: clear what's on the clipboard rather than changing its dispatcher instance.
             World.clearNamedCallbacks world
 
-            // update plugin
-            let pluginType =
+            // update plugin when one is defined
+            let pluginTypeOpt =
                 assemblies
                 |> Array.map (fun assembly -> assembly.GetTypes ())
                 |> Array.concat
                 |> Array.filter (fun ty -> ty.IsSubclassOf typeof<NuPlugin>)
                 |> Array.filter (fun ty -> not ty.IsAbstract)
                 |> Array.filter (fun ty -> ty.GetConstructors () |> Seq.exists (fun ctor -> ctor.GetParameters().Length = 0))
-                |> Array.head
-            let plugin = Activator.CreateInstance pluginType :?> NuPlugin
+                |> Array.tryHead
+            let plugin =
+                match pluginTypeOpt with
+                | Some pluginType -> Activator.CreateInstance pluginType :?> NuPlugin
+                | None -> world.WorldExtension.Plugin
 
             // update late-bound types
             let pluginFacets = plugin.Birth<Facet> assemblies
@@ -390,13 +395,12 @@ module WorldModule4 =
             let pluginScreenDispatchers = plugin.Birth<ScreenDispatcher> assemblies
             let pluginGameDispatchers = plugin.Birth<GameDispatcher> assemblies
 
-            // update user-defined 2d pipelines
-            for descriptor in plugin.UserDefinedPipeline2dDescriptors.Values do
-                World.enqueueRenderMessage2d (CreateUserDefinedPipeline2d { Pipeline2dDescriptor = descriptor }) world
-
-            // update user-defined 3d pipelines
-            for descriptor in plugin.UserDefinedPipeline3dDescriptors.Values do
-                World.enqueueRenderMessage3d (CreateUserDefinedPipeline3d { Pipeline3dDescriptor = descriptor }) world
+            // update user-defined pipelines when the plugin is replaced
+            if pluginTypeOpt.IsSome then
+                for descriptor in plugin.UserDefinedPipeline2dDescriptors.Values do
+                    World.enqueueRenderMessage2d (CreateUserDefinedPipeline2d { Pipeline2dDescriptor = descriptor }) world
+                for descriptor in plugin.UserDefinedPipeline3dDescriptors.Values do
+                    World.enqueueRenderMessage3d (CreateUserDefinedPipeline3d { Pipeline3dDescriptor = descriptor }) world
 
             // update instances
             let worldExtension = world.WorldExtension
@@ -422,6 +426,12 @@ module WorldModule4 =
                     { worldExtension with LateBindingsInstances = { worldExtension.LateBindingsInstances with GameDispatchers = Map.add dispatcherName dispatcher worldExtension.LateBindingsInstances.GameDispatchers }})
                     worldExtension pluginGameDispatchers
             world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
+
+            // update the overlayer's intrinsic overlays to those of the current facets and entity dispatchers so that
+            // entities of new types are overlaid as well
+            let overlayer = World.getOverlayer world
+            let intrinsicOverlays = World.makeIntrinsicOverlays (World.getFacets world) (World.getEntityDispatchers world)
+            World.setOverlayer (Overlayer.make intrinsicOverlays (Overlayer.getExtrinsicOverlays overlayer)) world
 
             // update late bindings for all simulants
             let lateBindingsInstances =
