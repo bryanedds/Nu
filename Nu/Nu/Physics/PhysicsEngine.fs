@@ -73,6 +73,13 @@ type SetBodyAngularVelocityMessage =
     { BodyId : BodyId
       AngularVelocity : Vector3 }
 
+/// A message to the physics system to move a kinematic body to a center and rotation over the next step, giving it the
+/// velocity to arrive there so that it carries and pushes what it touches.
+type MoveBodyMessage =
+    { BodyId : BodyId
+      Center : Vector3
+      Rotation : Quaternion }
+
 /// A message to the physics system to set the forward input of a vehicle body.
 type SetBodyVehicleForwardInputMessage =
     { BodyId : BodyId
@@ -222,6 +229,7 @@ type PhysicsMessage =
     | SetBodyRotationMessage of SetBodyRotationMessage
     | SetBodyLinearVelocityMessage of SetBodyLinearVelocityMessage
     | SetBodyAngularVelocityMessage of SetBodyAngularVelocityMessage
+    | MoveBodyMessage of MoveBodyMessage
     | SetBodyVehicleForwardInputMessage of SetBodyVehicleForwardInputMessage
     | SetBodyVehicleRightInputMessage of SetBodyVehicleRightInputMessage
     | SetBodyVehicleBrakeInputMessage of SetBodyVehicleBrakeInputMessage
@@ -281,6 +289,12 @@ type PhysicsEngine =
     
     /// Check that the body with the given body id is on the ground.
     abstract GetBodyGrounded : bodyId : BodyId -> bool
+
+    /// Get the velocity of the ground where the body with the given body id is touching it (zero if not on ground).
+    abstract GetBodyGroundVelocity : bodyId : BodyId -> Vector3
+
+    /// Get the mass of the body with the given body id (0.0f if static or kinematic, though not a kinematic character).
+    abstract GetBodyMass : bodyId : BodyId -> single
     
     /// Check that the body with the given body id is a sensor.
     abstract GetBodySensor : bodyId : BodyId -> bool
@@ -350,6 +364,8 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.GetBodyToGroundContactNormalOpt _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyToGroundContactTangentOpt _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyGrounded _ = failwith "No bodies in StubPhysicsEngine"
+        member physicsEngine.GetBodyGroundVelocity _ = failwith "No bodies in StubPhysicsEngine"
+        member physicsEngine.GetBodyMass _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodySensor _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyWheelSpeedAtClutch _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyWheelModelMatrix (_, _, _, _) = failwith "No bodies in StubPhysicsEngine"

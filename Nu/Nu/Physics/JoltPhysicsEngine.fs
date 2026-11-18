@@ -10,6 +10,7 @@ open System.Collections.Generic
 open System.Diagnostics
 open System.Linq
 open System.Numerics
+open System.Runtime.InteropServices
 open JoltPhysicsSharp
 open Prime
 
@@ -17,13 +18,22 @@ type [<Struct>] private CharacterContactEvent =
     | CharacterContactAdded of Character : CharacterVirtual * Character2Identifier : ValueEither<CharacterID, BodyID> * SubShape2ID : SubShapeID * ContactPosition : Vector3 * ContactNormal : Vector3
     | CharacterContactRemoved of Character : CharacterVirtual * Character2Identifier : ValueEither<CharacterID, BodyID> * SubShape2ID : SubShapeID
 
+module private JoltApiFixes =
+
+    /// Binds JPH_CharacterVirtual_StickToFloor directly since JoltPhysicsSharp passes its layer by pointer rather
+    /// than by value, crashing.
+    [<DllImport "joltc">]
+    extern [<return: MarshalAs (UnmanagedType.U1)>] bool JPH_CharacterVirtual_StickToFloor
+        (nativeint character, Vector3& stepDown, uint layer, nativeint system, nativeint bodyFilter, nativeint shapeFilter)
+
 type [<Struct>] private CharacterUserData =
     { CharacterBodyId : BodyId
       CharacterCollisionGroup : int
       CharacterCollisionCategories : uint64
       CharacterCollisionMask : uint64
       CharacterGravity : Gravity
-      CharacterProperties : StairSteppingCharacterProperties }
+      CharacterProperties : StairSteppingCharacterProperties
+      CharacterGroundVelocity : Vector3 }
 
 type [<Struct; CustomEquality; NoComparison>] private BodyContactEvent =
     | BodyContactAdded of BodyID : BodyID * Body2ID : BodyID * ContactNormal : Vector3
@@ -132,6 +142,8 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
           BodyCollisionsAll : Dictionary<BodyId, Dictionary<BodyId, Vector3>>
           BodyUserData : Dictionary<BodyID, BodyUserData>
           Bodies : Dictionary<BodyId, BodyID>
+          BodyTargets : Dictionary<BodyId, struct (Vector3 * Quaternion)>
+          BodiesTargeted : BodyId HashSet
           CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
           BodyConstraintEvents : BodyConstraintEvent List
           BodyConstraintBreakingPoints : Dictionary<BodyJointId, single>
@@ -817,7 +829,15 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             characterSettings.InnerBodyLayer <- objectLayer
             characterSettings.Mass <- mass
             characterSettings.MaxSlopeAngle <- characterProperties.SlopeMax
-            characterSettings.Shape <- scShapeSettings.Create ()
+            let characterShape = scShapeSettings.Create ()
+            characterSettings.Shape <- characterShape
+
+            // accept supporting contacts that touch the character's lower sphere, as in Jolt's CharacterVirtualTest
+            // sample, taking its bottom to be rounded as for a capsule
+            let characterBounds = characterShape.LocalBounds
+            let characterBottom = characterShape.CenterOfMass.Y + characterBounds.Min.Y
+            let characterRadius = min characterBounds.Size.X characterBounds.Size.Z * 0.5f
+            characterSettings.SupportingVolume <- Plane (v3Up, -(characterBottom + characterRadius))
 
             // inner shape config (must be set after Shape property)
             use scShapeSettingsInner = new StaticCompoundShapeSettings ()
@@ -897,7 +917,8 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                   CharacterCollisionCategories = bodyProperties.CollisionCategories
                   CharacterCollisionMask = bodyProperties.CollisionMask
                   CharacterGravity = bodyProperties.Gravity
-                  CharacterProperties = characterProperties }
+                  CharacterProperties = characterProperties
+                  CharacterGroundVelocity = v3Zero }
             physicsEngine.CharacterUserData.Add (character.ID, characterUserData)
             physicsEngine.Characters.Add (bodyId, character)
 
@@ -1047,6 +1068,8 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             match physicsEngine.Bodies.TryGetValue bodyId with
             | (true, bodyID) ->
                 physicsEngine.Bodies.Remove bodyId |> ignore<bool>
+                physicsEngine.BodyTargets.Remove bodyId |> ignore<bool>
+                physicsEngine.BodiesTargeted.Remove bodyId |> ignore<bool>
                 physicsEngine.BodyUserData.Remove bodyID |> ignore<bool>
                 physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &bodyID
             | (false, _) -> ()
@@ -1134,12 +1157,17 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             physicsEngine.BodyUserData[bodyID] <- { physicsEngine.BodyUserData[bodyID] with BodyEnabled = setBodyEnabledMessage.BodyEnabled }
         | ValueNone -> ()
 
+    static member private untargetBody bodyId physicsEngine =
+        physicsEngine.BodyTargets.Remove bodyId |> ignore<bool>
+        physicsEngine.BodiesTargeted.Remove bodyId |> ignore<bool>
+
     static member private setBodyCenter (setBodyCenterMessage : SetBodyCenterMessage) physicsEngine =
         match physicsEngine.Characters.TryGetValue setBodyCenterMessage.BodyId with
         | (true, character) -> character.Position <- setBodyCenterMessage.Center
         | (false, _) ->
             match physicsEngine.Bodies.TryGetValue setBodyCenterMessage.BodyId with
             | (true, bodyID) ->
+                JoltPhysicsEngine.untargetBody setBodyCenterMessage.BodyId physicsEngine
                 physicsEngine.PhysicsContext.BodyInterface.SetPosition (&bodyID, &setBodyCenterMessage.Center, Activation.Activate) // force activation so that a transform message will be produced
             | (false, _) -> ()
 
@@ -1149,6 +1177,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         | (false, _) ->
             match physicsEngine.Bodies.TryGetValue setBodyRotationMessage.BodyId with
             | (true, bodyID) ->
+                JoltPhysicsEngine.untargetBody setBodyRotationMessage.BodyId physicsEngine
                 let rotation = setBodyRotationMessage.Rotation.Normalized // NOTE: Jolt expects this to be normalized.
                 physicsEngine.PhysicsContext.BodyInterface.SetRotation (&bodyID, &rotation, Activation.Activate) // force activation so that a transform message will be produced
             | (false, _) -> ()
@@ -1159,14 +1188,87 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         | (false, _) ->
             match physicsEngine.Bodies.TryGetValue setBodyLinearVelocityMessage.BodyId with
             | (true, bodyID) ->
+                JoltPhysicsEngine.untargetBody setBodyLinearVelocityMessage.BodyId physicsEngine
                 physicsEngine.PhysicsContext.BodyInterface.SetLinearVelocity (&bodyID, &setBodyLinearVelocityMessage.LinearVelocity)
             | (false, _) -> ()
 
     static member private setBodyAngularVelocity (setBodyAngularVelocityMessage : SetBodyAngularVelocityMessage) physicsEngine =
         match JoltPhysicsEngine.tryGetBodyID setBodyAngularVelocityMessage.BodyId physicsEngine with
         | ValueSome bodyID ->
+            JoltPhysicsEngine.untargetBody setBodyAngularVelocityMessage.BodyId physicsEngine
             physicsEngine.PhysicsContext.BodyInterface.SetAngularVelocity (&bodyID, &setBodyAngularVelocityMessage.AngularVelocity)
         | ValueNone -> ()
+
+    static member private updateCharacter stepTime (character : CharacterVirtual) physicsEngine =
+        let characterLayer = Constants.Physics.ObjectLayerMoving
+        let characterUserData = physicsEngine.CharacterUserData[character.ID]
+        let characterGravityFactor =
+            match characterUserData.CharacterGravity with
+            | GravityWorld -> 1.0f
+            | GravityOverride gravity ->
+                Log.warnOnce "Gravity override is unsupported in JoltPhysicsEngine; interpreting as a scale by magnitude instead."
+                gravity.Magnitude
+            | GravityScale scale -> scale
+            | GravityIgnore -> 0.0f
+        let characterProperties = characterUserData.CharacterProperties
+        let mutable characterUpdateSettings =
+            ExtendedUpdateSettings
+                (WalkStairsStepUp = characterProperties.StairStepUp,
+                 StickToFloorStepDown = characterProperties.StairStepDownStickToFloor,
+                 WalkStairsStepDownExtra = characterProperties.StairStepDownExtra,
+                 WalkStairsStepForwardTest = characterProperties.StairStepForwardTest,
+                 WalkStairsMinStepForward = characterProperties.StairStepForwardMin,
+                 WalkStairsCosAngleForwardContact = characterProperties.StairCosAngleForwardContact)
+        // compute the character's velocity as in Jolt's CharacterVirtualTest sample, where the character's vertical
+        // velocity is absolute as is the sample's current vertical velocity while its horizontal velocity is that which
+        // it desires relative to its ground as is the sample's desired velocity
+        character.UpdateGroundVelocity ()
+        let onGround = character.GroundState = GroundState.OnGround
+        let groundVelocity = if onGround then character.GroundVelocity else v3Zero
+        let characterGravity = physicsEngine.PhysicsContext.Gravity * characterGravityFactor
+        let up = if characterGravity <> v3Zero then -characterGravity.Normalized else character.Up
+        let horizontal (velocity : Vector3) = velocity - velocity.Dot up * up
+        let verticalVelocity = character.LinearVelocity.Dot up * up
+        let desiredVelocity = // keeping the horizontal motion of ground just left
+            if not onGround && characterUserData.CharacterGroundVelocity <> v3Zero
+            then horizontal character.LinearVelocity + horizontal characterUserData.CharacterGroundVelocity
+            else horizontal character.LinearVelocity
+        let movingTowardGround = (verticalVelocity - groundVelocity).Dot up < 0.1f
+        let groundVelocityFollowed = onGround && movingTowardGround
+        let linearVelocity =
+            if groundVelocityFollowed
+            then groundVelocity + desiredVelocity // unlike the sample, no gravity on ground to slide or snag on stairs
+            else verticalVelocity + horizontal groundVelocity + characterGravity * stepTime + desiredVelocity
+
+        // update character, carrying it with ground moving away from it after the physics update instead since the
+        // ground is still in its way before it
+        let groundVelocityDeferred =
+            let groundSpeedToward = groundVelocity.Dot character.GroundNormal
+            if groundVelocityFollowed && groundSpeedToward < 0.0f then groundSpeedToward * character.GroundNormal else v3Zero
+        physicsEngine.CharacterUserData[character.ID] <- { characterUserData with CharacterGroundVelocity = groundVelocity }
+        let position = character.Position
+        character.LinearVelocity <- linearVelocity - groundVelocityDeferred
+        character.ExtendedUpdate (stepTime, characterUpdateSettings, &characterLayer, physicsEngine.PhysicsContext)
+
+        // keep vertical velocity, though only as much upward velocity as the character could actually rise with since
+        // Jolt doesn't reduce its velocity when blocked, as by a ceiling, which would otherwise keep it pressed there
+        let verticalSpeed = linearVelocity.Dot up
+        let verticalSpeedActual = (character.Position - position).Dot up / stepTime
+        let verticalSpeed =
+            if not groundVelocityFollowed && verticalSpeed > 0.0f && verticalSpeedActual < verticalSpeed
+            then verticalSpeedActual
+            else verticalSpeed
+        character.LinearVelocity <- verticalSpeed * up + desiredVelocity
+
+    static member private moveBody (moveBodyMessage : MoveBodyMessage) physicsEngine =
+        let bodyId = moveBodyMessage.BodyId
+        match physicsEngine.Bodies.TryGetValue bodyId with
+        | (true, bodyID) ->
+            if  physicsEngine.PhysicsContext.BodyInterface.GetMotionType &bodyID = MotionType.Kinematic &&
+                not (physicsEngine.Characters.ContainsKey bodyId) then
+                physicsEngine.BodyTargets[bodyId] <- struct (moveBodyMessage.Center, moveBodyMessage.Rotation)
+            else Log.warnOnce "Cannot move a body that isn't kinematic (kinematic characters excluded) to a target."
+        | (false, _) -> ()
 
     static member private setBodyVehicleForwardInput (setBodyVehicleForwardInputMessage : SetBodyVehicleForwardInputMessage) physicsEngine =
         match physicsEngine.VehicleConstraints.TryGetValue setBodyVehicleForwardInputMessage.BodyId with
@@ -1266,6 +1368,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         | SetBodyRotationMessage setBodyRotationMessage -> JoltPhysicsEngine.setBodyRotation setBodyRotationMessage physicsEngine
         | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> JoltPhysicsEngine.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
         | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> JoltPhysicsEngine.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
+        | MoveBodyMessage moveBodyMessage -> JoltPhysicsEngine.moveBody moveBodyMessage physicsEngine
         | SetBodyVehicleForwardInputMessage setBodyVehicleForwardInputMessage -> JoltPhysicsEngine.setBodyVehicleForwardInput setBodyVehicleForwardInputMessage physicsEngine
         | SetBodyVehicleRightInputMessage setBodyVehicleRightInputMessage -> JoltPhysicsEngine.setBodyVehicleRightInput setBodyVehicleRightInputMessage physicsEngine
         | SetBodyVehicleBrakeInputMessage setBodyVehicleBrakeInputMessage -> JoltPhysicsEngine.setBodyVehicleBrakeInput setBodyVehicleBrakeInputMessage physicsEngine
@@ -1502,6 +1605,8 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
           BodyCollisionsAll = dictPlus HashIdentity.Structural []
           BodyUserData = bodyUserData
           Bodies = dictPlus HashIdentity.Structural []
+          BodyTargets = dictPlus HashIdentity.Structural []
+          BodiesTargeted = hashSetPlus HashIdentity.Structural []
           CreateBodyJointMessages = dictPlus HashIdentity.Structural []
           BodyConstraintEvents = List ()
           BodyConstraintBreakingPoints = dictPlus HashIdentity.Structural []
@@ -1572,6 +1677,38 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             match physicsEngine.Characters.TryGetValue bodyId with
             | (true, character) -> character.GroundState = GroundState.OnGround
             | (false, _) -> physicsEngine.BodyCollisionsGround.ContainsKey bodyId
+
+        member physicsEngine.GetBodyGroundVelocity bodyId =
+            match physicsEngine.Characters.TryGetValue bodyId with
+            | (true, character) -> physicsEngine.CharacterUserData[character.ID].CharacterGroundVelocity
+            | (false, _) ->
+                match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.BodyCollisionsGround.TryGetValue bodyId) with
+                | ((true, bodyID), (true, collisions)) when collisions.Count > 0 ->
+                    match physicsEngine.Bodies.TryGetValue (Seq.head collisions.Keys) with
+                    | (true, groundBodyID) ->
+                        let bodyInterface = physicsEngine.PhysicsContext.BodyInterface
+                        let position = bodyInterface.GetPosition &bodyID
+                        bodyInterface.GetPointVelocity (&groundBodyID, &position)
+                    | (false, _) -> v3Zero
+                | (_, _) -> v3Zero
+
+        member physicsEngine.GetBodyMass bodyId =
+            match physicsEngine.Characters.TryGetValue bodyId with
+            | (true, character) -> character.Mass
+            | (false, _) ->
+                match JoltPhysicsEngine.tryGetBodyID bodyId physicsEngine with
+                | ValueSome bodyID ->
+                    let mutable bodyLockRead = BodyLockRead ()
+                    try physicsEngine.PhysicsContext.BodyLockInterface.LockRead (&bodyID, &bodyLockRead)
+                        if bodyLockRead.Succeeded then
+                            let body = bodyLockRead.Body
+                            if body.MotionType = MotionType.Dynamic then
+                                let inverseMass = body.MotionProperties.InverseMassUnchecked
+                                if inverseMass > 0.0f then 1.0f / inverseMass else 0.0f
+                            else 0.0f
+                        else Log.warnOnce "Failed to find expected body."; 0.0f
+                    finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockRead &bodyLockRead
+                | ValueNone -> failwith ("No body with BodyId = " + scstring bodyId + ".")
 
         member physicsEngine.GetBodySensor bodyId =
             match JoltPhysicsEngine.tryGetBodyID bodyId physicsEngine with
@@ -1713,6 +1850,28 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             let stepTime = gameDelta.SecondsF
             if stepTime > 0.0f then
 
+                // stop bodies that are no longer being moved to targets
+                for bodyId in physicsEngine.BodiesTargeted do
+                    if not (physicsEngine.BodyTargets.ContainsKey bodyId) then
+                        let bodyID = physicsEngine.Bodies[bodyId]
+                        let zero = v3Zero
+                        physicsEngine.PhysicsContext.BodyInterface.SetLinearAndAngularVelocity (&bodyID, &zero, &zero)
+                physicsEngine.BodiesTargeted.Clear ()
+
+                // move bodies to their targets over this step
+                for KeyValue (bodyId, struct (center, rotation)) in physicsEngine.BodyTargets do
+                    let bodyID = physicsEngine.Bodies[bodyId]
+                    let rotation = rotation.Normalized // NOTE: Jolt expects this to be normalized.
+                    physicsEngine.PhysicsContext.BodyInterface.MoveKinematic (&bodyID, &center, &rotation, stepTime)
+                    physicsEngine.BodiesTargeted.Add bodyId |> ignore<bool>
+                physicsEngine.BodyTargets.Clear ()
+
+                // update characters before the physics update, as Jolt prescribes, so that they move with their
+                // ground's velocity for this step as the physics update then moves that ground
+                for character in physicsEngine.Characters.Values do
+                    if physicsEngine.BodyUserData[character.InnerBodyID].BodyEnabled then
+                        JoltPhysicsEngine.updateCharacter stepTime character physicsEngine
+
                 // update non-character physics, logging on error (integration should still advance sim regardless of error)
                 match physicsEngine.PhysicsContext.Update (stepTime, Constants.Physics.Collision3dSteps, physicsEngine.JobSystem) with
                 | PhysicsUpdateError.ManifoldCacheFull as error ->
@@ -1729,38 +1888,18 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                          nameof Constants.Physics.Collision3dContactConstraintsMax + ".")
                 | _ -> ()
 
-                // update characters when body enabled
-                let characterLayer = Constants.Physics.ObjectLayerMoving
+                // carry characters with ground that moved away from them during the physics update, which characters
+                // updated before it cannot follow since the ground was still in their way
                 for character in physicsEngine.Characters.Values do
-                    let bodyUserData = physicsEngine.BodyUserData[character.InnerBodyID]
-                    if bodyUserData.BodyEnabled then
-                        let characterUserData = physicsEngine.CharacterUserData[character.ID]
-                        let characterGravityFactor =
-                            match characterUserData.CharacterGravity with
-                            | GravityWorld -> 1.0f
-                            | GravityOverride gravity ->
-                                Log.warnOnce "Gravity override is unsupported in JoltPhysicsEngine; interpreting as a scale by magnitude instead."
-                                gravity.Magnitude
-                            | GravityScale scale -> scale
-                            | GravityIgnore -> 0.0f
-                        let characterProperties = characterUserData.CharacterProperties
-                        let mutable characterUpdateSettings =
-                            ExtendedUpdateSettings
-                                (WalkStairsStepUp = characterProperties.StairStepUp,
-                                 StickToFloorStepDown = characterProperties.StairStepDownStickToFloor,
-                                 WalkStairsStepDownExtra = characterProperties.StairStepDownExtra,
-                                 WalkStairsStepForwardTest = characterProperties.StairStepForwardTest,
-                                 WalkStairsMinStepForward = characterProperties.StairStepForwardMin,
-                                 WalkStairsCosAngleForwardContact = characterProperties.StairCosAngleForwardContact)
-                        character.LinearVelocity <-
-                            if character.GroundState = GroundState.OnGround then
-                                if characterGravityFactor < 0.0f
-                                then character.LinearVelocity.MapY (min 0.0f)
-                                else character.LinearVelocity.MapY (max 0.0f)
-                            else
-                                let characterGravity = physicsEngine.PhysicsContext.Gravity * characterGravityFactor
-                                character.LinearVelocity + characterGravity * stepTime
-                        character.ExtendedUpdate (stepTime, characterUpdateSettings, &characterLayer, physicsEngine.PhysicsContext)
+                    if physicsEngine.BodyUserData[character.InnerBodyID].BodyEnabled then
+                        let groundVelocity = physicsEngine.CharacterUserData[character.ID].CharacterGroundVelocity
+                        let groundSpeedAway = -(groundVelocity.Dot character.GroundNormal)
+                        if character.GroundState = GroundState.OnGround && groundSpeedAway > 0.0f then
+                            let characterLayer = Constants.Physics.ObjectLayerMoving
+                            let mutable stepDown = -character.GroundNormal * groundSpeedAway * stepTime * 2.0f
+                            JoltApiFixes.JPH_CharacterVirtual_StickToFloor
+                                (character.Handle, &stepDown, characterLayer.Value, physicsEngine.PhysicsContext.Handle, 0n, 0n)
+                            |> ignore<bool>
 
                 // update constraints
                 for bodyConstraintEntry in physicsEngine.BodyConstraintBreakingPoints do
@@ -1847,6 +1986,8 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                 physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &bodyID
             physicsEngine.BodyUserData.Clear ()
             physicsEngine.Bodies.Clear ()
+            physicsEngine.BodyTargets.Clear ()
+            physicsEngine.BodiesTargeted.Clear ()
 
             // clear body joints
             physicsEngine.CreateBodyJointMessages.Clear ()

@@ -48,6 +48,7 @@ module Reflection =
         [|for assemblyName in assembly.GetReferencedAssemblies () do
             if assemblyNamePredicate assemblyName then
                 try let assembly = Assembly.Load assemblyName
+                    assembly
                     yield! loadReferencedAssembliesTransitively assemblyNamePredicate assembly
                 with _ -> ()|]
 

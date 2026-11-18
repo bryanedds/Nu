@@ -170,6 +170,29 @@ module WorldPhysics =
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
                 false
 
+        /// Get the velocity of the ground where the body with the given body id is touching it (zero if not on
+        /// ground), such as that of a moving platform. Kinematic characters already move with their ground, but custom
+        /// controllers, such as those of dynamic bodies, can use this to do likewise.
+        static member getBodyGroundVelocity bodyId (world : World) =
+            if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine3d.GetBodyGroundVelocity bodyId
+            elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine2d.GetBodyGroundVelocity bodyId
+            else
+                Log.info ("Body for '" + scstring bodyId + "' not found.")
+                v3Zero
+
+        /// Get the mass of the body with the given body id (0.0f if static or kinematic, though not a kinematic
+        /// character).
+        static member getBodyMass bodyId (world : World) =
+            if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine3d.GetBodyMass bodyId
+            elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine2d.GetBodyMass bodyId
+            else
+                Log.info ("Body for '" + scstring bodyId + "' not found.")
+                0.0f
+
         /// Check that the body with the given body id is a sensor.
         static member getBodySensor bodyId (world : World) =
             if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
@@ -334,6 +357,16 @@ module WorldPhysics =
             let setBodyAngularVelocityMessage = SetBodyAngularVelocityMessage { BodyId = bodyId; AngularVelocity = angularVelocity }
             World.handlePhysicsMessage3d setBodyAngularVelocityMessage world
             World.handlePhysicsMessage2d setBodyAngularVelocityMessage world
+
+        /// Send a physics message to move a kinematic body with the given body id to a center and rotation over the
+        /// next step, giving it the velocity to arrive there so that it carries and pushes what it touches. Unlike
+        /// setting its center or rotation, which teleports it, this is how to animate a body such as a moving platform
+        /// by position. The body stops once it's no longer moved this way. Does nothing while time is halted.
+        static member moveBody center rotation bodyId (world : World) =
+            if world.TimeAdvancing then
+                let moveBodyMessage = MoveBodyMessage { BodyId = bodyId; Center = center; Rotation = rotation }
+                World.handlePhysicsMessage3d moveBodyMessage world
+                World.handlePhysicsMessage2d moveBodyMessage world
 
         /// Send a physics message to set the forward input of a vehicle body with the given body id.
         static member setBodyVehicleForwardInput forwardInput bodyId world =

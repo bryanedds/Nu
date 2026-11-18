@@ -4276,7 +4276,22 @@ module TraversalInterpolatedFacetExtensions =
             else current
 
         member this.GetPositionInterpolated world =
-            this.InterpolateVector3 (this.GetPositionHistory world) (this.GetPosition world) world
+
+            // when standing on moving ground, such as a moving platform, carry each past position along with the
+            // ground's motion since then so that interpolation smooths only the entity's own motion rather than
+            // making it trail behind the ground
+            let history = this.GetPositionHistory world
+            let groundVelocity =
+                if this.Has<RigidBodyFacet> world then
+                    let bodyId = this.GetBodyId world
+                    if World.getBodyExists bodyId world then World.getBodyGroundVelocity bodyId world else v3Zero
+                else v3Zero
+            let history =
+                if groundVelocity <> v3Zero then
+                    let gameTime = if this.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
+                    FQueue.map (fun (time, position) -> (time, position + groundVelocity * (gameTime - time).SecondsF)) history
+                else history
+            this.InterpolateVector3 history (this.GetPosition world) world
 
         member this.GetLinearVelocityInterpolated world =
             this.InterpolateVector3 (this.GetLinearVelocityHistory world) (this.GetLinearVelocity world) world

@@ -130,7 +130,7 @@ module Platform =
             vmaResolverEvent.AddEventHandler (null, resolver)
 
         let configureFrameworkNativeLibraries () =
-            trySetDllImportResolver typeof<World>.Assembly ["cimgui", "cimgui"]
+            trySetDllImportResolver typeof<World>.Assembly ["cimgui", "cimgui"; "joltc", "joltc"]
             trySetDllImportResolver typeof<ImGuiNET.ImGui>.Assembly ["cimgui", "cimgui"]
             trySetDllImportResolver typeof<BulletSharp.BulletObject>.Assembly ["libbulletc", "bulletc"]
             loadAssimpFramework ()

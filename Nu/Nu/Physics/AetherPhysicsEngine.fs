@@ -26,6 +26,8 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
     private
         { PhysicsContext : Dynamics.World
           Bodies : Dictionary<BodyId, Gravity * Dynamics.Body>
+          BodyTargets : Dictionary<BodyId, struct (Vector3 * Quaternion)>
+          BodiesTargeted : BodyId HashSet
           Joints : Dictionary<BodyJointId, Dynamics.Joints.Joint>
           CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
           IntegrationMessages : IntegrationMessage List
@@ -432,6 +434,8 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         match physicsEngine.Bodies.TryGetValue bodyId with
         | (true, (_, body)) ->
             physicsEngine.Bodies.Remove bodyId |> ignore
+            physicsEngine.BodyTargets.Remove bodyId |> ignore<bool>
+            physicsEngine.BodiesTargeted.Remove bodyId |> ignore<bool>
             physicsEngine.PhysicsContext.Remove body
         | (false, _) -> ()
 
@@ -510,9 +514,14 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         | (true, (_, body)) -> body.Enabled <- setBodyEnabledMessage.BodyEnabled
         | (false, _) -> ()
 
+    static member private untargetBody bodyId physicsEngine =
+        physicsEngine.BodyTargets.Remove bodyId |> ignore<bool>
+        physicsEngine.BodiesTargeted.Remove bodyId |> ignore<bool>
+
     static member private setBodyCenter (setBodyCenterMessage : SetBodyCenterMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyCenterMessage.BodyId with
         | (true, (_, body)) ->
+            AetherPhysicsEngine.untargetBody setBodyCenterMessage.BodyId physicsEngine
             let center = AetherPhysicsEngine.toPhysicsV2 setBodyCenterMessage.Center
             if body.Position <> center then
                 body.Position <- center
@@ -522,6 +531,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
     static member private setBodyRotation (setBodyRotationMessage : SetBodyRotationMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyRotationMessage.BodyId with
         | (true, (_, body)) ->
+            AetherPhysicsEngine.untargetBody setBodyRotationMessage.BodyId physicsEngine
             let rotation = setBodyRotationMessage.Rotation.Angle2d
             if body.Rotation <> rotation then
                 body.Rotation <- rotation
@@ -530,13 +540,47 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
 
     static member private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyLinearVelocityMessage.BodyId with
-        | (true, (_, body)) -> body.LinearVelocity <- AetherPhysicsEngine.toPhysicsV2 setBodyLinearVelocityMessage.LinearVelocity
+        | (true, (_, body)) ->
+            AetherPhysicsEngine.untargetBody setBodyLinearVelocityMessage.BodyId physicsEngine
+            body.LinearVelocity <- AetherPhysicsEngine.toPhysicsV2 setBodyLinearVelocityMessage.LinearVelocity
         | (false, _) -> ()
 
     static member private setBodyAngularVelocity (setBodyAngularVelocityMessage : SetBodyAngularVelocityMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyAngularVelocityMessage.BodyId with
-        | (true, (_, body)) -> body.AngularVelocity <- setBodyAngularVelocityMessage.AngularVelocity.Z
+        | (true, (_, body)) ->
+            AetherPhysicsEngine.untargetBody setBodyAngularVelocityMessage.BodyId physicsEngine
+            body.AngularVelocity <- setBodyAngularVelocityMessage.AngularVelocity.Z
         | (false, _) -> ()
+
+    static member private moveBody (moveBodyMessage : MoveBodyMessage) physicsEngine =
+        let bodyId = moveBodyMessage.BodyId
+        match physicsEngine.Bodies.TryGetValue bodyId with
+        | (true, (_, body)) ->
+            if body.BodyType = Dynamics.BodyType.Kinematic
+            then physicsEngine.BodyTargets[bodyId] <- struct (moveBodyMessage.Center, moveBodyMessage.Rotation)
+            else Log.warnOnce "Cannot move a body that isn't kinematic to a target."
+        | (false, _) -> ()
+
+    static member private stepTargets stepTime physicsEngine =
+
+        // stop bodies that are no longer being moved to targets
+        for bodyId in physicsEngine.BodiesTargeted do
+            if not (physicsEngine.BodyTargets.ContainsKey bodyId) then
+                let (_, body) = physicsEngine.Bodies[bodyId]
+                body.LinearVelocity <- Common.Vector2.Zero
+                body.AngularVelocity <- 0.0f
+        physicsEngine.BodiesTargeted.Clear ()
+
+        // move bodies to their targets over this step
+        for KeyValue (bodyId, struct (center, rotation)) in physicsEngine.BodyTargets do
+            let (_, body) = physicsEngine.Bodies[bodyId]
+            let angleDelta = rotation.Angle2d - body.Rotation
+            let angleDelta = MathF.IEEERemainder (angleDelta, 2.0f * MathF.PI) // shortest way around
+            body.LinearVelocity <- (AetherPhysicsEngine.toPhysicsV2 center - body.Position) / stepTime
+            body.AngularVelocity <- angleDelta / stepTime
+            body.Awake <- true
+            physicsEngine.BodiesTargeted.Add bodyId |> ignore<bool>
+        physicsEngine.BodyTargets.Clear ()
 
     static member private setBodyJointMotorEnabled (setBodyJointMotorEnabledMessage : SetBodyJointMotorEnabledMessage) physicsEngine =
         match physicsEngine.Joints.TryGetValue setBodyJointMotorEnabledMessage.BodyJointId with
@@ -675,6 +719,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         | SetBodyRotationMessage setBodyRotationMessage -> AetherPhysicsEngine.setBodyRotation setBodyRotationMessage physicsEngine
         | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> AetherPhysicsEngine.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
         | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> AetherPhysicsEngine.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
+        | MoveBodyMessage moveBodyMessage -> AetherPhysicsEngine.moveBody moveBodyMessage physicsEngine
         | SetBodyVehicleForwardInputMessage _ -> () // no vehicle controller support
         | SetBodyVehicleRightInputMessage _ -> () // no vehicle controller support
         | SetBodyVehicleBrakeInputMessage _ -> () // no vehicle controller support
@@ -731,6 +776,8 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         let physicsEngine =
             { PhysicsContext = World (AetherPhysicsEngine.toPhysicsV2 gravity)
               Bodies = Dictionary<BodyId, Gravity * Dynamics.Body> HashIdentity.Structural
+              BodyTargets = Dictionary HashIdentity.Structural
+              BodiesTargeted = HashSet HashIdentity.Structural
               Joints = Dictionary<BodyJointId, Dynamics.Joints.Joint> HashIdentity.Structural
               CreateBodyJointMessages = Dictionary<BodyId, CreateBodyJointMessage List> HashIdentity.Structural
               IntegrationMessages = integrationMessages
@@ -777,6 +824,27 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         member physicsEngine.GetBodyGrounded bodyId =
             let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
             Array.notEmpty groundNormals
+
+        member physicsEngine.GetBodyGroundVelocity bodyId =
+            let up = -(AetherPhysicsEngine.getBodyGroundDirection bodyId physicsEngine)
+            AetherPhysicsEngine.getBodyContacts bodyId physicsEngine
+            |> Seq.tryPick (fun contact ->
+                let (normal, points) = contact.GetWorldManifold ()
+                if normal <> Common.Vector2.Zero then
+                    let bodyShapeIndex = contact.FixtureA.Tag :?> BodyShapeIndex
+                    let (normal, groundBody) = // normal points from ground to body
+                        if bodyShapeIndex.BodyId = bodyId
+                        then (-normal, contact.FixtureB.Body)
+                        else (normal, contact.FixtureA.Body)
+                    if acos ((Vector3 (normal.X, normal.Y, 0.0f)).Dot up) <= Constants.Physics.GroundAngleMax
+                    then Some (AetherPhysicsEngine.toPixelV3 (groundBody.GetLinearVelocityFromWorldPoint points[0]))
+                    else None
+                else None)
+            |> Option.defaultValue v3Zero
+
+        member physicsEngine.GetBodyMass bodyId =
+            let (_, body) = physicsEngine.Bodies[bodyId]
+            body.Mass
 
         member physicsEngine.GetBodySensor bodyId =
             let (_, body) = physicsEngine.Bodies[bodyId]
@@ -872,6 +940,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
 
             // integrate only when time has passed
             if stepTime > 0.0f then
+                AetherPhysicsEngine.stepTargets stepTime physicsEngine
                 AetherPhysicsEngine.stepGravity stepTime physicsEngine
                 physicsEngine.PhysicsContext.Step stepTime
                 AetherPhysicsEngine.createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine
@@ -945,6 +1014,8 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         member physicsEngine.ClearInternal () =
             physicsEngine.Joints.Clear ()
             physicsEngine.Bodies.Clear ()
+            physicsEngine.BodyTargets.Clear ()
+            physicsEngine.BodiesTargeted.Clear ()
             physicsEngine.CreateBodyJointMessages.Clear ()
             physicsEngine.IntegrationMessages.Clear ()
             physicsEngine.PhysicsContext.Clear ()
