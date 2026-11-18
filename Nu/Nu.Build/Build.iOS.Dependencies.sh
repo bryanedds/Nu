@@ -8,7 +8,7 @@ assimp_version="${ASSIMP_VERSION:-5.2.4}"
 assimp_tag="${ASSIMP_TAG:-v$assimp_version}"
 bulletsharp_rev="${BULLETSHARP_REV:-22261cf}"
 cimgui_nativebuild_rev="${CIMGUI_NATIVEBUILD_REV:-3c24d703aa5ed86ba8b898ade871f90b26d12b1e}"
-joltc_rev="${JOLTC_REV:-52d8c98}"
+joltc_rev="${JOLTC_REV:-efc8693}"
 ios_deployment_target="${IOS_DEPLOYMENT_TARGET:-13.0}"
 build_root="${BUILD_ROOT:-/private/tmp/nu-ios-native-build}"
 
@@ -166,6 +166,8 @@ git -C "$cimgui_src" submodule update --init --recursive
 if [ ! -d "$joltc_src/.git" ]; then
   git clone https://github.com/amerkoleci/joltc.git "$joltc_src"
 fi
+git -C "$joltc_src" checkout -- CMakeLists.txt
+git -C "$joltc_src" fetch origin
 git -C "$joltc_src" checkout "$joltc_rev"
 perl -0pi -e 's/if \(IOS OR EMSCRIPTEN\)/if (EMSCRIPTEN)/g; s/Always Disable shared library on \(IOS, WEB\)/Always Disable shared library on WEB/g' "$joltc_src/CMakeLists.txt"
 

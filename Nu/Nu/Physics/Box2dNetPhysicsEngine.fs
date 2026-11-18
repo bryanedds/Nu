@@ -39,6 +39,8 @@ type private Box2dNetKinematicCharacter =
       mutable Transform : B2Transform
       mutable Velocity : B2Vec2
       mutable OnGround : B2ShapeId voption
+      mutable OnGroundPrevious : B2ShapeId voption
+      mutable GroundVelocity : B2Vec2
       mutable PogoVelocity : single
 
       (* Output Parameters *)
@@ -502,6 +504,8 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         { mutable PhysicsContextId : B2WorldId
           Bodies : Dictionary<BodyId, B2BodyId>
           BodyGravityOverrides : Dictionary<BodyId, Vector3>
+          BodyTargets : Dictionary<BodyId, struct (Vector3 * Quaternion)>
+          BodiesTargeted : BodyId HashSet
           Characters : Dictionary<BodyId, Box2dNetKinematicCharacter>
           Joints : Dictionary<BodyJointId, B2JointId>
           BreakableJoints : Dictionary<BodyJointId, struct {| BreakingPoint : single; BreakingPointSquared : single |}>
@@ -1136,6 +1140,8 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                               Transform = B2Transform (bodyDef.position, bodyDef.rotation)
                               Velocity = B2Vec2 ()
                               OnGround = ValueNone
+                              OnGroundPrevious = ValueNone
+                              GroundVelocity = B2Vec2 ()
                               PogoVelocity = 0.0f
                               PogoOrigin = B2Vec2 ()
                               PogoDelta = B2Vec2 ()
@@ -1185,6 +1191,8 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         | (true, body) ->
             physicsEngine.Bodies.Remove bodyId |> ignore<bool>
             physicsEngine.BodyGravityOverrides.Remove bodyId |> ignore<bool>
+            physicsEngine.BodyTargets.Remove bodyId |> ignore<bool>
+            physicsEngine.BodiesTargeted.Remove bodyId |> ignore<bool>
             physicsEngine.Characters.Remove bodyId |> ignore<bool>
             physicsEngine.KinematicCollisionContext.PushLimits.Remove body |> ignore<bool>
             B2Bodies.b2DestroyBody body
@@ -1282,9 +1290,15 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
     // "Caution: Generally you should not set the transform on bodies after creation. Box2D treats this as a teleport and may result in undesirable behavior and/or performance problems."
     // However, setting the body transform (center, rotation) is required for e.g. following mouse movement.
     // In that case, Erin Catto noted that kinematic bodies allows the solver to dribble the movement across the sub-steps, potentially yielding a smoother result, compared to static bodies.
+    static member private untargetBody bodyId physicsEngine =
+        physicsEngine.BodyTargets.Remove bodyId |> ignore<bool>
+        physicsEngine.BodiesTargeted.Remove bodyId |> ignore<bool>
+
     static member private setBodyCenter (setBodyCenterMessage : SetBodyCenterMessage) physicsEngine =
-        match physicsEngine.Bodies.TryGetValue setBodyCenterMessage.BodyId with
+        let bodyId = setBodyCenterMessage.BodyId
+        match physicsEngine.Bodies.TryGetValue bodyId with
         | (true, body) ->
+            Box2dNetPhysicsEngine.untargetBody bodyId physicsEngine
             let center = Box2dNetPhysicsEngine.toB2Vec2 setBodyCenterMessage.Center
             let mutable transform = B2Bodies.b2Body_GetTransform body
             if transform.p <> center then
@@ -1293,8 +1307,10 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         | (false, _) -> ()
 
     static member private setBodyRotation (setBodyRotationMessage : SetBodyRotationMessage) physicsEngine =
-        match physicsEngine.Bodies.TryGetValue setBodyRotationMessage.BodyId with
+        let bodyId = setBodyRotationMessage.BodyId
+        match physicsEngine.Bodies.TryGetValue bodyId with
         | (true, body) ->
+            Box2dNetPhysicsEngine.untargetBody bodyId physicsEngine
             let rotation = Box2dNetPhysicsEngine.quatToRot setBodyRotationMessage.Rotation
             let mutable transform = B2Bodies.b2Body_GetTransform body
             if transform.q <> rotation then
@@ -1304,12 +1320,25 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
 
     static member private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyLinearVelocityMessage.BodyId with
-        | (true, body) -> B2Bodies.b2Body_SetLinearVelocity (body, Box2dNetPhysicsEngine.toB2Vec2 setBodyLinearVelocityMessage.LinearVelocity) // NOTE: wakes body for non-zero velocity.
+        | (true, body) ->
+            Box2dNetPhysicsEngine.untargetBody setBodyLinearVelocityMessage.BodyId physicsEngine
+            B2Bodies.b2Body_SetLinearVelocity (body, Box2dNetPhysicsEngine.toB2Vec2 setBodyLinearVelocityMessage.LinearVelocity) // NOTE: wakes body for non-zero velocity.
         | (false, _) -> ()
 
     static member private setBodyAngularVelocity (setBodyAngularVelocityMessage : SetBodyAngularVelocityMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyAngularVelocityMessage.BodyId with
-        | (true, body) -> B2Bodies.b2Body_SetAngularVelocity (body, setBodyAngularVelocityMessage.AngularVelocity.Z) // NOTE: wakes body for non-zero velocity.
+        | (true, body) ->
+            Box2dNetPhysicsEngine.untargetBody setBodyAngularVelocityMessage.BodyId physicsEngine
+            B2Bodies.b2Body_SetAngularVelocity (body, setBodyAngularVelocityMessage.AngularVelocity.Z) // NOTE: wakes body for non-zero velocity.
+        | (false, _) -> ()
+
+    static member private moveBody (moveBodyMessage : MoveBodyMessage) physicsEngine =
+        let bodyId = moveBodyMessage.BodyId
+        match physicsEngine.Bodies.TryGetValue bodyId with
+        | (true, body) ->
+            if B2Bodies.b2Body_GetType body = B2BodyType.b2_kinematicBody && not (physicsEngine.Characters.ContainsKey bodyId)
+            then physicsEngine.BodyTargets[bodyId] <- struct (moveBodyMessage.Center, moveBodyMessage.Rotation)
+            else Log.warnOnce "Cannot move a body that isn't kinematic (kinematic characters excluded) to a target."
         | (false, _) -> ()
 
     static member private setBodyJointMotorEnabled (setBodyJointMotorEnabledMessage : SetBodyJointMotorEnabledMessage) physicsEngine =
@@ -1484,6 +1513,37 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         | [||] -> None
         | groundNormals -> groundNormals |> Array.maxBy (fun normal -> normal.Dot groundDirection) |> Some
 
+    static member private getBodyGroundVelocity groundDirection bodyId physicsEngine =
+        match physicsEngine.Characters.TryGetValue bodyId with
+        | (true, character) -> Box2dNetPhysicsEngine.toVector3 character.GroundVelocity
+        | (false, _) ->
+            match physicsEngine.Bodies.TryGetValue bodyId with
+            | (true, body) ->
+                let capacity = B2Bodies.b2Body_GetContactCapacity body
+                let contacts =
+                    if capacity > 20
+                    then (Array.zeroCreate capacity).AsSpan ()
+                    else Span (NativeInterop.NativePtr.stackalloc<B2ContactData> capacity |> NativeInterop.NativePtr.toVoidPtr, capacity)
+                let contacts = contacts.Slice (0, B2Bodies.b2Body_GetContactData (body, contacts, capacity))
+                let up = -groundDirection
+                let mutable groundVelocity = v3Zero
+                let mutable i = 0
+                while i < contacts.Length do
+                    let contact = &contacts[i]
+                    let bodyA = B2Shapes.b2Shape_GetBody contact.shapeIdA
+                    let (normal, groundBody) = // normal points from ground to body
+                        if bodyA = body
+                        then (-contact.manifold.normal, B2Shapes.b2Shape_GetBody contact.shapeIdB)
+                        else (contact.manifold.normal, bodyA)
+                    if  contact.manifold.pointCount > 0 &&
+                        acos ((Vector3 (normal.X, normal.Y, 0.0f)).Dot up) <= Constants.Physics.GroundAngleMax then
+                        let point = contact.manifold.points[0].point
+                        groundVelocity <- Box2dNetPhysicsEngine.toVector3 (B2Bodies.b2Body_GetWorldPointVelocity (groundBody, point))
+                        i <- contacts.Length
+                    else i <- inc i
+                groundVelocity
+            | (false, _) -> v3Zero
+
     static member private getBodyGrounded groundDirection bodyId physicsEngine =
         match physicsEngine.Characters.TryGetValue bodyId with
         | (true, character) -> ValueOption.isSome character.OnGround
@@ -1567,6 +1627,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         | SetBodyRotationMessage setBodyRotationMessage -> Box2dNetPhysicsEngine.setBodyRotation setBodyRotationMessage physicsEngine
         | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> Box2dNetPhysicsEngine.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
         | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> Box2dNetPhysicsEngine.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
+        | MoveBodyMessage moveBodyMessage -> Box2dNetPhysicsEngine.moveBody moveBodyMessage physicsEngine
         | SetBodyVehicleForwardInputMessage _ -> () // no vehicle controller support
         | SetBodyVehicleRightInputMessage _ -> () // no vehicle controller support
         | SetBodyVehicleBrakeInputMessage _ -> () // no vehicle controller support
@@ -1628,6 +1689,8 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         { PhysicsContextId = Box2dNetPhysicsEngine.makePhysicsContext (Box2dNetPhysicsEngine.toB2Vec2 gravity) contactsTracker
           Bodies = Dictionary HashIdentity.Structural
           BodyGravityOverrides = Dictionary HashIdentity.Structural
+          BodyTargets = Dictionary HashIdentity.Structural
+          BodiesTargeted = HashSet HashIdentity.Structural
           Characters = Dictionary HashIdentity.Structural
           Joints = Dictionary HashIdentity.Structural
           BreakableJoints = Dictionary HashIdentity.Structural
@@ -1649,6 +1712,14 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         // initialize gravity
         let mutable gravity = character.GravityScale * B2Worlds.b2World_GetGravity world + character.GravityOverride
         let mutable gravityDirection = B2MathFunction.b2Normalize &gravity
+
+        // leave ground when moving away from it, such as when given an upward velocity to jump
+        if ValueOption.isSome character.OnGround then
+            let mutable velocity = character.Velocity
+            if B2MathFunction.b2Dot (&velocity, &gravityDirection) < -0.1f * Constants.Engine.Meter2d then
+                character.OnGround <- ValueNone
+
+        // apply gravity
         if ValueOption.isSome character.OnGround then // when on ground, stabilize pogo spring by clearing velocity in the direction of gravity
             let mutable movementAxis = B2Vec2 (-gravityDirection.Y, gravityDirection.X) // perpendicular to gravity
             let mutable velocity = character.Velocity
@@ -1676,6 +1747,15 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             then ValueSome castResult.shapeId
             else ValueNone
 
+        // carry character with the motion of its ground, keeping the motion of ground it leaves
+        let groundVelocity =
+            match character.OnGround with
+            | ValueSome shapeId -> B2Bodies.b2Body_GetWorldPointVelocity (B2Shapes.b2Shape_GetBody shapeId, castResult.point)
+            | ValueNone ->
+                character.Velocity <- character.Velocity + character.GroundVelocity
+                B2MathFunction.b2Vec2_zero
+        character.GroundVelocity <- groundVelocity
+
         // solve pogo state and apply pogo gravity to ground contact
         if not castResult.hit then
             character.PogoVelocity <- 0.0f
@@ -1689,7 +1769,10 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
 
         // solve collision planes for projected new position
         // TODO: is it possible to project external forces for dynamic characters?
-        let target = character.Transform.p + timeStep * character.Velocity + timeStep * character.PogoVelocity * -gravityDirection
+        let target =
+            character.Transform.p +
+            timeStep * (character.Velocity + groundVelocity) +
+            timeStep * character.PogoVelocity * -gravityDirection
         let tolerance = 0.01f * Constants.Engine.Meter2d
         let toleranceSquared = tolerance * tolerance
         let mutable i = 0
@@ -1836,19 +1919,28 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             let groundDirection = Box2dNetPhysicsEngine.getBodyGroundDirection bodyId physicsEngine
             Box2dNetPhysicsEngine.getBodyGrounded groundDirection bodyId physicsEngine
 
+        member physicsEngine.GetBodyGroundVelocity bodyId =
+            let groundDirection = Box2dNetPhysicsEngine.getBodyGroundDirection bodyId physicsEngine
+            Box2dNetPhysicsEngine.getBodyGroundVelocity groundDirection bodyId physicsEngine
+
+        member physicsEngine.GetBodyMass bodyId =
+            match physicsEngine.Characters.TryGetValue bodyId with
+            | (true, character) -> character.Mass
+            | (false, _) -> B2Bodies.b2Body_GetMass physicsEngine.Bodies[bodyId]
+
         member physicsEngine.GetBodySensor bodyId =
             let body = physicsEngine.Bodies[bodyId]
             let shapes = Span (NativeInterop.NativePtr.stackalloc<B2BodyId> 1 |> NativeInterop.NativePtr.toVoidPtr, 1)
             B2Bodies.b2Body_GetShapes (body, shapes, 1) = 1 && B2Shapes.b2Shape_IsSensor shapes[0]
 
-        member physicsEngine.GetBodyWheelSpeedAtClutch _ =
-            0.0f // no vehicle controller support
-
         member physicsEngine.GetBodyWheelModelMatrix (_, _, _, _) =
             m4Identity // no vehicle controller support
 
-        member physicsEngine.GetBodyWheelAngularVelocity (_, _) =
-            0.0f // no vehicle controller support
+        member physicsEngine.GetBodyWheelStateOpt (_, _) =
+            None // no vehicle controller support
+
+        member physicsEngine.GetBodyVehicleStateOpt _ =
+            None // no vehicle controller support
 
         member physicsEngine.GetBodyJointExists bodyJointId =
             physicsEngine.Joints.ContainsKey bodyJointId
@@ -1957,6 +2049,22 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             // integrate only when time has passed
             if stepTime > 0.0f then
 
+                // stop bodies that are no longer being moved to targets
+                for bodyId in physicsEngine.BodiesTargeted do
+                    if not (physicsEngine.BodyTargets.ContainsKey bodyId) then
+                        let body = physicsEngine.Bodies[bodyId]
+                        B2Bodies.b2Body_SetLinearVelocity (body, B2MathFunction.b2Vec2_zero)
+                        B2Bodies.b2Body_SetAngularVelocity (body, 0.0f)
+                physicsEngine.BodiesTargeted.Clear ()
+
+                // move bodies to their targets over this step
+                for KeyValue (bodyId, struct (center, rotation)) in physicsEngine.BodyTargets do
+                    let body = physicsEngine.Bodies[bodyId]
+                    let mutable target = B2Transform (Box2dNetPhysicsEngine.toB2Vec2 center, Box2dNetPhysicsEngine.quatToRot rotation)
+                    B2Bodies.b2Body_SetTargetTransform (body, &target, stepTime, true)
+                    physicsEngine.BodiesTargeted.Add bodyId |> ignore<bool>
+                physicsEngine.BodyTargets.Clear ()
+
                 // apply body-specific gravity for awake bodies
                 for KeyValue (bodyId, gravityOverride) in physicsEngine.BodyGravityOverrides do
                     let body = physicsEngine.Bodies[bodyId]
@@ -1967,6 +2075,18 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                 // pre-step the fluid simulation
                 for emitter in physicsEngine.FluidEmitters.Values do
                     Box2dNetFluidEmitter.preStep stepTime emitter
+
+                // step characters before the world step so that they move with their ground's velocity for this step as
+                // the world step then moves that ground the same way, zeroing their body velocities so that the world
+                // step doesn't move them again
+                for KeyValue (bodyId, character) in physicsEngine.Characters do
+                    let body = physicsEngine.Bodies[bodyId]
+                    character.Transform <- B2Bodies.b2Body_GetTransform body
+                    character.Velocity <- B2Bodies.b2Body_GetLinearVelocity body
+                    character.OnGroundPrevious <- character.OnGround
+                    Box2dNetPhysicsEngine.solveCharacter character stepTime physicsEngine.PhysicsContextId physicsEngine.KinematicCollisionContext
+                    B2Bodies.b2Body_SetTransform (body, character.Transform.p, character.Transform.q)
+                    B2Bodies.b2Body_SetLinearVelocity (body, B2MathFunction.b2Vec2_zero)
 
                 // step the world
                 B2Worlds.b2World_Step (physicsEngine.PhysicsContextId, stepTime, Constants.Physics.Collision2dSteps)
@@ -2071,16 +2191,12 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                                       AngularVelocity = v3 0.0f 0.0f (B2Bodies.b2Body_GetAngularVelocity transform.bodyId) })
                     | _ -> () // fluid particle transforms have empty user data and are not reported as body transforms
 
-                // step characters
+                // collect character results
                 for KeyValue (bodyId, character) in physicsEngine.Characters do
 
-                    // step character simulations
+                    // restore character velocity
                     let body = physicsEngine.Bodies[bodyId]
-                    character.Transform <- B2Bodies.b2Body_GetTransform body
-                    character.Velocity <- B2Bodies.b2Body_GetLinearVelocity body
-                    let oldGround = character.OnGround
-                    Box2dNetPhysicsEngine.solveCharacter character stepTime physicsEngine.PhysicsContextId physicsEngine.KinematicCollisionContext
-                    B2Bodies.b2Body_SetTransform (body, character.Transform.p, character.Transform.q)
+                    let oldGround = character.OnGroundPrevious
                     B2Bodies.b2Body_SetLinearVelocity (body, character.Velocity)
 
                     // collect character transform events
@@ -2165,6 +2281,8 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             physicsEngine.BreakableJoints.Clear ()
             physicsEngine.Bodies.Clear ()
             physicsEngine.BodyGravityOverrides.Clear ()
+            physicsEngine.BodyTargets.Clear ()
+            physicsEngine.BodiesTargeted.Clear ()
             physicsEngine.Characters.Clear ()
             physicsEngine.KinematicCollisionContext.PushLimits.Clear ()
             physicsEngine.CreateBodyJointMessages.Clear ()

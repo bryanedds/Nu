@@ -330,6 +330,33 @@ type [<Struct>] BodyIntersection =
           Position = position
           Normal = normal }
 
+/// Describes where a vehicle's wheel touches the ground, in world space.
+type [<Struct>] BodyWheelContact =
+    { ContactBodyIdOpt : BodyId option
+      ContactPosition : Vector3
+      ContactNormal : Vector3
+      ContactPointVelocity : Vector3 }
+
+/// Describes the state of a vehicle's wheel.
+type [<Struct>] BodyWheelState =
+    { WheelRotationAngle : single
+      WheelAngularVelocity : single
+      WheelSteerAngle : single
+      WheelSuspensionLength : single
+      WheelLongitudinalSlip : single // the slip ratio along the wheel's direction of travel, as for wheel spin or lock
+      WheelLateralSlip : single // the slip angle across the wheel's direction of travel in radians, as for skidding
+      WheelContactOpt : BodyWheelContact option }
+
+/// Describes the state of a vehicle as a whole, such as of its drivetrain.
+type [<Struct>] BodyVehicleState =
+    { VehicleWheelCount : int
+      VehicleWheelSpeedAtClutch : single
+      VehicleEngineRpm : single
+      VehicleGear : int
+      VehicleGearRatio : single
+      VehicleGearSwitching : bool
+      VehicleClutchFriction : single }
+
 /// The type of a physics body.
 [<Syntax
     ("", "", "", "", "",
