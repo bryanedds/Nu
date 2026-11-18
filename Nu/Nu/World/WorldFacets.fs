@@ -4292,7 +4292,10 @@ module TraversalInterpolatedFacetExtensions =
             let history =
                 if groundVelocity <> v3Zero then
                     let gameTime = if this.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
-                    FQueue.map (fun (time, position) -> (time, position + groundVelocity * (gameTime - time).SecondsF)) history
+                    FQueue.map (fun (time, position) ->
+                        let localTime = gameTime - time
+                        (time, position + groundVelocity * localTime.SecondsF))
+                        history
                 else history
             this.InterpolateVector3 history (this.GetPosition world) world
 
