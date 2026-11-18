@@ -1,0 +1,95 @@
+name: Build joltc for iOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      joltc_rev:
+        description: amerkoleci/joltc revision (efc8693 matches JoltPhysics.Native 1.2.0 / JoltPhysicsSharp 2.24.0)
+        default: efc8693
+      ios_deployment_target:
+        description: Minimum iOS version
+        default: '13.0'
+
+jobs:
+  build:
+    runs-on: macos-latest
+    env:
+      JOLTC_REV: ${{ inputs.joltc_rev }}
+      IOS_DEPLOYMENT_TARGET: ${{ inputs.ios_deployment_target }}
+    steps:
+      - name: Install Ninja
+        run: brew install ninja
+
+      - name: Fetch joltc
+        run: |
+          git clone https://github.com/amerkoleci/joltc.git joltc
+          git -C joltc checkout "$JOLTC_REV"
+          # allow a shared library on iOS, as in Nu/Nu.Build/Build.iOS.Dependencies.sh
+          perl -0pi -e 's/if \(IOS OR EMSCRIPTEN\)/if (EMSCRIPTEN)/g; s/Always Disable shared library on \(IOS, WEB\)/Always Disable shared library on WEB/g' joltc/CMakeLists.txt
+
+      - name: Build device and simulator libraries
+        run: |
+          for sdk in iphoneos iphonesimulator; do
+            cmake -S joltc -B "build-$sdk" -G Ninja \
+              -DCMAKE_SYSTEM_NAME=iOS \
+              -DCMAKE_C_COMPILER="$(xcrun --sdk $sdk -find clang)" \
+              -DCMAKE_CXX_COMPILER="$(xcrun --sdk $sdk -find clang++)" \
+              -DCMAKE_OSX_SYSROOT="$(xcrun --sdk $sdk --show-sdk-path)" \
+              -DCMAKE_OSX_ARCHITECTURES=arm64 \
+              -DCMAKE_OSX_DEPLOYMENT_TARGET="$IOS_DEPLOYMENT_TARGET" \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DJPH_BUILD_SHARED=ON -DJPH_SAMPLES=OFF -DJPH_TESTS=OFF -DJPH_INSTALL=OFF \
+              -DUSE_SSE4_1=OFF -DUSE_SSE4_2=OFF -DUSE_AVX=OFF -DUSE_AVX2=OFF -DUSE_AVX512=OFF \
+              -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF
+            cmake --build "build-$sdk" --config Release --parallel
+          done
+
+      - name: Package xcframework
+        run: |
+          for sdk in iphoneos iphonesimulator; do
+            framework="frameworks/$sdk/joltc.framework"
+            mkdir -p "$framework"
+            cp "build-$sdk/lib/libjoltc.dylib" "$framework/joltc"
+            install_name_tool -id "@rpath/joltc.framework/joltc" "$framework/joltc"
+            cat > "$framework/Info.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+          	<key>CFBundleDevelopmentRegion</key>
+          	<string>en</string>
+          	<key>CFBundleExecutable</key>
+          	<string>joltc</string>
+          	<key>CFBundleIdentifier</key>
+          	<string>org.nu-game-engine.joltc</string>
+          	<key>CFBundleInfoDictionaryVersion</key>
+          	<string>6.0</string>
+          	<key>CFBundleName</key>
+          	<string>joltc</string>
+          	<key>CFBundlePackageType</key>
+          	<string>FMWK</string>
+          	<key>CFBundleShortVersionString</key>
+          	<string>1.0</string>
+          	<key>CFBundleVersion</key>
+          	<string>1</string>
+          	<key>MinimumOSVersion</key>
+          	<string>$IOS_DEPLOYMENT_TARGET</string>
+          </dict>
+          </plist>
+          PLIST
+          done
+          xcodebuild -create-xcframework \
+            -framework frameworks/iphoneos/joltc.framework \
+            -framework frameworks/iphonesimulator/joltc.framework \
+            -output joltc.xcframework
+          file joltc.xcframework/ios-arm64/joltc.framework/joltc joltc.xcframework/ios-arm64-simulator/joltc.framework/joltc
+          # sanity check that the bindings Nu calls directly are exported
+          for sym in JPH_CharacterVirtual_StickToFloor JPH_CompoundShape_GetSubShape JPH_CompoundShape_GetSubShapeIndexFromID; do
+            nm -gU joltc.xcframework/ios-arm64/joltc.framework/joltc | grep -q "_$sym$"
+          done
+
+      - name: Upload xcframework
+        uses: actions/upload-artifact@v4
+        with:
+          name: joltc.xcframework
+          path: joltc.xcframework

@@ -4284,27 +4284,48 @@ module TraversalInterpolatedFacetExtensions =
 
                 // the time-averaged position is defined as the integral of the position over time divided by the total
                 // time duration. for discrete data points, this involves assuming a linear interpolation between
-                // points and computing the integral as the sum of areas under the curve (trapezoids).
+                // points and computing the integral as the sum of areas under the curve (trapezoids). The integral is
+                // taken of the deviation from the current value so that an unchanging value averages to exactly
+                // itself rather than to a rounding of it that varies with the durations between data points.
                 let gameTime = if this.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
                 let history = history |> FQueue.conj (gameTime, current)
                 let (sum, totalTime, _) =
                     history |> FQueue.fold
                         (fun (sum, totalTime, prevOpt) (time, value) ->
+                            let deviation = value - current
                             match prevOpt with
-                            | ValueSome (previousTime, previousValue) ->
+                            | ValueSome (previousTime, previousDeviation) ->
                                 let deltaTime = time - previousTime
                                 let deltaTime = deltaTime.SecondsF
                                 if deltaTime > 0.0f
-                                then (sum + 0.5f * (previousValue + value) * deltaTime, totalTime + deltaTime, ValueSome (time, value))
-                                else (sum, totalTime, ValueSome (time, value))
-                            | ValueNone -> (sum, totalTime, ValueSome (time, value)))
+                                then (sum + 0.5f * (previousDeviation + deviation) * deltaTime, totalTime + deltaTime, ValueSome (time, deviation))
+                                else (sum, totalTime, ValueSome (time, deviation))
+                            | ValueNone -> (sum, totalTime, ValueSome (time, deviation)))
                         (Vector3.Zero, 0.0f, ValueNone)
-                if totalTime > 0.0f then sum / totalTime else current
+                if totalTime > 0.0f && sum <> Vector3.Zero then current + sum / totalTime else current
 
             else current
 
         member this.GetPositionInterpolated world =
-            this.InterpolateVector3 (this.GetPositionHistory world) (this.GetPosition world) world
+
+            // when standing on moving ground, such as a moving platform, carry each past position along with the
+            // ground's motion since then so that interpolation smooths only the entity's own motion rather than
+            // making it trail behind the ground
+            let history = this.GetPositionHistory world
+            let groundVelocity =
+                if this.Has<RigidBodyFacet> world then
+                    let bodyId = this.GetBodyId world
+                    if World.getBodyExists bodyId world then World.getBodyGroundVelocity bodyId world else v3Zero
+                else v3Zero
+            let history =
+                if groundVelocity <> v3Zero then
+                    let gameTime = if this.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
+                    FQueue.map (fun (time, position) ->
+                        let localTime = gameTime - time
+                        (time, position + groundVelocity * localTime.SecondsF))
+                        history
+                else history
+            this.InterpolateVector3 history (this.GetPosition world) world
 
         member this.GetLinearVelocityInterpolated world =
             this.InterpolateVector3 (this.GetLinearVelocityHistory world) (this.GetLinearVelocity world) world
@@ -4317,7 +4338,8 @@ module TraversalInterpolatedFacetExtensions =
             let rotationHistory = this.GetRotationHistory world
             if FQueue.notEmpty rotationHistory then
 
-                // interpolate rotation using time-weighted slerp between all pairs
+                // interpolate rotation using time-weighted slerp between all pairs, summing the midpoints' deviations
+                // from the current rotation so that an unchanging rotation averages to exactly itself
                 // NOTE: q and -q describe the same rotation, so each one is first brought into the current rotation's
                 // hemisphere since summing midpoints of opposite signs would partially cancel them out.
                 let gameTime = if this.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
@@ -4333,12 +4355,12 @@ module TraversalInterpolatedFacetExtensions =
                                 let deltaTime = deltaTime.SecondsF
                                 if deltaTime > 0.0f then
                                     let midpoint = Quaternion.Slerp (previousRotation, rotation, 0.5f)
-                                    (sum + midpoint * deltaTime, totalTime + deltaTime, ValueSome (time, rotation))
+                                    (sum + (midpoint - current) * deltaTime, totalTime + deltaTime, ValueSome (time, rotation))
                                 else (sum, totalTime, ValueSome (time, rotation))
                             | ValueNone -> (sum, totalTime, ValueSome (time, rotation)))
                         (Quaternion.Zero, 0.0f, ValueNone)
-                if totalTime > 0.0f
-                then (sum * (1.0f / totalTime)).Normalized // normalize to guard against floating point drift.
+                if totalTime > 0.0f && sum <> Quaternion.Zero
+                then (current + sum * (1.0f / totalTime)).Normalized // normalize to guard against floating point drift.
                 else rotation
 
             else rotation

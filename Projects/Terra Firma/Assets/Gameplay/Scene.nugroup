@@ -8269,4 +8269,11 @@
     [Position [28.8 5.0999994 29.4]]
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 0.38268346 0 0.9238795]]]
+   []]
+  [MovingPlatformDispatcher
+   [[Name Elevator]
+    [PlatformPeriod 10]
+    [PlatformTravel [0 8 0]]
+    [Presence Omnipresent]
+    [Position [-18 2 10]]]
    []]]]

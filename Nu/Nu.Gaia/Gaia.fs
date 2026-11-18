@@ -106,6 +106,7 @@ module Gaia =
     let mutable private LogStr = ""
     let private EntityHierarchyIndexed = List<Entity> () // indexed lookup of hierarchy's displayed entities
     let private PropagationSourcesIndexed = List<Entity> () // indexed lookup of the propagation sources displayed
+    let private FsiSessionLateBindingTypes = HashSet<Type> HashIdentity.Reference
 
     (* Configuration States *)
 
@@ -1490,8 +1491,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         | Right (group, groupDescriptor) ->
             let worldStateOld = world.CurrentState
             try if not (group.GetExists world) || group.GetProtection world = Unprotected then
-                    if group.GetExists world then
-                        World.destroyGroupImmediate SelectedGroup world
+                    if group.GetExists world then World.destroyGroupImmediate SelectedGroup world
                     let group = World.readGroup groupDescriptor None SelectedScreen world
                     selectGroup true group
                     pruneEntitySelection world
@@ -1521,6 +1521,21 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             AssetGraphStr <- PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter
         | Left error ->
             MessageBoxOpt <- Some ("Asset reload error due to: " + error + "'.")
+
+    /// Note the facet and dispatcher types defined by the fsi session so far, returning whether any are new.
+    let private noteFsiSessionLateBindingTypes () =
+        let mutable noted = false
+        for assembly in FsiSession.DynamicAssemblies do
+            for ty in assembly.GetTypes () do
+                if  (ty.IsSubclassOf typeof<Facet> ||
+                     ty.IsSubclassOf typeof<EntityDispatcher> ||
+                     ty.IsSubclassOf typeof<GroupDispatcher> ||
+                     ty.IsSubclassOf typeof<ScreenDispatcher> ||
+                     ty.IsSubclassOf typeof<GameDispatcher>) &&
+                    not ty.IsAbstract &&
+                    FsiSessionLateBindingTypes.Add ty then
+                    noted <- true
+        noted
 
     let private tryReloadCode initializing world =
         if World.getAllowCodeReload world then
@@ -1628,6 +1643,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     // the new session won't contain project code until the reload script below succeeds
                     FsiSessionHasProjectCode <- false
 
+                    // clear the late binding types so that we can note them again after the reload script below succeeds
+                    FsiSessionLateBindingTypes.Clear ()
+
                     // create a new session for code reload
                     Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
                     let fsiArgs = if String.notEmpty fsprojDefineConstants then Array.add ("--define:" + fsprojDefineConstants) FsiArgs else FsiArgs
@@ -1641,6 +1659,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         Log.info "Updating code..."
                         focusPropertyOpt None world // drop any reference to old property type
                         World.updateLateBindings initializing FsiSession.DynamicAssemblies world // replace references to old types
+                        noteFsiSessionLateBindingTypes () |> ignore<bool>
                         FsiSessionHasProjectCode <- true
                         Log.info "Code updated."
                     | (Choice2Of2 exn, diags) ->
@@ -2090,7 +2109,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             | Some _ | None -> ()
             (*ImGui.EndDragDropTarget ()*)
 
-    let private updateHotkeys entityHierarchyFocused world =
+    let private updateHotkeys entityHierarchyFocused simulantPropertiesFocused world =
         if not (modal ()) then
             let io = ImGui.GetIO ()
             if ImGui.IsKeyPressed ImGuiKey.F2 && (match Seq.tryExactlyOne SelectedEntities with Some entity -> entity.GetProtection world = Unprotected | None -> false) then ShowRenameEntityDialog <- true
@@ -2145,6 +2164,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     elif not (String.IsNullOrWhiteSpace PropertyValueSearchStr) then
                         PropertyValueSearchStr <- ""
                         PropertyValueSearchIndex <- -1
+                    elif entityHierarchyFocused || simulantPropertiesFocused then
+                        ViewportFocusRequested <- true
                     else
                         ImGuiInternal.tryCancelDragDrop ()
                         DragDropPayloadOpt <- None // TODO: P1: remove this line when AcceptDragDropPayload is exposed.
@@ -2594,7 +2615,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         ImGui.SetNextWindowPos v2Zero
         ImGui.SetNextWindowSize io.DisplaySize
         if ImGui.IsKeyReleased ImGuiKey.Escape && not (modal ()) then ImGui.SetNextWindowFocus ()
-        if ImGui.Begin ("Viewport", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs ||| ImGuiWindowFlags.NoNav) then
+        if ImGui.Begin ("Viewport", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs) then
             if not ViewMode.IsCaptureMode then
 
                 // physics debug rendering
@@ -3172,7 +3193,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let mutable entityHierarchyFocused = false
             let windowName = "Entity Hierarchy"
             if ImGui.Begin windowName then
-                
+
                 // store focus
                 if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             
@@ -3302,33 +3323,49 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiGamePropertiesWindow world =
         let windowName = "Game Properties"
-        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
-            if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
-            imGuiEditProperties Game world
+        let focused =
+            if ImGui.Begin windowName then
+                if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
+                imGuiEditProperties Game world
+                ImGui.IsWindowFocused ImGuiFocusedFlags.RootAndChildWindows
+            else false
         ImGui.End ()
+        focused
 
     let private imGuiScreenPropertiesWindow world =
         let windowName = "Screen Properties"
-        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
-            if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
-            imGuiEditProperties SelectedScreen world
+        let focused =
+            if ImGui.Begin windowName then
+                if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
+                imGuiEditProperties SelectedScreen world
+                ImGui.IsWindowFocused ImGuiFocusedFlags.RootAndChildWindows
+            else false
         ImGui.End ()
+        focused
 
     let private imGuiGroupPropertiesWindow world =
         let windowName = "Group Properties"
-        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
-            if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
-            imGuiEditProperties SelectedGroup world
+        let focused =
+            if ImGui.Begin windowName then
+                if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
+                imGuiEditProperties SelectedGroup world
+                ImGui.IsWindowFocused ImGuiFocusedFlags.RootAndChildWindows
+            else false
         ImGui.End ()
+        focused
 
     let private imGuiEntityPropertiesWindow world =
         let windowName = "Entity Properties"
-        if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
-            if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
-            match Seq.tryExactlyOne SelectedEntities with
-            | Some entity when entity.GetExists world && SelectedEntities.Count = 1 -> imGuiEditProperties entity world
-            | Some _ | None -> () // nothing for none, nor for several since they're not edited together
+        let focused =
+            if ImGui.Begin windowName then
+                if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
+                match Seq.tryExactlyOne SelectedEntities with
+                | Some entity when entity.GetExists world && SelectedEntities.Count = 1 -> imGuiEditProperties entity world
+                | Some _ | None -> () // nothing for none, nor for several since they're not edited together
+                ImGui.IsWindowFocused ImGuiFocusedFlags.RootAndChildWindows
+            else false
         ImGui.End ()
+        focused
 
     let private imGuiPropagationSourcesWindow world =
         let windowName = "Propagation Sources"
@@ -3783,6 +3820,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     if errorStr.Length > 0
                     then InteractiveOutputStr <- InteractiveOutputStr + errorStr
                     else InteractiveOutputStr <- InteractiveOutputStr + Environment.NewLine + outStr
+                    if noteFsiSessionLateBindingTypes () then // make any facets or dispatchers defined by the evaluation available, as with code reloading
+                        selectEntities true Set.empty world // NOTE: makes sure old dispatcher doesn't hang around in old cached entity state.
+                        focusPropertyOpt None world // drop any reference to old property type
+                        World.updateLateBindings false FsiSession.DynamicAssemblies world
                 | (Choice2Of2 exn, diags) ->
                     let exnStr = "Unhandled exception: " + scstring exn
                     InteractiveOutputStr <- InteractiveOutputStr + Environment.NewLine + exnStr
@@ -4658,10 +4699,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         let dockNodeFlags = ImGuiDockNodeFlags.NoDockingOverCentralNode ||| ImGuiDockNodeFlags.PassthruCentralNode
         let dockSpaceId = ImGui.DockSpaceOverViewport (0u, ImGui.GetMainViewport (), dockNodeFlags)
 
-        // enable keyboard nav in the windows that allow it (the entity hierarchy and the property windows), keeping alt
-        // from toggling the menu layer and alt+arrows from moving the nav cursor since gaia uses them (#603)
+        // enable keyboard nav in the windows that allow it (the entity hierarchy and the property windows)
         let io = ImGui.GetIO ()
         io.ConfigFlags <- io.ConfigFlags ||| ImGuiConfigFlags.NavEnableKeyboard
+        io.ConfigNavCaptureKeyboard <- false
         let keyOwnerId = ImGui.GetID "Gaia"
         ImGuiInternal.setKeyOwner ImGuiKey.LeftAlt keyOwnerId
         ImGuiInternal.setKeyOwner ImGuiKey.RightAlt keyOwnerId
@@ -4682,20 +4723,20 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             try imGuiViewportManipulation world
 
                 // windows
-                let entityHierarchyFocused =
+                let (entityHierarchyFocused, simulantPropertiesFocused) =
                     if not ViewMode.IsNormalMode then
                         imGuiFullScreenWindow world
-                        false
+                        (false, false)
                     else
                         imGuiMainMenuWindow world
                         let entityHierarchyFocused = imGuiHierarchyWindow world
                         ExpandEntityHierarchy <- false
                         CollapseEntityHierarchy <- false
                         imGuiTimelineWindow ()
-                        imGuiGamePropertiesWindow world 
-                        imGuiScreenPropertiesWindow world 
-                        imGuiGroupPropertiesWindow world 
-                        imGuiEntityPropertiesWindow world 
+                        let gamePropertiesFocused = imGuiGamePropertiesWindow world
+                        let screenPropertiesFocused = imGuiScreenPropertiesWindow world
+                        let groupPropertiesFocused = imGuiGroupPropertiesWindow world
+                        let entityPropertiesFocused = imGuiEntityPropertiesWindow world
                         imGuiEditPropertyWindow world
                         imGuiAssetGraphWindow ()
                         imGuiOverlayerWindow ()
@@ -4709,7 +4750,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         imGuiLogWindow world
                         imGuiAssetViewerWindow world // HACK: for some reason, this window must be processed last in order for it to be selected by default.
                         imGuiDebugWindow ()
-                        entityHierarchyFocused
+                        let simulantPropertiesFocused = gamePropertiesFocused || screenPropertiesFocused || groupPropertiesFocused || entityPropertiesFocused
+                        (entityHierarchyFocused, simulantPropertiesFocused)
 
                 // prompt dialogs
                 match MessageBoxOpt with
@@ -4736,10 +4778,12 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 // non-imgui input
                 updateEntityContext world // before the eye drag ends, so it sees whether a right drag's panned the eye
                 updateEyeDrag world
-                updateEyeTravel world
+                if  not entityHierarchyFocused &&
+                    not simulantPropertiesFocused then
+                    updateEyeTravel world
                 updateEntityDrag world
                 updateAssetDrag world
-                updateHotkeys entityHierarchyFocused world
+                updateHotkeys entityHierarchyFocused simulantPropertiesFocused world
 
                 // deferred imgui input
                 updateResetEye ()

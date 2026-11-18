@@ -73,6 +73,13 @@ type SetBodyAngularVelocityMessage =
     { BodyId : BodyId
       AngularVelocity : Vector3 }
 
+/// A message to the physics system to move a kinematic body to a center and rotation over the next step, giving it the
+/// velocity to arrive there so that it carries and pushes what it touches.
+type MoveBodyMessage =
+    { BodyId : BodyId
+      Center : Vector3
+      Rotation : Quaternion }
+
 /// A message to the physics system to set the forward input of a vehicle body.
 type SetBodyVehicleForwardInputMessage =
     { BodyId : BodyId
@@ -222,6 +229,7 @@ type PhysicsMessage =
     | SetBodyRotationMessage of SetBodyRotationMessage
     | SetBodyLinearVelocityMessage of SetBodyLinearVelocityMessage
     | SetBodyAngularVelocityMessage of SetBodyAngularVelocityMessage
+    | MoveBodyMessage of MoveBodyMessage
     | SetBodyVehicleForwardInputMessage of SetBodyVehicleForwardInputMessage
     | SetBodyVehicleRightInputMessage of SetBodyVehicleRightInputMessage
     | SetBodyVehicleBrakeInputMessage of SetBodyVehicleBrakeInputMessage
@@ -281,18 +289,24 @@ type PhysicsEngine =
     
     /// Check that the body with the given body id is on the ground.
     abstract GetBodyGrounded : bodyId : BodyId -> bool
+
+    /// Get the velocity of the ground where the body with the given body id is touching it (zero if not on ground).
+    abstract GetBodyGroundVelocity : bodyId : BodyId -> Vector3
+
+    /// Get the mass of the body with the given body id (0.0f if static or kinematic, though not a kinematic character).
+    abstract GetBodyMass : bodyId : BodyId -> single
     
     /// Check that the body with the given body id is a sensor.
     abstract GetBodySensor : bodyId : BodyId -> bool
     
-    /// Get the wheel speed framed in terms of the clutch (0.0f if not a wheeled vehicle).
-    abstract GetBodyWheelSpeedAtClutch : bodyId : BodyId -> single
-    
     /// Get the given wheel's model matrix (identity if not a wheeled vehicle or invalid wheel).
     abstract GetBodyWheelModelMatrix : wheelModelRight : Vector3 * wheelModelUp : Vector3 * wheelIndex : int * bodyId : BodyId -> Matrix4x4
     
-    /// Get the given wheel's angular velocity (0.0f if not a wheeled vehicle or invalid wheel).
-    abstract GetBodyWheelAngularVelocity : wheelIndex : int * bodyId : BodyId -> single
+    /// Get the given wheel's state (None if not a wheeled vehicle or invalid wheel).
+    abstract GetBodyWheelStateOpt : wheelIndex : int * bodyId : BodyId -> BodyWheelState option
+
+    /// Get the state of the vehicle as a whole, such as of its drivetrain (None if not a wheeled vehicle).
+    abstract GetBodyVehicleStateOpt : bodyId : BodyId -> BodyVehicleState option
     
     /// Check that the physics engine contains the body with the given body id.
     abstract GetBodyJointExists : bodyJointId : BodyJointId -> bool
@@ -350,10 +364,12 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.GetBodyToGroundContactNormalOpt _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyToGroundContactTangentOpt _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyGrounded _ = failwith "No bodies in StubPhysicsEngine"
+        member physicsEngine.GetBodyGroundVelocity _ = failwith "No bodies in StubPhysicsEngine"
+        member physicsEngine.GetBodyMass _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodySensor _ = failwith "No bodies in StubPhysicsEngine"
-        member physicsEngine.GetBodyWheelSpeedAtClutch _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyWheelModelMatrix (_, _, _, _) = failwith "No bodies in StubPhysicsEngine"
-        member physicsEngine.GetBodyWheelAngularVelocity (_, _) = failwith "No bodies in StubPhysicsEngine"
+        member physicsEngine.GetBodyWheelStateOpt (_, _) = failwith "No bodies in StubPhysicsEngine"
+        member physicsEngine.GetBodyVehicleStateOpt _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyJointExists _ = failwith "No body joints in StubPhysicsEngine"
         member physicsEngine.GetBodyJointMotorSpeed _ = failwith "No body joints in StubPhysicsEngine"
         member physicsEngine.GetBodyJointTargetAngle _ = failwith "No body joints in StubPhysicsEngine"
