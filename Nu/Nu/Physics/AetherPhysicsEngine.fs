@@ -860,14 +860,14 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
                 i <- inc i
             sensor
 
-        member physicsEngine.GetBodyWheelSpeedAtClutch _ =
-            0.0f // no vehicle controller support
-
         member physicsEngine.GetBodyWheelModelMatrix (_, _, _, _) =
             m4Identity // no vehicle controller support
 
-        member physicsEngine.GetBodyWheelAngularVelocity (_, _) =
-            0.0f // no vehicle controller support
+        member physicsEngine.GetBodyWheelStateOpt (_, _) =
+            None // no vehicle controller support
+
+        member physicsEngine.GetBodyVehicleStateOpt _ =
+            None // no vehicle controller support
 
         member physicsEngine.GetBodyJointExists bodyJointId =
             physicsEngine.Joints.ContainsKey bodyJointId

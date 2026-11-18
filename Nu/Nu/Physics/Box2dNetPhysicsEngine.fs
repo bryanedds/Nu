@@ -1933,14 +1933,14 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             let shapes = Span (NativeInterop.NativePtr.stackalloc<B2BodyId> 1 |> NativeInterop.NativePtr.toVoidPtr, 1)
             B2Bodies.b2Body_GetShapes (body, shapes, 1) = 1 && B2Shapes.b2Shape_IsSensor shapes[0]
 
-        member physicsEngine.GetBodyWheelSpeedAtClutch _ =
-            0.0f // no vehicle controller support
-
         member physicsEngine.GetBodyWheelModelMatrix (_, _, _, _) =
             m4Identity // no vehicle controller support
 
-        member physicsEngine.GetBodyWheelAngularVelocity (_, _) =
-            0.0f // no vehicle controller support
+        member physicsEngine.GetBodyWheelStateOpt (_, _) =
+            None // no vehicle controller support
+
+        member physicsEngine.GetBodyVehicleStateOpt _ =
+            None // no vehicle controller support
 
         member physicsEngine.GetBodyJointExists bodyJointId =
             physicsEngine.Joints.ContainsKey bodyJointId

@@ -75,6 +75,10 @@ type [<Struct>] private BodyUserData =
       BodyCollisionCategories : uint64
       BodyCollisionMask : uint64 }
 
+type private VehicleTireState =
+    { VehicleController : WheeledVehicleController // NOTE: held so its tire callback stays registered.
+      VehicleWheelSlips : Vector2 array } // the greatest longitudinal and lateral slip of each wheel during a step
+
 type [<Struct>] private BodyConstraintEvent =
     | BodyConstraintBreak of BodyJointId : BodyJointId * BreakingPoint : single * BreakingOverflow : single
 
@@ -148,6 +152,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
           CharacterUserData : Dictionary<CharacterID, CharacterUserData>
           Characters : Dictionary<BodyId, CharacterVirtual>
           VehicleConstraints : Dictionary<BodyId, VehicleConstraint>
+          VehicleTireStates : Dictionary<BodyId, VehicleTireState>
           mutable BodyUnoptimizedCreationCount : int
           BodyContactLock : obj
           BodyContactEvents : BodyContactEvent HashSet
@@ -986,6 +991,20 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             physicsEngine.VehicleConstraints.Add (bodyId, vehicleConstraint)
             physicsEngine.PhysicsContext.AddConstraint vehicleConstraint
 
+            // track tire slip through the tire impulse callback, which is the only place Jolt exposes it, computing
+            // the same tire impulses as Jolt's default callback. since the callback is made several times per step
+            // with slip that can vary between them, the greatest slip of the step is kept.
+            let vehicleController = vehicleConstraint.GetController<WheeledVehicleController> ()
+            let wheelSlips = Array.zeroCreate<Vector2> vehicleConstraint.WheelsCount
+            let tireMaxImpulseCallback =
+                WheeledVehicleController.TireMaxImpulseCallback (fun wheelIndex longitudinalImpulse lateralImpulse suspensionImpulse longitudinalFriction lateralFriction longitudinalSlip lateralSlip _ ->
+                    longitudinalImpulse <- longitudinalFriction * suspensionImpulse
+                    lateralImpulse <- lateralFriction * suspensionImpulse
+                    let wheelSlip = wheelSlips[int wheelIndex]
+                    wheelSlips[int wheelIndex] <- v2 (max wheelSlip.X (abs longitudinalSlip)) (max wheelSlip.Y (abs lateralSlip)))
+            vehicleController.SetTireMaxImpulseCallback tireMaxImpulseCallback
+            physicsEngine.VehicleTireStates.Add (bodyId, { VehicleController = vehicleController; VehicleWheelSlips = wheelSlips })
+
             // register step listener
             physicsEngine.PhysicsContext.AddStepListener vehicleConstraint
 
@@ -1108,6 +1127,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                 physicsEngine.PhysicsContext.RemoveStepListener vehicleConstraint
                 physicsEngine.PhysicsContext.RemoveConstraint vehicleConstraint
                 physicsEngine.VehicleConstraints.Remove bodyId |> ignore<bool>
+                physicsEngine.VehicleTireStates.Remove bodyId |> ignore<bool>
                 vehicleConstraint.Dispose ()
             | (false, _) -> ()
 
@@ -1645,6 +1665,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
           CharacterUserData = dictPlus HashIdentity.Structural []
           Characters = dictPlus HashIdentity.Structural []
           VehicleConstraints = dictPlus HashIdentity.Structural []
+          VehicleTireStates = dictPlus HashIdentity.Structural []
           BodyUnoptimizedCreationCount = 0
           BodyContactLock = bodyContactLock
           BodyContactEvents = bodyContactEvents
@@ -1768,25 +1789,57 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                 finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockRead &bodyLockRead
             | ValueNone -> failwith ("No body with BodyId = " + scstring bodyId + ".")
 
-        member physicsEngine.GetBodyWheelSpeedAtClutch bodyId =
-            match physicsEngine.VehicleConstraints.TryGetValue bodyId with
-            | (true, vehicleConstraint) ->
-                let controller = vehicleConstraint.GetController<WheeledVehicleController> ()
-                controller.WheelSpeedAtClutch
-            | (false, _) -> 0.0f
-
         member physicsEngine.GetBodyWheelModelMatrix (wheelModelRight, wheelModelUp, wheelIndex, bodyId) =
             match physicsEngine.VehicleConstraints.TryGetValue bodyId with
             | (true, vehicleConstraint) when wheelIndex >= 0 && wheelIndex < vehicleConstraint.WheelsCount ->
                 JoltPhysicsEngine.getWheelWorldTransform vehicleConstraint wheelIndex wheelModelRight wheelModelUp
             | (_, _) -> m4Identity
 
-        member physicsEngine.GetBodyWheelAngularVelocity (wheelIndex, bodyId) =
+        member physicsEngine.GetBodyWheelStateOpt (wheelIndex, bodyId) =
             match physicsEngine.VehicleConstraints.TryGetValue bodyId with
             | (true, vehicleConstraint) when wheelIndex >= 0 && wheelIndex < vehicleConstraint.WheelsCount ->
                 let wheel = vehicleConstraint.GetWheel<WheelWV> wheelIndex
-                wheel.AngularVelocity
-            | (_, _) -> 0.0f
+                let wheelSlip = // only meaningful while in contact since the tire callback is only made then
+                    if wheel.HasContact
+                    then physicsEngine.VehicleTireStates[bodyId].VehicleWheelSlips[wheelIndex]
+                    else v2Zero
+                let contactOpt =
+                    if wheel.HasContact then
+                        let contactBodyIdOpt =
+                            match physicsEngine.BodyUserData.TryGetValue wheel.ContactBodyID with
+                            | (true, bodyUserData) -> Some bodyUserData.BodyId
+                            | (false, _) -> None
+                        Some
+                            { ContactBodyIdOpt = contactBodyIdOpt
+                              ContactPosition = wheel.ContactPosition
+                              ContactNormal = wheel.ContactNormal
+                              ContactPointVelocity = wheel.ContactPointVelocity }
+                    else None
+                Some
+                    { WheelRotationAngle = wheel.RotationAngle
+                      WheelAngularVelocity = wheel.AngularVelocity
+                      WheelSteerAngle = wheel.SteerAngle
+                      WheelSuspensionLength = wheel.SuspensionLength
+                      WheelLongitudinalSlip = wheelSlip.X
+                      WheelLateralSlip = wheelSlip.Y
+                      WheelContactOpt = contactOpt }
+            | (_, _) -> None
+
+        member physicsEngine.GetBodyVehicleStateOpt bodyId =
+            match physicsEngine.VehicleConstraints.TryGetValue bodyId with
+            | (true, vehicleConstraint) ->
+                let controller = vehicleConstraint.GetController<WheeledVehicleController> ()
+                let engine = controller.Engine
+                let transmission = controller.Transmission
+                Some
+                    { VehicleWheelCount = vehicleConstraint.WheelsCount
+                      VehicleWheelSpeedAtClutch = controller.WheelSpeedAtClutch
+                      VehicleEngineRpm = engine.CurrentRPM
+                      VehicleGear = transmission.CurrentGear
+                      VehicleGearRatio = transmission.CurrentRatio
+                      VehicleGearSwitching = transmission.IsSwitchingGear
+                      VehicleClutchFriction = transmission.ClutchFriction }
+            | (false, _) -> None
 
         member physicsEngine.GetBodyJointExists bodyJointId =
             physicsEngine.BodyConstraints.ContainsKey bodyJointId
@@ -1933,6 +1986,10 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                     if physicsEngine.BodyUserData[character.InnerBodyID].BodyEnabled then
                         JoltPhysicsEngine.updateCharacter stepTime character physicsEngine
 
+                // reset tire slips to be tracked anew during the physics update
+                for vehicleTireState in physicsEngine.VehicleTireStates.Values do
+                    Array.fill vehicleTireState.VehicleWheelSlips 0 vehicleTireState.VehicleWheelSlips.Length v2Zero
+
                 // update non-character physics, logging on error (integration should still advance sim regardless of error)
                 match physicsEngine.PhysicsContext.Update (stepTime, Constants.Physics.Collision3dSteps, physicsEngine.JobSystem) with
                 | PhysicsUpdateError.ManifoldCacheFull as error ->
@@ -2061,6 +2118,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                 physicsEngine.PhysicsContext.RemoveStepListener vehicleConstraint
                 physicsEngine.PhysicsContext.RemoveConstraint vehicleConstraint
             physicsEngine.VehicleConstraints.Clear ()
+            physicsEngine.VehicleTireStates.Clear ()
 
             // clear integration messages
             physicsEngine.IntegrationMessages.Clear ()

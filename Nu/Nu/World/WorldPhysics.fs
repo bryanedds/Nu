@@ -203,16 +203,6 @@ module WorldPhysics =
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
                 false
 
-        /// Get the wheel speed at the clutch of the vehicle body with the given body id.
-        static member getBodyWheelSpeedAtClutch bodyId (world : World) =
-            if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
-                world.Subsystems.PhysicsEngine3d.GetBodyWheelSpeedAtClutch bodyId
-            elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
-                world.Subsystems.PhysicsEngine2d.GetBodyWheelSpeedAtClutch bodyId
-            else
-                Log.info ("Body for '" + scstring bodyId + "' not found.")
-                0.0f
-
         /// Get the wheel model matrix of the vehicle body with the given body id.
         static member getBodyWheelModelMatrix wheelModelRight wheelModelUp wheelIndex bodyId (world : World) =
             if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
@@ -223,15 +213,25 @@ module WorldPhysics =
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
                 m4Identity
 
-        /// Get the wheel angular velocity of the vehicle body with the given body id.
-        static member getBodyWheelAngularVelocity wheelIndex bodyId (world : World) =
+        /// Get the state of the given wheel of the vehicle body with the given body id.
+        static member getBodyWheelStateOpt wheelIndex bodyId (world : World) =
             if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
-                world.Subsystems.PhysicsEngine3d.GetBodyWheelAngularVelocity (wheelIndex, bodyId)
+                world.Subsystems.PhysicsEngine3d.GetBodyWheelStateOpt (wheelIndex, bodyId)
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
-                world.Subsystems.PhysicsEngine2d.GetBodyWheelAngularVelocity (wheelIndex, bodyId)
+                world.Subsystems.PhysicsEngine2d.GetBodyWheelStateOpt (wheelIndex, bodyId)
             else
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
-                0.0f
+                None
+
+        /// Get the state of the vehicle body with the given body id as a whole, such as of its drivetrain.
+        static member getBodyVehicleStateOpt bodyId (world : World) =
+            if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine3d.GetBodyVehicleStateOpt bodyId
+            elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine2d.GetBodyVehicleStateOpt bodyId
+            else
+                Log.info ("Body for '" + scstring bodyId + "' not found.")
+                None
 
         /// Check that the world contains a body joint with the given body joint id.
         static member getBodyJointExists bodyJointId (world : World) =
