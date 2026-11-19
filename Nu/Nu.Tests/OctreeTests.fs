@@ -29,9 +29,9 @@ module OctreeTests =
     let makeTestElement id name =
         { Id = id; Name = name }
     
-    let makeTestOctelement id name visibleInView staticInPlay lightProbe light presence presenceInPlay bounds =
+    let makeTestOctelement id name static_ visibleInView staticInPlay lightProbe light presence presenceInPlay bounds =
         let element = makeTestElement id name
-        Octelement.make visibleInView staticInPlay lightProbe light presence presenceInPlay bounds element
+        Octelement.make static_ visibleInView staticInPlay lightProbe light presence presenceInPlay bounds element
 
     // Helper to create a standard test tree
     let makeTestTree depth size =
@@ -77,7 +77,7 @@ module OctreeTests =
 
         let tree = makeTestTree 3 16.0f
         let bounds = box3 (v3 0.0f 0.0f 0.0f) (v3 1.0f 1.0f 1.0f)
-        let element = makeTestOctelement 1 "test1" true false false false Presence.Exterior Presence.Exterior bounds
+        let element = makeTestOctelement 1 "test1" false true false false false Presence.Exterior Presence.Exterior bounds
         Octree.addElement Presence.Exterior Presence.Exterior bounds element tree
         
         let results = HashSet<TestElement Octelement> (OctelementEqualityComparer<TestElement> ())
@@ -88,10 +88,10 @@ module OctreeTests =
     let ``Adding multiple elements with different presence types`` () =
         
         let tree = makeTestTree 4 32.0f
-        let element1 = makeTestOctelement 1 "exterior" true false false false Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 2.0f 2.0f 2.0f))
-        let element2 = makeTestOctelement 2 "interior" true false false false Presence.Interior Presence.Interior (box3 (v3 5.0f 5.0f 5.0f) (v3 2.0f 2.0f 2.0f))
-        let element3 = makeTestOctelement 3 "omnipresent" true false false false Presence.Omnipresent Presence.Omnipresent (box3 (v3 10.0f 10.0f 10.0f) (v3 1.0f 1.0f 1.0f))
-        let element4 = makeTestOctelement 4 "imposter" true false false false Presence.Imposter Presence.Imposter (box3 (v3 15.0f 15.0f 15.0f) (v3 1.0f 1.0f 1.0f))
+        let element1 = makeTestOctelement 1 "exterior" false true false false false Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 2.0f 2.0f 2.0f))
+        let element2 = makeTestOctelement 2 "interior" false true false false false Presence.Interior Presence.Interior (box3 (v3 5.0f 5.0f 5.0f) (v3 2.0f 2.0f 2.0f))
+        let element3 = makeTestOctelement 3 "omnipresent" false true false false false Presence.Omnipresent Presence.Omnipresent (box3 (v3 10.0f 10.0f 10.0f) (v3 1.0f 1.0f 1.0f))
+        let element4 = makeTestOctelement 4 "imposter" false true false false false Presence.Imposter Presence.Imposter (box3 (v3 15.0f 15.0f 15.0f) (v3 1.0f 1.0f 1.0f))
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 2.0f 2.0f 2.0f)) element1 tree
         Octree.addElement Presence.Interior Presence.Interior (box3 (v3 5.0f 5.0f 5.0f) (v3 2.0f 2.0f 2.0f)) element2 tree
         Octree.addElement Presence.Omnipresent Presence.Omnipresent (box3 (v3 10.0f 10.0f 10.0f) (v3 1.0f 1.0f 1.0f)) element3 tree
@@ -105,8 +105,8 @@ module OctreeTests =
     let ``Adding light probe elements`` () =
         
         let tree = makeTestTree 4 32.0f
-        let lightProbe = makeTestOctelement 1 "lightprobe" true false true false Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 1.0f 1.0f 1.0f))
-        let regularElement = makeTestOctelement 2 "regular" true false false false Presence.Exterior Presence.Exterior (box3 (v3 5.0f 5.0f 5.0f) (v3 1.0f 1.0f 1.0f))
+        let lightProbe = makeTestOctelement 1 "lightprobe" false true false true false Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 1.0f 1.0f 1.0f))
+        let regularElement = makeTestOctelement 2 "regular" false true false false false Presence.Exterior Presence.Exterior (box3 (v3 5.0f 5.0f 5.0f) (v3 1.0f 1.0f 1.0f))
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 1.0f 1.0f 1.0f)) lightProbe tree
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 5.0f 5.0f 5.0f) (v3 1.0f 1.0f 1.0f)) regularElement tree
         
@@ -123,7 +123,7 @@ module OctreeTests =
         // add then remove
         let tree = makeTestTree 3 16.0f
         let bounds = box3 (v3 0.0f 0.0f 0.0f) (v3 1.0f 1.0f 1.0f)
-        let element = makeTestOctelement 1 "test1" true false false false Presence.Exterior Presence.Exterior bounds
+        let element = makeTestOctelement 1 "test1" false true false false false Presence.Exterior Presence.Exterior bounds
         Octree.addElement Presence.Exterior Presence.Exterior bounds element tree
         Octree.removeElement Presence.Exterior Presence.Exterior bounds element tree
         
@@ -138,8 +138,8 @@ module OctreeTests =
         let tree = makeTestTree 4 32.0f
         let boundsOld = box3 (v3 1.0f 1.0f 1.0f) (v3 2.0f 2.0f 2.0f)
         let boundsNew = box3 (v3 10.0f 10.0f 10.0f) (v3 2.0f 2.0f 2.0f)
-        let element = makeTestOctelement 1 "moving" true false false false Presence.Exterior Presence.Exterior boundsOld
-        let elementNew = makeTestOctelement 1 "moving" true false false false Presence.Exterior Presence.Exterior boundsNew
+        let element = makeTestOctelement 1 "moving" false true false false false Presence.Exterior Presence.Exterior boundsOld
+        let elementNew = makeTestOctelement 1 "moving" false true false false false Presence.Exterior Presence.Exterior boundsNew
         Octree.addElement Presence.Exterior Presence.Exterior boundsOld element tree
         
         // update to new position
@@ -159,8 +159,8 @@ module OctreeTests =
     let ``Query at point returns correct elements`` () =
         
         let tree = makeTestTree 4 32.0f
-        let element1 = makeTestOctelement 1 "at-origin" true false false false Presence.Exterior Presence.Exterior (box3 (v3 -1.0f -1.0f -1.0f) (v3 2.0f 2.0f 2.0f))
-        let element2 = makeTestOctelement 2 "far-away" true false false false Presence.Exterior Presence.Exterior (box3 (v3 10.0f 10.0f 10.0f) (v3 2.0f 2.0f 2.0f))
+        let element1 = makeTestOctelement 1 "at-origin" false true false false false Presence.Exterior Presence.Exterior (box3 (v3 -1.0f -1.0f -1.0f) (v3 2.0f 2.0f 2.0f))
+        let element2 = makeTestOctelement 2 "far-away" false true false false false Presence.Exterior Presence.Exterior (box3 (v3 10.0f 10.0f 10.0f) (v3 2.0f 2.0f 2.0f))
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 -1.0f -1.0f -1.0f) (v3 2.0f 2.0f 2.0f)) element1 tree
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 10.0f 10.0f 10.0f) (v3 2.0f 2.0f 2.0f)) element2 tree
         
@@ -175,9 +175,9 @@ module OctreeTests =
     let ``Query in bounds returns intersecting elements`` () =
         
         let tree = makeTestTree 4 32.0f
-        let element1 = makeTestOctelement 1 "inside" true false false false Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 2.0f 2.0f 2.0f))
-        let element2 = makeTestOctelement 2 "outside" true false false false Presence.Exterior Presence.Exterior (box3 (v3 20.0f 20.0f 20.0f) (v3 2.0f 2.0f 2.0f))
-        let element3 = makeTestOctelement 3 "overlapping" true false false false Presence.Exterior Presence.Exterior (box3 (v3 4.0f 4.0f 4.0f) (v3 2.0f 2.0f 2.0f))
+        let element1 = makeTestOctelement 1 "inside" false true false false false Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 2.0f 2.0f 2.0f))
+        let element2 = makeTestOctelement 2 "outside" false true false false false Presence.Exterior Presence.Exterior (box3 (v3 20.0f 20.0f 20.0f) (v3 2.0f 2.0f 2.0f))
+        let element3 = makeTestOctelement 3 "overlapping" false true false false false Presence.Exterior Presence.Exterior (box3 (v3 4.0f 4.0f 4.0f) (v3 2.0f 2.0f 2.0f))
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 2.0f 2.0f 2.0f)) element1 tree
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 12.0f 12.0f 12.0f) (v3 2.0f 2.0f 2.0f)) element2 tree
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 4.0f 4.0f 4.0f) (v3 2.0f 2.0f 2.0f)) element3 tree
@@ -195,8 +195,8 @@ module OctreeTests =
     let ``Query in frustum returns intersecting elements`` () =
         
         let tree = makeTestTree 5 64.0f
-        let element1 = makeTestOctelement 1 "in-frustum" true false false false Presence.Exterior Presence.Exterior (box3 (v3 0.0f 0.0f 0.0f) (v3 1.0f 1.0f 1.0f))
-        let element2 = makeTestOctelement 2 "out-of-frustum" true false false false Presence.Exterior Presence.Exterior (box3 (v3 50.0f 50.0f 50.0f) (v3 1.0f 1.0f 1.0f))
+        let element1 = makeTestOctelement 1 "in-frustum" false true false false false Presence.Exterior Presence.Exterior (box3 (v3 0.0f 0.0f 0.0f) (v3 1.0f 1.0f 1.0f))
+        let element2 = makeTestOctelement 2 "out-of-frustum" false true false false false Presence.Exterior Presence.Exterior (box3 (v3 50.0f 50.0f 50.0f) (v3 1.0f 1.0f 1.0f))
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 0.0f 0.0f 0.0f) (v3 1.0f 1.0f 1.0f)) element1 tree
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 50.0f 50.0f 50.0f) (v3 1.0f 1.0f 1.0f)) element2 tree
         
@@ -210,8 +210,8 @@ module OctreeTests =
     let ``Query in view box returns only visible elements`` () =
 
         let tree = makeTestTree 4 32.0f
-        let element1 = makeTestOctelement 1 "visible" true false false false Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 2.0f 2.0f 2.0f))
-        let element2 = makeTestOctelement 2 "invisible" false false false false Presence.Exterior Presence.Exterior (box3 (v3 3.0f 3.0f 3.0f) (v3 2.0f 2.0f 2.0f))
+        let element1 = makeTestOctelement 1 "visible" false true false false false Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 2.0f 2.0f 2.0f))
+        let element2 = makeTestOctelement 2 "invisible" false false false false false Presence.Exterior Presence.Exterior (box3 (v3 3.0f 3.0f 3.0f) (v3 2.0f 2.0f 2.0f))
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 2.0f 2.0f 2.0f)) element1 tree
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 3.0f 3.0f 3.0f) (v3 2.0f 2.0f 2.0f)) element2 tree
         
@@ -226,8 +226,8 @@ module OctreeTests =
     let ``Query elements in view with frustums`` () =
 
         let tree = makeTestTree 5 64.0f
-        let interiorElement = makeTestOctelement 1 "interior" true false false false Presence.Interior Presence.Interior (box3 (v3 0.0f 0.0f 0.0f) (v3 1.0f 1.0f 1.0f))
-        let exteriorElement = makeTestOctelement 2 "exterior" true false false false Presence.Exterior Presence.Exterior (box3 (v3 2.0f 2.0f 2.0f) (v3 1.0f 1.0f 1.0f))
+        let interiorElement = makeTestOctelement 1 "interior" false true false false false Presence.Interior Presence.Interior (box3 (v3 0.0f 0.0f 0.0f) (v3 1.0f 1.0f 1.0f))
+        let exteriorElement = makeTestOctelement 2 "exterior" false true false false false Presence.Exterior Presence.Exterior (box3 (v3 2.0f 2.0f 2.0f) (v3 1.0f 1.0f 1.0f))
         Octree.addElement Presence.Interior Presence.Interior (box3 (v3 0.0f 0.0f 0.0f) (v3 1.0f 1.0f 1.0f)) interiorElement tree
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 2.0f 2.0f 2.0f) (v3 1.0f 1.0f 1.0f)) exteriorElement tree
         
@@ -242,8 +242,8 @@ module OctreeTests =
     let ``Query elements in play`` () =
 
         let tree = makeTestTree 4 32.0f
-        let dynamicElement = makeTestOctelement 1 "dynamic" true false false false Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 2.0f 2.0f 2.0f))
-        let staticElement = makeTestOctelement 2 "static" true true false false Presence.Exterior Presence.Exterior (box3 (v3 3.0f 3.0f 3.0f) (v3 2.0f 2.0f 2.0f))
+        let dynamicElement = makeTestOctelement 1 "dynamic" false true false false false Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 2.0f 2.0f 2.0f))
+        let staticElement = makeTestOctelement 2 "static" true true true false false Presence.Exterior Presence.Exterior (box3 (v3 3.0f 3.0f 3.0f) (v3 2.0f 2.0f 2.0f))
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 2.0f 2.0f 2.0f)) dynamicElement tree
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 3.0f 3.0f 3.0f) (v3 2.0f 2.0f 2.0f)) staticElement tree
         
@@ -259,7 +259,7 @@ module OctreeTests =
     let ``Omnipresent elements appear in all queries`` () =
 
         let tree = makeTestTree 4 32.0f
-        let element = makeTestOctelement 1 "omnipresent" true false false false Presence.Omnipresent Presence.Omnipresent (box3 (v3 100.0f 100.0f 100.0f) (v3 1.0f 1.0f 1.0f))
+        let element = makeTestOctelement 1 "omnipresent" false true false false false Presence.Omnipresent Presence.Omnipresent (box3 (v3 100.0f 100.0f 100.0f) (v3 1.0f 1.0f 1.0f))
         Octree.addElement Presence.Omnipresent Presence.Omnipresent (box3 (v3 100.0f 100.0f 100.0f) (v3 1.0f 1.0f 1.0f)) element tree
         
         // query at different locations should all return the omnipresent element
@@ -273,7 +273,7 @@ module OctreeTests =
     let ``Imposter elements handled correctly`` () =
 
         let tree = makeTestTree 4 32.0f
-        let imposter = makeTestOctelement 1 "imposter" true false false false Presence.Imposter Presence.Imposter (box3 (v3 1.0f 1.0f 1.0f) (v3 1.0f 1.0f 1.0f))
+        let imposter = makeTestOctelement 1 "imposter" false true false false false Presence.Imposter Presence.Imposter (box3 (v3 1.0f 1.0f 1.0f) (v3 1.0f 1.0f 1.0f))
         Octree.addElement Presence.Imposter Presence.Imposter (box3 (v3 1.0f 1.0f 1.0f) (v3 1.0f 1.0f 1.0f)) imposter tree
         
         // imposter should appear in general queries
@@ -287,7 +287,7 @@ module OctreeTests =
         // create element larger than the magnitude threshold
         let tree = makeTestTree 4 32.0f
         let largeBounds = box3 (v3 0.0f 0.0f 0.0f) (v3 1000.0f 1000.0f 1000.0f)
-        let element = makeTestOctelement 1 "large" true false false false Presence.Exterior Presence.Exterior largeBounds
+        let element = makeTestOctelement 1 "large" false true false false false Presence.Exterior Presence.Exterior largeBounds
         Octree.addElement Presence.Exterior Presence.Exterior largeBounds element tree
         
         // should still be queryable
@@ -302,7 +302,7 @@ module OctreeTests =
         let tree = makeTestTree 3 16.0f
         let bounds = Octree.getBounds tree
         let outsideBounds = box3 (v3 (bounds.Max.X + 10.0f) (bounds.Max.Y + 10.0f) (bounds.Max.Z + 10.0f)) (v3 2.0f 2.0f 2.0f)
-        let element = makeTestOctelement 1 "outside" true false false false Presence.Exterior Presence.Exterior outsideBounds
+        let element = makeTestOctelement 1 "outside" false true false false false Presence.Exterior Presence.Exterior outsideBounds
         Octree.addElement Presence.Exterior Presence.Exterior outsideBounds element tree
         
         // should still be queryable
@@ -314,9 +314,9 @@ module OctreeTests =
     let ``Light probes in view frustum query`` () =
         
         let tree = makeTestTree 4 32.0f
-        let lightProbe = makeTestOctelement 1 "lightprobe" true false true false Presence.Exterior Presence.Exterior (box3 (v3 0.0f 0.0f 0.0f) (v3 1.0f 1.0f 1.0f))
-        let invisibleProbe = makeTestOctelement 2 "invisible" false false true false Presence.Exterior Presence.Exterior (box3 (v3 2.0f 2.0f 2.0f) (v3 1.0f 1.0f 1.0f))
-        let regularElement = makeTestOctelement 3 "regular" true false false false Presence.Exterior Presence.Exterior (box3 (v3 4.0f 4.0f 4.0f) (v3 1.0f 1.0f 1.0f))
+        let lightProbe = makeTestOctelement 1 "lightprobe" false true false true false Presence.Exterior Presence.Exterior (box3 (v3 0.0f 0.0f 0.0f) (v3 1.0f 1.0f 1.0f))
+        let invisibleProbe = makeTestOctelement 2 "invisible" false false false true false Presence.Exterior Presence.Exterior (box3 (v3 2.0f 2.0f 2.0f) (v3 1.0f 1.0f 1.0f))
+        let regularElement = makeTestOctelement 3 "regular" false true false false false Presence.Exterior Presence.Exterior (box3 (v3 4.0f 4.0f 4.0f) (v3 1.0f 1.0f 1.0f))
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 0.0f 0.0f 0.0f) (v3 1.0f 1.0f 1.0f)) lightProbe tree
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 2.0f 2.0f 2.0f) (v3 1.0f 1.0f 1.0f)) invisibleProbe tree
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 4.0f 4.0f 4.0f) (v3 1.0f 1.0f 1.0f)) regularElement tree
@@ -332,8 +332,8 @@ module OctreeTests =
     let ``Light probes in view box query`` () =
         
         let tree = makeTestTree 4 32.0f
-        let lightProbe = makeTestOctelement 1 "lightprobe" true false true false Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 1.0f 1.0f 1.0f))
-        let outsideProbe = makeTestOctelement 2 "outside" true false true false Presence.Exterior Presence.Exterior (box3 (v3 10.0f 10.0f 10.0f) (v3 1.0f 1.0f 1.0f))
+        let lightProbe = makeTestOctelement 1 "lightprobe" false true false true false Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 1.0f 1.0f 1.0f))
+        let outsideProbe = makeTestOctelement 2 "outside" false true false true false Presence.Exterior Presence.Exterior (box3 (v3 10.0f 10.0f 10.0f) (v3 1.0f 1.0f 1.0f))
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 1.0f 1.0f 1.0f)) lightProbe tree
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 10.0f 10.0f 10.0f) (v3 1.0f 1.0f 1.0f)) outsideProbe tree
         
@@ -348,8 +348,8 @@ module OctreeTests =
     let ``Lights in view frustum query`` () =
         
         let tree = makeTestTree 4 32.0f
-        let light = makeTestOctelement 1 "light" true false false true Presence.Exterior Presence.Exterior (box3 (v3 0.0f 0.0f 0.0f) (v3 1.0f 1.0f 1.0f))
-        let invisibleLight = makeTestOctelement 2 "invisible" false false false true Presence.Exterior Presence.Exterior (box3 (v3 2.0f 2.0f 2.0f) (v3 1.0f 1.0f 1.0f))
+        let light = makeTestOctelement 1 "light" false true false false true Presence.Exterior Presence.Exterior (box3 (v3 0.0f 0.0f 0.0f) (v3 1.0f 1.0f 1.0f))
+        let invisibleLight = makeTestOctelement 2 "invisible" false false false false true Presence.Exterior Presence.Exterior (box3 (v3 2.0f 2.0f 2.0f) (v3 1.0f 1.0f 1.0f))
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 0.0f 0.0f 0.0f) (v3 1.0f 1.0f 1.0f)) light tree
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 2.0f 2.0f 2.0f) (v3 1.0f 1.0f 1.0f)) invisibleLight tree
         
@@ -365,10 +365,10 @@ module OctreeTests =
         
         // add multiple elements with different types
         let tree = makeTestTree 4 32.0f
-        let regular = makeTestOctelement 1 "regular" true false false false Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 1.0f 1.0f 1.0f))
-        let lightProbe = makeTestOctelement 2 "lightprobe" true false true false Presence.Exterior Presence.Exterior (box3 (v3 2.0f 2.0f 2.0f) (v3 1.0f 1.0f 1.0f))
-        let light = makeTestOctelement 3 "light" true false false true Presence.Exterior Presence.Exterior (box3 (v3 3.0f 3.0f 3.0f) (v3 1.0f 1.0f 1.0f))
-        let omnipresent = makeTestOctelement 4 "omnipresent" true false false false Presence.Omnipresent Presence.Omnipresent (box3 (v3 4.0f 4.0f 4.0f) (v3 1.0f 1.0f 1.0f))
+        let regular = makeTestOctelement 1 "regular" false true false false false Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 1.0f 1.0f 1.0f))
+        let lightProbe = makeTestOctelement 2 "lightprobe" false true false true false Presence.Exterior Presence.Exterior (box3 (v3 2.0f 2.0f 2.0f) (v3 1.0f 1.0f 1.0f))
+        let light = makeTestOctelement 3 "light" false true false false true Presence.Exterior Presence.Exterior (box3 (v3 3.0f 3.0f 3.0f) (v3 1.0f 1.0f 1.0f))
+        let omnipresent = makeTestOctelement 4 "omnipresent" false true false false false Presence.Omnipresent Presence.Omnipresent (box3 (v3 4.0f 4.0f 4.0f) (v3 1.0f 1.0f 1.0f))
         
         // add elements to tree
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 1.0f 1.0f 1.0f)) regular tree
@@ -394,7 +394,7 @@ module OctreeTests =
         
         // add element to create internal structure
         let tree = makeTestTree 4 32.0f
-        let element = makeTestOctelement 1 "temporary" true false false false Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 1.0f 1.0f 1.0f))
+        let element = makeTestOctelement 1 "temporary" false true false false false Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 1.0f 1.0f 1.0f))
         Octree.addElement Presence.Exterior Presence.Exterior (box3 (v3 1.0f 1.0f 1.0f) (v3 1.0f 1.0f 1.0f)) element tree
         
         // remove element to leave empty nodes
@@ -414,7 +414,7 @@ module OctreeTests =
         // add same element multiple times
         let tree = makeTestTree 4 32.0f
         let bounds = box3 (v3 1.0f 1.0f 1.0f) (v3 1.0f 1.0f 1.0f)
-        let element = makeTestOctelement 1 "duplicate" true false false false Presence.Exterior Presence.Exterior bounds
+        let element = makeTestOctelement 1 "duplicate" false true false false false Presence.Exterior Presence.Exterior bounds
         Octree.addElement Presence.Exterior Presence.Exterior bounds element tree
         Octree.addElement Presence.Exterior Presence.Exterior bounds element tree
         Octree.addElement Presence.Exterior Presence.Exterior bounds element tree
@@ -430,7 +430,7 @@ module OctreeTests =
         // remove element that was never added
         let tree = makeTestTree 4 32.0f
         let bounds = box3 (v3 1.0f 1.0f 1.0f) (v3 1.0f 1.0f 1.0f)
-        let element = makeTestOctelement 1 "nonexistent" true false false false Presence.Exterior Presence.Exterior bounds
+        let element = makeTestOctelement 1 "nonexistent" false true false false false Presence.Exterior Presence.Exterior bounds
         Octree.removeElement Presence.Exterior Presence.Exterior bounds element tree
         
         // tree should still be functional
@@ -444,8 +444,8 @@ module OctreeTests =
         // add as exterior
         let tree = makeTestTree 4 32.0f
         let bounds = box3 (v3 1.0f 1.0f 1.0f) (v3 1.0f 1.0f 1.0f)
-        let elementExterior = makeTestOctelement 1 "changing" true false false false Presence.Exterior Presence.Exterior bounds
-        let elementOmnipresent = makeTestOctelement 1 "changing" true false false false Presence.Omnipresent Presence.Omnipresent bounds
+        let elementExterior = makeTestOctelement 1 "changing" false true false false false Presence.Exterior Presence.Exterior bounds
+        let elementOmnipresent = makeTestOctelement 1 "changing" false true false false false Presence.Omnipresent Presence.Omnipresent bounds
         Octree.addElement Presence.Exterior Presence.Exterior bounds elementExterior tree
         
         // update to omnipresent
@@ -470,7 +470,7 @@ module OctreeTests =
             let isLight = i % 10 = 0
             let isLightProbe = i % 7 = 0 && not isLight
             let presence = if i % 20 = 0 then Presence.Omnipresent else Presence.Exterior
-            let element = makeTestOctelement i ("stress" + string i) true false isLightProbe isLight presence presence bounds
+            let element = makeTestOctelement i ("stress" + string i) false true false isLightProbe isLight presence presence bounds
             Octree.addElement presence presence bounds element tree
         
         // verify all elements were added

@@ -14,10 +14,11 @@ open Prime
 module OctelementMasks =
 
     // OPTIMIZATION: Octelement flag bit-masks for performance.
-    let [<Literal>] VisibleInViewMask = 0b0001u
-    let [<Literal>] StaticInPlayMask =  0b0010u
-    let [<Literal>] LightProbeMask =    0b0100u
-    let [<Literal>] LightMask =         0b1000u
+    let [<Literal>] StaticMask =        0b00001u
+    let [<Literal>] VisibleInViewMask = 0b00010u
+    let [<Literal>] StaticInPlayMask =  0b00100u
+    let [<Literal>] LightProbeMask =    0b01000u
+    let [<Literal>] LightMask =         0b10000u
 
 // NOTE: opening this in order to make the Octelement property implementations reasonably succinct.
 open OctelementMasks
@@ -36,6 +37,7 @@ module Octelement =
               PresenceInPlay_ : Presence
               Bounds_ : Box3
               Entry_ : 'e }
+        member this.Static = this.Flags_ &&& StaticMask <> 0u
         member this.VisibleInView = this.Flags_ &&& VisibleInViewMask <> 0u
         member this.StaticInPlay = this.Flags_ &&& StaticInPlayMask <> 0u
         member this.LightProbe = this.Flags_ &&& LightProbeMask <> 0u
@@ -47,9 +49,10 @@ module Octelement =
         override this.GetHashCode () = this.HashCode_
         override this.Equals that = match that with :? Octelement<'e> as that -> this.Entry_.Equals that.Entry_ | _ -> false
 
-    let make visibleInView staticInPlay lightProbe light presence presenceInPlay bounds (entry : 'e) =
+    let make static_ visibleInView staticInPlay lightProbe light presence presenceInPlay bounds (entry : 'e) =
         let hashCode = entry.GetHashCode ()
         let flags =
+            (if static_ then StaticMask else 0u) |||
             (if visibleInView then VisibleInViewMask else 0u) |||
             (if staticInPlay then StaticInPlayMask else 0u) |||
             (if lightProbe then LightProbeMask else 0u) |||
