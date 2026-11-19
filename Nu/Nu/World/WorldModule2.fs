@@ -823,7 +823,7 @@ module WorldModule2 =
             if SList.notEmpty entities3d then
                 for entity in entities3d do
                     let entityState = World.getEntityState entity world
-                    let element = Octelement.make entityState.VisibleInView entityState.Static entityState.StaticInPlay entityState.LightProbe entityState.Light entityState.Presence entityState.PresenceInPlay entityState.Bounds entity
+                    let element = Octelement.make entityState.Static entityState.VisibleInView entityState.StaticInPlay entityState.LightProbe entityState.Light entityState.Presence entityState.PresenceInPlay entityState.Bounds entity
                     Octree.addElement entityState.Presence entityState.PresenceInPlay entityState.Bounds element world.Octree
             if SList.exists (fun (entity : Entity) -> entity.Has<LightProbeFacet> world && entity.GetProbeStale world) entities3d then
                 World.requestLightMapRender world
@@ -838,7 +838,7 @@ module WorldModule2 =
             if SArray.notEmpty entities3d then
                 for entity in entities3d do
                     let entityState = World.getEntityState entity world
-                    let element = Octelement.make entityState.VisibleInView entityState.Static entityState.StaticInPlay entityState.LightProbe entityState.Light entityState.Presence entityState.PresenceInPlay entityState.Bounds entity
+                    let element = Octelement.make entityState.Static entityState.VisibleInView entityState.StaticInPlay entityState.LightProbe entityState.Light entityState.Presence entityState.PresenceInPlay entityState.Bounds entity
                     Octree.removeElement entityState.Presence entityState.PresenceInPlay entityState.Bounds element world.Octree
 
         static member internal registerScreenPhysics screen world =
@@ -3335,8 +3335,8 @@ module WorldModule3 =
                 | :? Facet as facet ->
                     match Array.tryFindIndex (fun (facet2 : Facet) -> getTypeName facet2 = getTypeName facet) entityState.Facets with
                     | Some index ->
-                        let visibleInViewOld = entityState.VisibleInView
                         let staticOld = entityState.Static
+                        let visibleInViewOld = entityState.VisibleInView
                         let staticInPlayOld = entityState.StaticInPlay
                         let lightProbeOld = entityState.LightProbe
                         let lightOld = entityState.Light
@@ -3352,15 +3352,15 @@ module WorldModule3 =
                             let entityState = { entityState with Facets = facets }
                             World.setEntityState entityState entity world
                         World.registerEntityIndex (getType facet) entity world
-                        World.updateEntityInEntityTree visibleInViewOld staticOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
+                        World.updateEntityInEntityTree staticOld visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                         World.updateEntityPresenceOverride entity world
                         World.attachEntityMissingProperties entity world
                         World.refreshEntityComputedProperties entity world
                     | None -> ()
                 | :? EntityDispatcher as dispatcher ->
                     if getTypeName entityState.Dispatcher = getTypeName dispatcher then
-                        let visibleInViewOld = entityState.VisibleInView
                         let staticOld = entityState.Static
+                        let visibleInViewOld = entityState.VisibleInView
                         let staticInPlayOld = entityState.StaticInPlay
                         let lightProbeOld = entityState.LightProbe
                         let lightOld = entityState.Light
@@ -3375,7 +3375,7 @@ module WorldModule3 =
                             let entityState = { entityState with Dispatcher = dispatcher }
                             World.setEntityState entityState entity world
                         World.registerEntityIndex (getType dispatcher) entity world
-                        World.updateEntityInEntityTree visibleInViewOld staticOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
+                        World.updateEntityInEntityTree staticOld visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                         let entityState = World.getEntityState entity world
                         let intrinsicFacetNamesNew = World.getEntityIntrinsicFacetNames entityState
                         let intrinsicFacetNamesAdded = Set.difference intrinsicFacetNamesNew intrinsicFacetNamesOld
