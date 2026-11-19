@@ -36,6 +36,9 @@ module ImGuiInternal =
     [<DllImport("cimgui", CallingConvention = CallingConvention.Cdecl, EntryPoint = "igSetKeyOwner")>]
     extern void ImGui_SetKeyOwner (ImGuiKey key, uint32 ownerId, ImGuiInputFlags flags)
 
+    [<DllImport("cimgui", CallingConvention = CallingConvention.Cdecl, EntryPoint = "igGetActiveID")>]
+    extern uint32 ImGui_GetActiveID ()
+
     [<DllImport("cimgui", CallingConvention = CallingConvention.Cdecl, EntryPoint = "igDockBuilderGetCentralNode")>]
     extern nativeint DockBuilder_GetCentralNode (uint32 dockSpaceId)
 
@@ -46,6 +49,10 @@ module ImGuiInternal =
     /// layer and arrows moving the nav cursor. A claim lasts while the key's held, so make it every frame.
     let setKeyOwner key ownerId =
         ImGui_SetKeyOwner (key, ownerId, ImGuiInputFlags.None)
+
+    /// Get the id of the item being interacted with, such as a text field being edited, or 0 when there's none.
+    let getActiveId () =
+        ImGui_GetActiveID ()
 
     /// Clear the drag drop action.
     let tryCancelDragDrop () =

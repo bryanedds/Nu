@@ -1079,11 +1079,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private createRestorePoint world =
         World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Default.Sound world
-        if world.TimeAdvancing then
-            World.setTimeAdvancing false world
-            snapshot RestorePoint world
-            World.setTimeAdvancing true world
-        else snapshot RestorePoint world
+        snapshot RestorePoint world
 
     let private inductEntity atMouse (entity : Entity) (world : World)=
         let (positionSnap, _, _) = getSnaps ()
@@ -4678,6 +4674,21 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         let simulantPropertiesFocused = gamePropertiesFocused || screenPropertiesFocused || groupPropertiesFocused || entityPropertiesFocused
                         (entityHierarchyFocused, simulantPropertiesFocused)
 
+                // HACK: keep the arrow keys from navigating a focused property window, leaving them to eye travel
+                // while tab still navigates, or to the text field being edited there
+                if simulantPropertiesFocused then
+                    let arrowOwnerIdOpt =
+                        if canEditWithKeyboard world then Some keyOwnerId
+                        elif io.WantTextInput then
+                            let activeId = ImGuiInternal.getActiveId ()
+                            if activeId <> 0u then Some activeId else None // 0 is any owner, which imgui disallows
+                        else None
+                    match arrowOwnerIdOpt with
+                    | Some arrowOwnerId ->
+                        for key in [ImGuiKey.UpArrow; ImGuiKey.DownArrow; ImGuiKey.LeftArrow; ImGuiKey.RightArrow] do
+                            ImGuiInternal.setKeyOwner key arrowOwnerId
+                    | None -> ()
+
                 // prompt dialogs
                 match MessageBoxOpt with
                 | None ->
@@ -4703,9 +4714,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 // non-imgui input
                 updateEntityContext world // before the eye drag ends, so it sees whether a right drag's panned the eye
                 updateEyeDrag world
-                if  not entityHierarchyFocused &&
-                    not simulantPropertiesFocused then
-                    updateEyeTravel world
+                if not entityHierarchyFocused then updateEyeTravel world
                 updateEntityDrag world
                 updateAssetDrag world
                 updateHotkeys entityHierarchyFocused simulantPropertiesFocused world

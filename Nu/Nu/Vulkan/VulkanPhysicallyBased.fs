@@ -2636,7 +2636,8 @@ module PhysicallyBased =
                       Pipeline.descriptor 3 SampledImage FragmentStage 1 // blurredTexture
                       Pipeline.descriptor 4 SampledImage FragmentStage 1|] // unblurredTexture
                   Pipeline.descriptorSet<Unit>
-                    [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|] // unfilteredSampler
+                    [|Pipeline.descriptor 0 Sampler FragmentStage 1 // unfilteredSampler
+                      Pipeline.descriptor 1 Sampler FragmentStage 1|]|] // filteredSampler
                 [||] [|colorAttachmentFormat|] None
                 [|eyeUniform; depthOfFieldUniform|]
 
@@ -2667,6 +2668,7 @@ module PhysicallyBased =
         (blurredTexture : Texture)
         (unblurredTexture : Texture)
         (unfilteredSampler : Sampler)
+        (filteredSampler : Sampler)
         (colorAttachment : Texture)
         (resolution : Vector2i)
         (geometry : PhysicallyBasedGeometry)
@@ -2707,9 +2709,10 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampledTexture 3 0 blurredTexture vkSet
                 Pipeline.writeDescriptorSampledTexture 4 0 unblurredTexture vkSet
 
-            // specify sampler
+            // specify samplers
             let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline $ fun vkSet ->
                 Pipeline.writeDescriptorSampler 0 0 unfilteredSampler vkSet
+                Pipeline.writeDescriptorSampler 1 0 filteredSampler vkSet
 
             // set up render
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)

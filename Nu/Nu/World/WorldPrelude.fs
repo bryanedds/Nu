@@ -513,10 +513,9 @@ module internal AmbientState =
         state.Alive
 
     let internal setTimeAdvancing timeAdvancing (state : _ AmbientState) =
-        if timeAdvancing <> state.TimeAdvancing then
-            state.Flags <- if timeAdvancing then state.Flags ||| TimeAdvancingMask else state.Flags ||| TimeHaltRequestedMask
-            if state.TimeResumptionRequested && state.TimeHaltedRequested then
-                Log.warn "Time resumption and halt both requested in the same frame, but these will resolve in a statically-defined order."
+        state.Flags <- if timeAdvancing then state.Flags ||| TimeAdvancingMask else state.Flags ||| TimeHaltRequestedMask
+        if state.TimeResumptionRequested && state.TimeHaltedRequested then
+            Log.warn "Time resumption and halt both requested in the same frame, but these will resolve in a statically-defined order."
 
     let internal setFramePacing framePacing (state : _ AmbientState) =
         state.Flags <- if framePacing then state.Flags ||| FramePacingMask else state.Flags &&& ~~~FramePacingMask
