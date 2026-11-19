@@ -49,7 +49,7 @@ module Octelement =
         override this.GetHashCode () = this.HashCode_
         override this.Equals that = match that with :? Octelement<'e> as that -> this.Entry_.Equals that.Entry_ | _ -> false
 
-    let make visibleInView static_ staticInPlay lightProbe light presence presenceInPlay bounds (entry : 'e) =
+    let make static_ visibleInView staticInPlay lightProbe light presence presenceInPlay bounds (entry : 'e) =
         let hashCode = entry.GetHashCode ()
         let flags =
             (if static_ then StaticMask else 0u) |||
