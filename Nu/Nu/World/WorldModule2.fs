@@ -61,7 +61,7 @@ module WorldModule2 =
 
         /// Set the override for the rate at which world time proceeds.
         static member setTickDeltaOverride tickDeltaOverride (world : World) =
-            World.mapAmbientState (AmbientState.setTickDeltaOverride tickDeltaOverride) world
+            AmbientState.setTickDeltaOverride tickDeltaOverride world.AmbientState
 
         /// Get all the light probes in a group.
         static member getLightProbes (group : Group) (world : World) : Entity seq =

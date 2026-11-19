@@ -490,7 +490,7 @@ module internal AmbientState =
               mutable TickTime : int64
               mutable ScaledTimeAccumulator : double
               TickWatch : Stopwatch
-              TickDeltaOverride : int64 option
+              mutable TickDeltaOverride : int64 option
               mutable DateDelta : TimeSpan
               mutable TickDeltaPrevious : int64
               mutable DateTime : DateTimeOffset
@@ -593,7 +593,7 @@ module internal AmbientState =
         state.TickDeltaOverride
 
     let internal setTickDeltaOverride tickDeltaOverride (state : 'w AmbientState) =
-        { state with TickDeltaOverride = tickDeltaOverride }
+        state.TickDeltaOverride <- tickDeltaOverride
 
     let internal processTime (state : 'w AmbientState) =
         if state.TimeResumptionRequested then
