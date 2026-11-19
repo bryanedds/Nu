@@ -3061,13 +3061,13 @@ type Light3dFacet () =
         entity.SetSize size world
         Cascade
 
-    static let enforceLightTypePresence (entity : Entity) world =
-        match entity.GetLightType world with
-        | DirectionalLight _ | CascadedLight -> entity.SetPresence Omnipresent world // shines and shadows about the eye
-        | PointLight _ | SpotLight (_, _, _) -> ()
-
     static let handleLightTypeChange (evt : Event<ChangeData, Entity>) (world : World) =
-        enforceLightTypePresence evt.Subscriber world
+        let entity = evt.Subscriber
+        match entity.GetLightType world with
+        | DirectionalLight _ | CascadedLight ->
+            entity.SetPresence Omnipresent world
+            entity.SetStatic true world
+        | PointLight _ | SpotLight (_, _, _) -> ()
         Cascade
 
     static member Properties =
@@ -3089,7 +3089,6 @@ type Light3dFacet () =
         World.sense (nameof handleLightingChange) entity.Brightness.ChangeEvent entity (nameof Light3dFacet) world
         World.sense (nameof handleLightingChange) entity.LightCutoff.ChangeEvent entity (nameof Light3dFacet) world
         World.sense (nameof handleLightTypeChange) entity.LightType.ChangeEvent entity (nameof Light3dFacet) world
-        enforceLightTypePresence entity world
 
     override this.Render (renderPass, entity, world) =
         let lightId = entity.GetId world
