@@ -28,6 +28,7 @@ layout(set = 0, binding = 3) uniform texture2D blurredTexture;
 layout(set = 0, binding = 4) uniform texture2D unblurredTexture;
 
 layout(set = 1, binding = 0) uniform sampler unfilteredSampler;
+layout(set = 1, binding = 1) uniform sampler filteredSampler;
 
 layout(location = 0) in vec2 texCoords;
 
@@ -73,7 +74,7 @@ void main()
     // compute frag
     if (depthCount > 0)
     {
-        vec4 blurredColor = texture(sampler2D(blurredTexture, unfilteredSampler), texCoords);
+        vec4 blurredColor = texture(sampler2D(blurredTexture, filteredSampler), texCoords); // filtered since half-res
         if (depthOfField.focalType == 0)
         {
             float blur =
