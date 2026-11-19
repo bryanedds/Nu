@@ -951,6 +951,22 @@ module WorldModule2 =
             // wipe memoized named content
             Content.wipe ()
 
+            // determine whether physics can be partially rebuilt, keeping the bodies of entities whose states the
+            // switch leaves in place. NOTE: a switch of selected screen changes which entities have physics at all.
+            let worldStateCurrent = world.WorldState
+            let physicsRebuildPartial = world.Functional && worldStateOld.GameState.SelectedScreenOpt = worldStateCurrent.GameState.SelectedScreenOpt
+
+            // unregister the physics of entities the switch changes or removes while their current states are in place
+            if physicsRebuildPartial then
+                match worldStateCurrent.GameState.SelectedScreenOpt with
+                | Some screen ->
+                    for group in World.getGroups screen world do
+                        for entity in World.getEntities group world do
+                            match (SUMap.tryFind entity worldStateCurrent.EntityStates, SUMap.tryFind entity worldStateOld.EntityStates) with
+                            | (Some entityStateCurrent, Some entityStateOld) when refEq entityStateCurrent entityStateOld -> ()
+                            | (_, _) -> World.unregisterEntityPhysics entity world
+                | None -> ()
+
             // update world state
             world.WorldState <- worldStateOld
 
@@ -968,11 +984,21 @@ module WorldModule2 =
             | None -> ()
 
             // rebuild physics states
-            let physics3d = World.getPhysicsEngine3d world in physics3d.ClearInternal ()
-            let physics2d = World.getPhysicsEngine2d world in physics2d.ClearInternal ()
-            match World.getSelectedScreenOpt world with
-            | Some screen -> World.registerScreenPhysics screen world
-            | None -> ()
+            if physicsRebuildPartial then
+                match worldStateCurrent.GameState.SelectedScreenOpt with
+                | Some screen ->
+                    for group in World.getGroups screen world do
+                        for entity in World.getEntities group world do
+                            match (SUMap.tryFind entity worldStateCurrent.EntityStates, SUMap.tryFind entity worldStateOld.EntityStates) with
+                            | (Some entityStateCurrent, Some entityStateOld) when refEq entityStateCurrent entityStateOld -> ()
+                            | (_, _) -> World.registerEntityPhysics entity world
+                | None -> ()
+            else
+                let physics3d = World.getPhysicsEngine3d world in physics3d.ClearInternal ()
+                let physics2d = World.getPhysicsEngine2d world in physics2d.ClearInternal ()
+                match World.getSelectedScreenOpt world with
+                | Some screen -> World.registerScreenPhysics screen world
+                | None -> ()
 
         static member private processCoroutines (world : World) =
             if world.TimeAdvancing then
