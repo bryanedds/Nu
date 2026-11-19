@@ -31,7 +31,7 @@ module OctreeTests =
     
     let makeTestOctelement id name visibleInView staticInPlay lightProbe light presence presenceInPlay bounds =
         let element = makeTestElement id name
-        Octelement.make visibleInView staticInPlay lightProbe light presence presenceInPlay bounds element
+        Octelement.make visibleInView staticInPlay staticInPlay lightProbe light presence presenceInPlay bounds element
 
     // Helper to create a standard test tree
     let makeTestTree depth size =
