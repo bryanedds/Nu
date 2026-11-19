@@ -322,8 +322,22 @@ float fadeShadowScalar(vec2 shadowTexCoords, float shadowScalar)
     return 1.0 - (1.0 - shadowScalar) * (1.0 - fadeScalar);
 }
 
+float interleavedGradientNoise(vec2 position)
+{
+    return fract(52.9829189 * fract(dot(position, vec2(0.06711056, 0.00583715))));
+}
+
+vec3 interleavedGradientNoise3(vec2 position)
+{
+    return vec3(
+        interleavedGradientNoise(position),
+        interleavedGradientNoise(position + vec2(47.0, 17.0)),
+        interleavedGradientNoise(position + vec2(13.0, 71.0)));
+}
+
 float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, int shadowIndex)
 {
+    vec3 dither = interleavedGradientNoise3(gl_FragCoord.xy);
     vec3 positionShadow = position.xyz - lightOrigin;
     float shadowZ = length(positionShadow);
     float shadowHits = 0.0;
@@ -333,7 +347,7 @@ float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, int shadowIndex)
         {
             for (int k = 0; k < lighting.lightShadowSamples; ++k)
             {
-                vec3 offset = (vec3(i, j, k) - vec3(lighting.lightShadowSamples * 0.5)) * (lighting.lightShadowSampleScalar / lighting.lightShadowSamples);
+                vec3 offset = (vec3(i, j, k) + dither - vec3(lighting.lightShadowSamples * 0.5)) * (lighting.lightShadowSampleScalar / lighting.lightShadowSamples);
                 shadowHits += shadowZ - lighting.lightShadowBias > texture(samplerCube(shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX], filteredSampler), positionShadow + offset).x ? 1.0 : 0.0;
             }
         }
