@@ -862,9 +862,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private tryUndo (world : World) =
         if  not (World.getImperative world) &&
             match Pasts with
-            | past :: pasts' ->
-                let future = (fst past, world.CurrentState)
-                World.switch (snd past) world
+            | (pastSnapshotType, pastWorldState) :: pasts' ->
+                let future = (pastSnapshotType, world.CurrentState)
+                World.switch pastWorldState world
+                if pastSnapshotType.IsRestorePoint then World.setTimeAdvancing false world
                 Pasts <- pasts'
                 Futures <- future :: Futures
                 TimelineChanged <- true
@@ -886,9 +887,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private tryRedo world =
         if  not (World.getImperative world) &&
             match Futures with
-            | future :: futures' ->
-                let past = (fst future, world.CurrentState)
-                World.switch (snd future) world
+            | (futureSnapshotType, futureWorldState) :: futures' ->
+                let past = (futureSnapshotType, world.CurrentState)
+                World.switch futureWorldState world
+                if futureSnapshotType.IsRestorePoint then World.setTimeAdvancing false world
                 Pasts <- past :: Pasts
                 Futures <- futures'
                 TimelineChanged <- true
@@ -1131,11 +1133,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private createRestorePoint world =
         World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Default.Sound world
-        if world.TimeAdvancing then
-            World.setTimeAdvancing false world
-            snapshot RestorePoint world
-            World.setTimeAdvancing true world
-        else snapshot RestorePoint world
+        snapshot RestorePoint world
 
     let private inductEntity atMouse (entity : Entity) (world : World)=
         let (positionSnap, _, _) = getSnaps ()
@@ -4753,6 +4751,21 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         let simulantPropertiesFocused = gamePropertiesFocused || screenPropertiesFocused || groupPropertiesFocused || entityPropertiesFocused
                         (entityHierarchyFocused, simulantPropertiesFocused)
 
+                // HACK: keep the arrow keys from navigating a focused property window, leaving them to eye travel
+                // while tab still navigates, or to the text field being edited there
+                if simulantPropertiesFocused then
+                    let arrowOwnerIdOpt =
+                        if canEditWithKeyboard world then Some keyOwnerId
+                        elif io.WantTextInput then
+                            let activeId = ImGuiInternal.getActiveId ()
+                            if activeId <> 0u then Some activeId else None // 0 is any owner, which imgui disallows
+                        else None
+                    match arrowOwnerIdOpt with
+                    | Some arrowOwnerId ->
+                        for key in [ImGuiKey.UpArrow; ImGuiKey.DownArrow; ImGuiKey.LeftArrow; ImGuiKey.RightArrow] do
+                            ImGuiInternal.setKeyOwner key arrowOwnerId
+                    | None -> ()
+
                 // prompt dialogs
                 match MessageBoxOpt with
                 | None ->
@@ -4778,9 +4791,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 // non-imgui input
                 updateEntityContext world // before the eye drag ends, so it sees whether a right drag's panned the eye
                 updateEyeDrag world
-                if  not entityHierarchyFocused &&
-                    not simulantPropertiesFocused then
-                    updateEyeTravel world
+                if not entityHierarchyFocused then updateEyeTravel world
                 updateEntityDrag world
                 updateAssetDrag world
                 updateHotkeys entityHierarchyFocused simulantPropertiesFocused world

@@ -5489,7 +5489,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             PhysicallyBased.drawFilterDepthOfFieldSurface
                 eyeCenter view geometryProjection
                 renderer.LightingConfig.DepthOfFieldNearDistance renderer.LightingConfig.DepthOfFieldFarDistance renderer.LightingConfig.DepthOfFieldFocalType.Enumerate renderer.LightingConfig.DepthOfFieldFocalDistance renderer.LightingConfig.DepthOfFieldFocalPoint
-                depthTexture colorHalf0Texture compositionTexture renderer.UnfilteredSampler colorFull0Texture geometryResolution
+                depthTexture colorHalf0Texture compositionTexture renderer.UnfilteredSampler renderer.FilteredSampler colorFull0Texture geometryResolution
                 renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterDepthOfFieldPipeline renderer.VulkanContext
             Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
 

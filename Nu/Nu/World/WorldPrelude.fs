@@ -517,11 +517,9 @@ module internal AmbientState =
         state.Alive
 
     let internal setTimeAdvancing timeAdvancing (state : _ AmbientState) =
-        if timeAdvancing <> state.TimeAdvancing then
-            let state = { state with Flags = if timeAdvancing then state.Flags ||| TimeResumptionRequestedMask else state.Flags ||| TimeHaltRequestedMask }
-            if state.TimeResumptionRequested && state.TimeHaltedRequested then Log.warn "TimeResumption and TimeHalt both requested in the same frame, but these will resolve in a predefined order."
-            state
-        else state
+        let state = { state with Flags = if timeAdvancing then state.Flags ||| TimeResumptionRequestedMask else state.Flags ||| TimeHaltRequestedMask }
+        if state.TimeResumptionRequested && state.TimeHaltedRequested then Log.warn "TimeResumption and TimeHalt both requested in the same frame, but these will resolve in a predefined order."
+        state
 
     let internal setFramePacing framePacing (state : _ AmbientState) =
         { state with Flags = if framePacing then state.Flags ||| FramePacingMask else state.Flags &&& ~~~FramePacingMask }

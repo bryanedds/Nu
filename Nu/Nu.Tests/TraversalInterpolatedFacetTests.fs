@@ -85,7 +85,7 @@ module TraversalInterpolatedFacetTests =
         let result = World.runWithCleanUp runWhile preProcess ignore ignore ignore ignore (Some ignore) world
         Assert.Equal (Constants.Engine.ExitCodeSuccess, result)
 
-    [<TestCase true; TestCase false>]
+    [<TestCase true; TestCase false; DefaultFloatingPointTolerance 1e-5>] // a time-averaged 61.05 rounds within an ulp
     let ``Interpolation should work with a different history and history size.`` (testOutOfRangeHistory : bool) =
 
         Nu.init ()
@@ -158,6 +158,52 @@ module TraversalInterpolatedFacetTests =
                 Assert.AreEqual (1.0f, actual.W ** 2.0f + actual.Z ** 2.0f) // is a unit quaternion
                 Assert.AreEqual (0.0f, actual.X)
                 Assert.AreEqual (0.0f, actual.Y)
+
+            // fin
+            World.endGroup world
+            World.endScreen world
+            World.endGame world
+
+        let result = World.runWithCleanUp runWhile preProcess ignore ignore ignore ignore (Some ignore) world
+        Assert.Equal (Constants.Engine.ExitCodeSuccess, result)
+
+    [<Test>]
+    let ``Interpolation of an unchanging value should be exactly that value.`` () =
+
+        Nu.init ()
+        let world = World.makeStub (constant None) { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
+        let runWhile (world : World) = world.UpdateTime <= 13L
+        let value = v3 0.1f 3.3f -7.3f // values whose time-weighted sums don't divide back out exactly
+        let rotation = Quaternion.CreateFromAngle2d 0.1f
+        let preProcess (world : World) =
+
+            // NOTE: using preProcess instead of perProcess is needed to declare entities before facets update.
+            World.beginGame [] world
+            World.beginScreen "A" true Vanilla [] world |> ignore
+            World.beginGroup "B" [] world
+            World.doEntity "C"
+                [Entity.FacetNames .= Set.ofList [nameof RigidBodyFacet; nameof TraversalInterpolatedFacet]
+                 Entity.TraversalHistoryMax .= GameTime.ofUpdates 20L
+                 Entity.Position @= value
+                 Entity.LinearVelocity @= value
+                 Entity.AngularVelocity @= value
+                 Entity.Rotation @= rotation] world |> ignore
+            let c = world.DeclaredEntity
+
+            if world.UpdateTime = 13L then
+
+                // a history of the same value at uneven times
+                let times = [1L; 2L; 5L; 6L; 11L]
+                c.SetPositionHistory (Prime.FQueue.ofList [for t in times do GameTime.ofUpdates t, value]) world
+                c.SetLinearVelocityHistory (Prime.FQueue.ofList [for t in times do GameTime.ofUpdates t, value]) world
+                c.SetAngularVelocityHistory (Prime.FQueue.ofList [for t in times do GameTime.ofUpdates t, value]) world
+                c.SetRotationHistory (Prime.FQueue.ofList [for t in times do GameTime.ofUpdates t, rotation]) world
+
+                // exact comparisons, which the default floating point tolerance doesn't apply to
+                Assert.True ((c.GetPositionInterpolated world = value))
+                Assert.True ((c.GetLinearVelocityInterpolated world = value))
+                Assert.True ((c.GetAngularVelocityInterpolated world = value))
+                Assert.True ((c.GetRotationInterpolated world = rotation))
 
             // fin
             World.endGroup world
