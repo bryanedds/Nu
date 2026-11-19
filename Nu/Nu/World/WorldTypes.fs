@@ -2103,9 +2103,9 @@ and [<NoEquality; NoComparison>] World =
     member this.ScaledTime =
         AmbientState.getScaledTime this.AmbientState
 
-    /// Get the game time between this and the previous frame, scaled by the time scalar.
+    /// Get the scaled game time that has transpired since a previous time.
     member this.LocalTime previousTime =
-        this.ScaledDelta - previousTime
+        this.ScaledTime - previousTime
 
     /// Get the time scalar - how fast scaled game time passes relative to unscaled game time, 0 holding it still.
     member this.TimeScalar =
