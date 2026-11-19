@@ -592,6 +592,9 @@ module internal AmbientState =
     let internal getTickDeltaOverride state =
         state.TickDeltaOverride
 
+    let internal setTickDeltaOverride tickDeltaOverride (state : 'w AmbientState) =
+        { state with TickDeltaOverride = tickDeltaOverride }
+
     let internal processTime (state : 'w AmbientState) =
         if state.TimeResumptionRequested then
             state.TickWatch.Start ()

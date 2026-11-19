@@ -55,6 +55,14 @@ module WorldModule2 =
         static member setTimeHalted halted (world : World) =
             AmbientState.setTimeAdvancing (not halted) world.AmbientState
 
+        /// Get the override for the rate at which world time proceeds.
+        static member getTickDeltaOverride (world : World) =
+            AmbientState.getTickDeltaOverride world.AmbientState
+
+        /// Set the override for the rate at which world time proceeds.
+        static member setTickDeltaOverride tickDeltaOverride (world : World) =
+            World.mapAmbientState (AmbientState.setTickDeltaOverride tickDeltaOverride) world
+
         /// Get all the light probes in a group.
         static member getLightProbes (group : Group) (world : World) : Entity seq =
             World.getEntitiesWith<LightProbeFacet> group world
