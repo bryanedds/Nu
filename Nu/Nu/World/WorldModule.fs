@@ -252,23 +252,25 @@ module WorldModule =
         static member getTickTime world =
             AmbientState.getTickTime world.AmbientState
 
-        /// Get the polymorphic engine time between this and the previous frame, unscaled by the time scalar.
+        /// Get the game time between this and the previous frame, unscaled by the time scalar.
         static member getUnscaledDelta world =
             AmbientState.getUnscaledDelta world.AmbientState
 
-        /// Get the polymorphic engine time that has transpired since the world began advancing, unscaled by the time
-        /// scalar.
+        /// Get the game time that has transpired since the world began advancing, unscaled by the time scalar.
         static member getUnscaledTime world =
             AmbientState.getUnscaledTime world.AmbientState
 
-        /// Get the polymorphic engine time between this and the previous frame, scaled by the time scalar.
+        /// Get the game time between this and the previous frame, scaled by the time scalar.
         static member getScaledDelta world =
             AmbientState.getScaledDelta world.AmbientState
 
-        /// Get the polymorphic engine time that has transpired since the world began advancing, scaled by the time
-        /// scalar as it went.
+        /// Get the game time that has transpired since the world began advancing, scaled by the time scalar as it went.
         static member getScaledTime world =
             AmbientState.getScaledTime world.AmbientState
+
+        /// Get the game time between this and the previous frame, scaled by the time scalar.
+        static member getLocalTime previousTime world =
+            World.getScaledTime world - previousTime
 
         /// Get the amount of date time that has transpired between this and the previous frame. This value is independent
         /// of whether the world was or is advancing.
