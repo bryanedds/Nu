@@ -268,7 +268,7 @@ module WorldModule =
         static member getScaledTime world =
             AmbientState.getScaledTime world.AmbientState
 
-        /// Get the game time between this and the previous frame, scaled by the time scalar.
+        /// Get the scaled game time that has transpired since a previous time.
         static member getLocalTime previousTime world =
             World.getScaledTime world - previousTime
 
