@@ -2,7 +2,7 @@
 // Required Notice:
 // Copyright (C) Bryan Edds.
 // Gaia - The Nu Game Engine editor is licensed under the Nu Game Engine Noncommercial License.
-// See: https://github.com/bryanedds/Nu/master/License.md
+// See: https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu.Gaia
 open System
@@ -1519,6 +1519,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             AssetGraphStr <- PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter
         | Left error ->
             MessageBoxOpt <- Some ("Asset reload error due to: " + error + "'.")
+        match World.tryReloadOverlayer assetSourceDir TargetDir world with
+        | Right overlayer ->
+            let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
+            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
+            OverlayerStr <- PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
+        | Left error ->
+            MessageBoxOpt <- Some ("Overlayer reload error due to: " + error + "'.")
 
     /// Note the facet and dispatcher types defined by the fsi session so far, returning whether any are new.
     let private noteFsiSessionLateBindingTypes () =
@@ -3462,11 +3469,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             if ImGui.Button "Save" then
                 let overlayerSourceDir = TargetDir + "/../../.."
-                let overlayerFilePath = overlayerSourceDir + "/" + Assets.Global.AssetGraphFilePath
+                let overlayerFilePath = overlayerSourceDir + "/" + Assets.Global.OverlayerFilePath
                 try let overlays = scvalue<Overlay list> OverlayerStr
                     let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
                     File.WriteAllText (overlayerFilePath, PrettyPrinter.prettyPrint (scstring overlays) prettyPrinter)
-                with exn -> MessageBoxOpt <- Some ("Could not save asset graph due to: " + scstring exn)
+                with exn -> MessageBoxOpt <- Some ("Could not save overlayer due to: " + scstring exn)
             ImGui.SameLine ()
             if ImGui.Button "Load" then
                 let overlayerFilePath = TargetDir + "/" + Assets.Global.OverlayerFilePath
