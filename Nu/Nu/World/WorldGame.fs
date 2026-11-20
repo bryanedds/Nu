@@ -267,7 +267,7 @@ module WorldGameModule =
             File.Move (filePathTmp, filePath)
 
         /// Read a game from a game descriptor.
-        static member readGame gameDescriptor name world =
+        static member readGame gameDescriptor world =
 
             // make the dispatcher
             let dispatcherName = gameDescriptor.GameDispatcherName
@@ -283,7 +283,7 @@ module WorldGameModule =
             let gameState = Reflection.readPropertiesToTarget GameState.copy gameDescriptor.GameProperties gameState
 
             // set the game's state in the world
-            let game = Game name
+            let game = Nu.Game.Handle
             World.setGameState gameState game world
 
             // read the game's screens

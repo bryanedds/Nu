@@ -92,10 +92,10 @@ module Symbolics =
         tryLoadSymbol assetTag metadata symbolics |> Option.map snd
 
     /// Try to find the symbols with the given asset tags.
-    let tryGetSymbols metadata assetTags symbolics =
+    let tryGetSymbols assetTags metadata symbolics =
         List.foldBack
             (fun assetTag symbols ->
-                match tryGetSymbol metadata assetTag symbolics with
+                match tryGetSymbol assetTag metadata symbolics with
                 | Some symbol -> symbol :: symbols
                 | None -> symbols)
             assetTags

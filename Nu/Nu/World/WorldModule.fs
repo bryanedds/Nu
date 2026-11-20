@@ -592,9 +592,9 @@ module WorldModule =
             World.mapAmbientState (AmbientState.mapSymbolics mapper) world
 
         /// Try to load a symbol package with the given name.
-        static member tryLoadSymbolPackage implicitDelimiters packageName world =
+        static member tryLoadSymbolPackage packageName metadata world =
             let symbolics = World.getSymbolics world
-            Symbolics.tryLoadSymbolPackage implicitDelimiters packageName symbolics
+            Symbolics.tryLoadSymbolPackage packageName metadata symbolics
 
         /// Unload a symbol package with the given name.
         static member unloadSymbolPackage packageName world =
@@ -607,9 +607,9 @@ module WorldModule =
             Symbolics.tryGetSymbol assetTag metadata symbolics
 
         /// Try to find symbols with the given asset tags.
-        static member tryGetSymbols implicitDelimiters assetTags world =
+        static member tryGetSymbols assetTags metadata world =
             let symbolics = World.getSymbolics world
-            Symbolics.tryGetSymbols implicitDelimiters assetTags symbolics
+            Symbolics.tryGetSymbols assetTags metadata symbolics
 
         /// Reload all the symbols in symbolics.
         static member reloadSymbols world =
