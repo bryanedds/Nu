@@ -1086,69 +1086,73 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             if isCharacter then
                 match bodyProperties.BodyShape with
                 | CapsuleShape capsuleShape ->
-                    match bodyProperties.CharacterProperties with
-                    | PogoSpringCharacterProperties properties ->
+                    // use the pogo spring properties, falling back on their defaults when given stair-stepping ones
+                    let properties =
+                        match bodyProperties.CharacterProperties with
+                        | PogoSpringCharacterProperties properties -> properties
+                        | StairSteppingCharacterProperties _ ->
+                            Log.warnOnce
+                                ("StairSteppingCharacterProperties not implemented in Box2dNetPhysicsEngine; " +
+                                 "using default PogoSpringCharacterProperties instead.")
+                            PogoSpringCharacterProperties.defaultProperties
 
-                        // ensure center1 is at the bottom for pogo casting
-                        let mutable capsule = Box2dNetPhysicsEngine.toB2Capsule capsuleShape
-                        if capsule.center1.Y > capsule.center2.Y then
-                            let topPoint = capsule.center1
-                            capsule.center1 <- capsule.center2
-                            capsule.center2 <- topPoint
+                    // ensure center1 is at the bottom for pogo casting
+                    let mutable capsule = Box2dNetPhysicsEngine.toB2Capsule capsuleShape
+                    if capsule.center1.Y > capsule.center2.Y then
+                        let topPoint = capsule.center1
+                        capsule.center1 <- capsule.center2
+                        capsule.center2 <- topPoint
 
-                        // adjust the bottom point of the capsule upward by the projection of (0, pogoRestLength) onto the capsule vector
-                        let mutable capsuleVector = capsule.center2 - capsule.center1 // from the bottom point of the capsule
-                        let pogoRestLength = properties.PogoRestLengthScalar * B2MathFunction.b2Length &capsuleVector
-                        let mutable pogoVector = B2Vec2 (0.0f, pogoRestLength)
-                        let capsuleVectorPogoPortion =
-                            B2MathFunction.b2Dot (&capsuleVector, &pogoVector) /
-                            B2MathFunction.b2LengthSquared &capsuleVector
-                        capsule.center1 <- capsule.center1 + capsuleVectorPogoPortion * capsuleVector
-                                
-                        // create the body shape
-                        let mutable shapeDef = Unchecked.defaultof<_>
-                        configureBodyShapeProperties &shapeDef bodyId.BodySource bodyProperties capsuleShape.PropertiesOpt
-                        shapeDef.density <- Box2dNetPhysicsEngine.computeCapsuleDensity bodyProperties.Substance (capsuleShape.Height * (1.0f - capsuleVectorPogoPortion)) capsuleShape.Radius capsuleShape.TransformOpt
-                        let shape = B2Shapes.b2CreateCapsuleShape (body, &shapeDef, &capsule)
-                        let (gravityScale, gravityOverride) =
-                            match bodyProperties.Gravity with
-                            | GravityWorld -> (1.0f, B2MathFunction.b2Vec2_zero)
-                            | GravityOverride gravity -> (0.0f, Box2dNetPhysicsEngine.toB2Vec2 gravity)
-                            | GravityScale scale -> (scale, B2MathFunction.b2Vec2_zero)
-                            | GravityIgnore -> (0.0f, B2MathFunction.b2Vec2_zero)
+                    // adjust the bottom point of the capsule upward by the projection of (0, pogoRestLength) onto the capsule vector
+                    let mutable capsuleVector = capsule.center2 - capsule.center1 // from the bottom point of the capsule
+                    let pogoRestLength = properties.PogoRestLengthScalar * B2MathFunction.b2Length &capsuleVector
+                    let mutable pogoVector = B2Vec2 (0.0f, pogoRestLength)
+                    let capsuleVectorPogoPortion =
+                        B2MathFunction.b2Dot (&capsuleVector, &pogoVector) /
+                        B2MathFunction.b2LengthSquared &capsuleVector
+                    capsule.center1 <- capsule.center1 + capsuleVectorPogoPortion * capsuleVector
+                            
+                    // create the body shape
+                    let mutable shapeDef = Unchecked.defaultof<_>
+                    configureBodyShapeProperties &shapeDef bodyId.BodySource bodyProperties capsuleShape.PropertiesOpt
+                    shapeDef.density <- Box2dNetPhysicsEngine.computeCapsuleDensity bodyProperties.Substance (capsuleShape.Height * (1.0f - capsuleVectorPogoPortion)) capsuleShape.Radius capsuleShape.TransformOpt
+                    let shape = B2Shapes.b2CreateCapsuleShape (body, &shapeDef, &capsule)
+                    let (gravityScale, gravityOverride) =
+                        match bodyProperties.Gravity with
+                        | GravityWorld -> (1.0f, B2MathFunction.b2Vec2_zero)
+                        | GravityOverride gravity -> (0.0f, Box2dNetPhysicsEngine.toB2Vec2 gravity)
+                        | GravityScale scale -> (scale, B2MathFunction.b2Vec2_zero)
+                        | GravityIgnore -> (0.0f, B2MathFunction.b2Vec2_zero)
 
-                        // add the character to the bookkeeping
-                        physicsEngine.Characters[bodyId] <-
-                            { PogoRestLength = pogoRestLength
-                              PogoFrequency = properties.PogoFrequency
-                              PogoDampingRatio = properties.PogoDampingRatio
-                              PogoProxy =
-                                match properties.PogoShapeCast with
-                                | PointPogoShapeCast -> B2Distances.b2MakeProxy (B2Vec2 (), 1, 0.0f)
-                                | CirclePogoShapeCast diameterScalar -> B2Distances.b2MakeProxy (B2Vec2 (), 1, diameterScalar * 0.5f * capsule.radius)
-                                | SegmentPogoShapeCast widthScalar ->
-                                    let segmentOffset = B2Vec2 (widthScalar * capsule.radius, 0.0f)
-                                    B2Distances.b2MakeProxy (-segmentOffset, segmentOffset, 2, 0.0f)
-                              CollisionCategory = shapeDef.filter.categoryBits
-                              CastMask = shapeDef.filter.maskBits
-                              CollisionMask = shapeDef.filter.maskBits ||| properties.AdditionalCollisionMask
-                              Capsule = capsule
-                              CapsuleShape = shape
-                              Mass = B2Bodies.b2Body_GetMass body
-                              GravityScale = gravityScale
-                              GravityOverride = gravityOverride
-                              Transform = B2Transform (bodyDef.position, bodyDef.rotation)
-                              Velocity = B2Vec2 ()
-                              OnGround = ValueNone
-                              OnGroundPrevious = ValueNone
-                              GroundVelocity = B2Vec2 ()
-                              PogoVelocity = 0.0f
-                              PogoOrigin = B2Vec2 ()
-                              PogoDelta = B2Vec2 ()
-                              GroundCastResult = B2RayResult () }
-
-                    // stair-stepping unimplemented (but is it even needed with the pogo spring implementation?)
-                    | StairSteppingCharacterProperties _ -> Log.warn "StairSteppingCharacterProperties not yet implemented in Box2dPhysicsEngine."
+                    // add the character to the bookkeeping
+                    physicsEngine.Characters[bodyId] <-
+                        { PogoRestLength = pogoRestLength
+                          PogoFrequency = properties.PogoFrequency
+                          PogoDampingRatio = properties.PogoDampingRatio
+                          PogoProxy =
+                            match properties.PogoShapeCast with
+                            | PointPogoShapeCast -> B2Distances.b2MakeProxy (B2Vec2 (), 1, 0.0f)
+                            | CirclePogoShapeCast diameterScalar -> B2Distances.b2MakeProxy (B2Vec2 (), 1, diameterScalar * capsule.radius)
+                            | SegmentPogoShapeCast widthScalar ->
+                                let segmentOffset = B2Vec2 (widthScalar * capsule.radius, 0.0f)
+                                B2Distances.b2MakeProxy (-segmentOffset, segmentOffset, 2, 0.0f)
+                          CollisionCategory = shapeDef.filter.categoryBits
+                          CastMask = shapeDef.filter.maskBits
+                          CollisionMask = shapeDef.filter.maskBits ||| properties.AdditionalCollisionMask
+                          Capsule = capsule
+                          CapsuleShape = shape
+                          Mass = B2Bodies.b2Body_GetMass body
+                          GravityScale = gravityScale
+                          GravityOverride = gravityOverride
+                          Transform = B2Transform (bodyDef.position, bodyDef.rotation)
+                          Velocity = B2Vec2 ()
+                          OnGround = ValueNone
+                          OnGroundPrevious = ValueNone
+                          GroundVelocity = B2Vec2 ()
+                          PogoVelocity = 0.0f
+                          PogoOrigin = B2Vec2 ()
+                          PogoDelta = B2Vec2 ()
+                          GroundCastResult = B2RayResult () }
                 
                 // not a capsule shape - unsupported
                 | shape -> Log.warn ("Characters in Box2dNetPhysicsEngine only support CapsuleShapes. Ignoring character body type for " + scstring shape + ".")

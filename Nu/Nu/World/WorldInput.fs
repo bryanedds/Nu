@@ -85,7 +85,7 @@ module WorldInputModule =
         static member isMouseButtonReleased mouseButton world =
             ignore (world : World)
             let io = ImGui.GetIO ()
-            if not (io.WantCaptureKeyboardGlobal)
+            if not (io.WantCaptureMouseGlobal)
             then MouseState.isButtonReleased mouseButton
             else false
 
@@ -93,7 +93,7 @@ module WorldInputModule =
         static member getMouseScrolled world =
             ignore (world : World)
             let io = ImGui.GetIO ()
-            if not (io.WantCaptureKeyboardGlobal)
+            if not (io.WantCaptureMouseGlobal)
             then MouseState.getScrolled ()
             else 0.0f
 
@@ -101,7 +101,7 @@ module WorldInputModule =
         static member isMouseScrolledUp world =
             ignore (world : World)
             let io = ImGui.GetIO ()
-            if not (io.WantCaptureKeyboardGlobal)
+            if not (io.WantCaptureMouseGlobal)
             then MouseState.isScrolledUp ()
             else false
 
@@ -109,7 +109,7 @@ module WorldInputModule =
         static member isMouseScrolledDown world =
             ignore (world : World)
             let io = ImGui.GetIO ()
-            if not (io.WantCaptureKeyboardGlobal)
+            if not (io.WantCaptureMouseGlobal)
             then MouseState.isScrolledDown ()
             else false
 

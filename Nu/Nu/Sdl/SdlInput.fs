@@ -290,6 +290,10 @@ module GamepadState =
     let internal getGamepadCount () =
         Array.length Gamepads
 
+    /// Attempt to get the polling index of the open gamepad with the given SDL joystick instance id.
+    let internal tryGetIndex (joystickId : SDL_JoystickID) =
+        Array.tryFindIndex (fun gamepad -> SDL3.SDL_GetGamepadID gamepad = joystickId) Gamepads
+
     /// Convert an SDL gamepad axis to a GamepadAxis.
     let internal toNuAxis axis =
         match axis with
