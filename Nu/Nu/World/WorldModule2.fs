@@ -489,7 +489,7 @@ module WorldModule2 =
 
         /// Create a dissolve screen whose content is loaded from the given group file.
         static member createDissolveScreenFromGroupFile<'d when 'd :> ScreenDispatcher> nameOpt dissolveDescriptor songOpt groupFilePath world =
-            World.createDissolveScreenFromGroupFile6 typeof<'d>.Name nameOpt dissolveDescriptor groupFilePath songOpt world
+            World.createDissolveScreenFromGroupFile6 typeof<'d>.Name nameOpt dissolveDescriptor songOpt groupFilePath world
 
         /// Create a slide screen that transitions to the given destination upon completion.
         static member createSlideScreen6 dispatcherName nameOpt slideDescriptor destination world =
