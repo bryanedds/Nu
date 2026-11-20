@@ -25,6 +25,8 @@ Look here to get started with your own project in Nu -
 
 [Introductory Material](https://github.com/bryanedds/Nu/wiki#introductory-material) - start here first!
 
+[Making Games with the Nu Game Engine (Draft)](https://github.com/bryanedds/Nu/releases/download/v21.0.0/Making.Games.with.the.Nu.Game.Engine.Draft.pdf) - first draft of our *NEW* book on using Nu Game Engine!
+
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/bryanedds/Nu) -  an increasingly accurate AI-generated wiki for Nu!
 
 [API Documentation](https://bryanedds.github.io/Nu/) - a basic API reference.

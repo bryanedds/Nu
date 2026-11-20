@@ -108,7 +108,7 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
         | ValueNone -> false
 
     /// Set the lensed property to the given value.
-    /// Throws an exception if the lens is readonly.
+    /// Warns once if the lens is readonly.
     member lens.Set value world =
         match lens.SetOpt with
         | ValueSome setter -> setter value world

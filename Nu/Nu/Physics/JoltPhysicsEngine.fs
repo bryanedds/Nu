@@ -1873,9 +1873,9 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             let rayCastResults =
                 if closestOnly then
                     let mutable rayCastResult = Unchecked.defaultof<RayCastResult>
-                    physicsEngine.PhysicsContext.NarrowPhaseQuery.CastRay
-                        (&ray, &rayCastResult, null, null, bodyFilter) |> ignore<bool>
-                    List [rayCastResult]
+                    if physicsEngine.PhysicsContext.NarrowPhaseQuery.CastRay (&ray, &rayCastResult, null, null, bodyFilter)
+                    then List [rayCastResult]
+                    else List ()
                 else
                     let rayCastSettings = RayCastSettings ()
                     let collectorType = CollisionCollectorType.AllHitSorted // TODO: consider allowing for unsorted hits.

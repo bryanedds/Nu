@@ -755,7 +755,8 @@ module AssimpExtensions =
                         let localTimeScaled =
                             match animation.Playback with
                             | Once ->
-                                localTime * double animationRate
+                                let length = animationChannel.RotationKeys[dec animationChannel.RotationKeys.Length].Time
+                                min (localTime * double animationRate) length // hold the last pose once played through
                             | Loop ->
                                 let length = animationChannel.RotationKeys[dec animationChannel.RotationKeys.Length].Time
                                 localTime * double animationRate % length
