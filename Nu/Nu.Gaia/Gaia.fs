@@ -2107,7 +2107,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             | Some _ | None -> ()
             (*ImGui.EndDragDropTarget ()*)
 
-    let private updateHotkeys entityHierarchyFocused simulantPropertiesFocused world =
+    let private updateHotkeys entityHierarchyFocused world =
         if not (modal ()) then
             let io = ImGui.GetIO ()
             if ImGui.IsKeyPressed ImGuiKey.F2 && (match Seq.tryExactlyOne SelectedEntities with Some entity -> entity.GetProtection world = Unprotected | None -> false) then ShowRenameEntityDialog <- true
@@ -2162,7 +2162,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     elif not (String.IsNullOrWhiteSpace PropertyValueSearchStr) then
                         PropertyValueSearchStr <- ""
                         PropertyValueSearchIndex <- -1
-                    elif entityHierarchyFocused || simulantPropertiesFocused then
+                    elif entityHierarchyFocused then
                         ViewportFocusRequested <- true
                     else
                         ImGuiInternal.tryCancelDragDrop ()
@@ -4794,7 +4794,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if not entityHierarchyFocused then updateEyeTravel world
                 updateEntityDrag world
                 updateAssetDrag world
-                updateHotkeys entityHierarchyFocused simulantPropertiesFocused world
+                updateHotkeys entityHierarchyFocused world
 
                 // deferred imgui input
                 updateResetEye ()
