@@ -494,7 +494,7 @@ module WorldModule2 =
 
         /// Create a dissolve screen whose content is loaded from the given group file.
         static member createDissolveScreenFromGroupFile<'d when 'd :> ScreenDispatcher> nameOpt dissolveDescriptor songOpt groupFilePath world =
-            World.createDissolveScreenFromGroupFile6 typeof<'d>.Name nameOpt dissolveDescriptor groupFilePath songOpt world
+            World.createDissolveScreenFromGroupFile6 typeof<'d>.Name nameOpt dissolveDescriptor songOpt groupFilePath world
 
         /// Create a slide screen that transitions to the given destination upon completion.
         static member createSlideScreen6 dispatcherName nameOpt slideDescriptor destination world =
@@ -1159,9 +1159,11 @@ module WorldModule2 =
                     let travel = evt.wheel.y * if flipped then -1.0f else 1.0f
                     MouseState.MouseScrollStateCurrent <- MouseState.MouseScrollStateCurrent + travel
                     imGui.HandleMouseScrollChange evt.wheel.y // NOTE: ImGui does its own platform-specific flipping according to le AI.
-                    let eventData = { Travel = travel }
-                    let eventTrace = EventTrace.debug "World" "processInput2" "MouseScroll" EventTrace.empty
-                    World.publishPlus eventData Nu.Game.Handle.MouseScrollEvent eventTrace Nu.Game.Handle true true world
+                    let io = ImGui.GetIO ()
+                    if not io.WantCaptureMouseGlobal then
+                        let eventData = { Travel = travel }
+                        let eventTrace = EventTrace.debug "World" "processInput2" "MouseScroll" EventTrace.empty
+                        World.publishPlus eventData Nu.Game.Handle.MouseScrollEvent eventTrace Nu.Game.Handle true true world
             | SDL_EventType.SDL_EVENT_TEXT_INPUT ->
                 let io = ImGui.GetIO ()
                 let imGui = World.getImGui world
@@ -1196,34 +1198,37 @@ module WorldModule2 =
                     let eventTrace = EventTrace.debug "World" "processInput2" "KeyboardKeyChange" EventTrace.empty
                     World.publishPlus eventData Nu.Game.Handle.KeyboardKeyChangeEvent eventTrace Nu.Game.Handle true true world
             | SDL_EventType.SDL_EVENT_GAMEPAD_AXIS_MOTION ->
-                let index = evt.gaxis.which |> LanguagePrimitives.EnumToValue
-                let axis = evt.gaxis.axis |> int |> enum<SDL_GamepadAxis>
-                let value = evt.gaxis.value
-                let eventData = { GamepadAxis = GamepadState.toNuAxisValue value }
-                let eventTrace = EventTrace.debug "World" "processInput2" "GamepadAxisChange" EventTrace.empty
-                World.publishPlus eventData (Nu.Game.Handle.GamepadAxisChangeEvent (GamepadState.toNuAxis axis) index) eventTrace Nu.Game.Handle true true world
+                match GamepadState.tryGetIndex evt.gaxis.which with // NOTE: indexed as the polling functions are.
+                | Some index ->
+                    let index = uint index
+                    let axis = evt.gaxis.axis |> int |> enum<SDL_GamepadAxis>
+                    let value = evt.gaxis.value
+                    let eventData = { GamepadAxis = GamepadState.toNuAxisValue value }
+                    let eventTrace = EventTrace.debug "World" "processInput2" "GamepadAxisChange" EventTrace.empty
+                    World.publishPlus eventData (Nu.Game.Handle.GamepadAxisChangeEvent (GamepadState.toNuAxis axis) index) eventTrace Nu.Game.Handle true true world
+                | None -> ()
             | SDL_EventType.SDL_EVENT_GAMEPAD_BUTTON_DOWN ->
-                let index = evt.gbutton.which |> LanguagePrimitives.EnumToValue
+                let indexOpt = GamepadState.tryGetIndex evt.gbutton.which |> Option.map uint
                 let button = evt.gbutton.button |> int |> enum<SDL_GamepadButton>
-                match GamepadState.tryToNuButton button with
-                | Some button ->
+                match (indexOpt, GamepadState.tryToNuButton button) with
+                | (Some index, Some button) ->
                     let eventData = { GamepadButton = button; Down = true }
                     let eventTrace = EventTrace.debug "World" "processInput2" "GamepadButtonDown" EventTrace.empty
                     World.publishPlus eventData (Nu.Game.Handle.GamepadButtonDownEvent index) eventTrace Nu.Game.Handle true true world
                     let eventTrace = EventTrace.debug "World" "processInput2" "GamepadButtonChange" EventTrace.empty
                     World.publishPlus eventData (Nu.Game.Handle.GamepadButtonChangeEvent index) eventTrace Nu.Game.Handle true true world
-                | None -> ()
+                | (_, _) -> ()
             | SDL_EventType.SDL_EVENT_GAMEPAD_BUTTON_UP ->
-                let index = evt.gbutton.which |> LanguagePrimitives.EnumToValue
+                let indexOpt = GamepadState.tryGetIndex evt.gbutton.which |> Option.map uint
                 let button = evt.gbutton.button |> int |> enum<SDL_GamepadButton>
-                match GamepadState.tryToNuButton button with
-                | Some button ->
-                    let eventData = { GamepadButton = button; Down = true }
+                match (indexOpt, GamepadState.tryToNuButton button) with
+                | (Some index, Some button) ->
+                    let eventData = { GamepadButton = button; Down = false }
                     let eventTrace = EventTrace.debug "World" "processInput2" "GamepadButtonUp" EventTrace.empty
                     World.publishPlus eventData (Nu.Game.Handle.GamepadButtonUpEvent index) eventTrace Nu.Game.Handle true true world
                     let eventTrace = EventTrace.debug "World" "processInput2" "GamepadButtonChange" EventTrace.empty
                     World.publishPlus eventData (Nu.Game.Handle.GamepadButtonChangeEvent index) eventTrace Nu.Game.Handle true true world
-                | None -> ()
+                | (_, _) -> ()
             | _ -> ()
 
         static member private processIntegrationMessage integrationMessage (world : World) =
@@ -2209,6 +2214,7 @@ module EntityDispatcherModule =
             [define Entity.Absolute true
              define Entity.Size Constants.Engine.EntityGuiSizeDefault
              define Entity.Presence Omnipresent
+             define Entity.TimeScaled false
              define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
              define Entity.Layout Manual
              define Entity.LayoutMargin v2Zero
@@ -2415,6 +2421,7 @@ module EntityDispatcherModule =
             [define Entity.Absolute true
              define Entity.Size Constants.Engine.EntityGuiSizeDefault
              define Entity.Presence Omnipresent
+             define Entity.TimeScaled false
              define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
              define Entity.Layout Manual
              define Entity.LayoutMargin v2Zero

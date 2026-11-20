@@ -2557,27 +2557,27 @@ type LayoutFacet () =
                     let position =
                         v2
                             ((margins.X - margins.Z) * 0.5f)
-                            ((margins.Y - margins.W) * 0.5f)
+                            ((margins.W - margins.Y) * 0.5f) // y is up, so the top margin lowers the center
                     child.SetPositionLocal position.V3 world
                     child.SetSize size.V3 world
                 | DockTop ->
                     let size = v2 perimeter.Width margins.Y - margin
-                    let position = v2 0.0f (-perimeterHeightHalf + margins.Y * 0.5f)
+                    let position = v2 0.0f (perimeterHeightHalf - margins.Y * 0.5f)
                     child.SetPositionLocal position.V3 world
                     child.SetSize size.V3 world
                 | DockRight ->
                     let size = v2 margins.Z (perimeter.Height - margins.Y - margins.W) - margin
-                    let position = v2 (perimeterWidthHalf - margins.Z * 0.5f) ((margins.Y - margins.W) * 0.5f)
+                    let position = v2 (perimeterWidthHalf - margins.Z * 0.5f) ((margins.W - margins.Y) * 0.5f)
                     child.SetPositionLocal position.V3 world
                     child.SetSize size.V3 world
                 | DockBottom ->
                     let size = v2 perimeter.Width margins.W - margin
-                    let position = v2 0.0f (perimeterHeightHalf - margins.Z * 0.5f)
+                    let position = v2 0.0f (-perimeterHeightHalf + margins.W * 0.5f)
                     child.SetPositionLocal position.V3 world
                     child.SetSize size.V3 world
                 | DockLeft ->
                     let size = v2 margins.X (perimeter.Height - margins.Y - margins.W) - margin
-                    let position = v2 (-perimeterWidthHalf + margins.X * 0.5f) ((margins.Y - margins.W) * 0.5f)
+                    let position = v2 (-perimeterWidthHalf + margins.X * 0.5f) ((margins.W - margins.Y) * 0.5f)
                     child.SetPositionLocal position.V3 world
                     child.SetSize size.V3 world
 
@@ -3810,7 +3810,8 @@ module AnimatedModelFacetExtensions =
                 Some (boneIds, boneOffsets, boneTransforms)
             | Some _ | None -> None
 
-        /// TODO: document this!
+        /// Compute the entity's bone transforms from its animations at its current time (scaled or unscaled per
+        /// TimeScaled) and set them, doing nothing when its animated model isn't loaded or has no meshes.
         member this.AnimateBones (world : World) =
             let gameTime = if this.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
             let animations = this.GetAnimations world
