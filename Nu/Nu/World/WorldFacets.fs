@@ -3811,7 +3811,8 @@ module AnimatedModelFacetExtensions =
                 Some (boneIds, boneOffsets, boneTransforms)
             | Some _ | None -> None
 
-        /// TODO: document this!
+        /// Compute the entity's bone transforms from its animations at its current time (scaled or unscaled per
+        /// TimeScaled) and set them, doing nothing when its animated model isn't loaded or has no meshes.
         member this.AnimateBones (world : World) =
             let gameTime = if this.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
             let animations = this.GetAnimations world
