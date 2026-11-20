@@ -1,0 +1,33 @@
+; The generator room - the generator, and its fuse panel missing its main fuse. Seating the morgue's fuse restores
+; the power to the whole wing.
+
+[[Palette [[Floor [0.3 0.3 0.29 1]] [Walls [0.4 0.4 0.38 1]] [Dado [0.32 0.32 0.3 1]] [Generator [0.35 0.4 0.3 1]] [Panel [0.45 0.45 0.42 1]] [Red [1 0.15 0.1 1]] [Green [0.2 1 0.3 1]]]]
+
+ [Area [[Type [Hospital Generator]] [Name "Generator Room"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-3 -0.5 -3] [6 4 6]]] [Songs [[[Song HospitalPoweredSong] [When [Some [Flagged PowerRestored]]]] [[Song HospitalSong]]]]]]
+ [Layout [Chamber [[Size [5 5]] [Floor Floor] [Walls Walls] [Dado Dado] [FloorSurface [Some Concrete]] [WallSurface [Some Concrete]]]]]
+
+ ; the doors
+ [Prop [[Name GeneratorDoor] [Appearance [Some [Composed SteelWallDoor []]]] [Place [[Against [Some West]] [Along 0]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Hospital EastHall]] [Style SteelDoor]]]]]]]]]
+
+ [Prop [[Name Lamp] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.4]]]]]] [Place [[At [Some [0 0]]] [Height [Some 2.7]]]]]]
+ [Camera [[Zone [[-2.5 -2.5] [5 5]]] [At [-2 2.75 2]] [LookAt [0.8 0.4 -0.8]] [FieldOfView 66]]]
+
+ [Prop [[Name Generator] [Appearance [Some [Slab [[Size [2.4 1.4 1.4]] [Surface Steel] [Tint Generator] [Solid True]]]]] [Place [[At [Some [0.6 -1.2]]]]]]]
+ [Prop [[Name FusePanel] [Appearance [Some [Slab [[Size [0.25 1.6 0.8]] [Surface Steel] [Tint Panel] [Solid True]]]]] [Place [[At [Some [2.35 1]]]]]
+   [Interact [Some [[InteractionType Examine] [Cue [If [Flagged PowerRestored]
+                                                   [Say ["The generator's running. Its lamp burns green."]]
+                                                   [If [Carries Fuse]
+                                                    [Sequence [[Take Fuse] [SetFlag PowerRestored] [Sound FuseSound] [Sound PowerOnSound]
+                                                               [Say ["You seat the fuse and throw the lever. The generator coughs, catches, and roars." "All through the wing, the lights come up."]]]]
+                                                    [Say ["The generator's fuse panel. One cartridge is missing - a gap where the main fuse should be."]]]]]]]]]]
+ ; the panel's lamp - red while the power's out, green once it's back
+ [While [Not [Flagged PowerRestored]]
+  [[Prop [[Name PanelLampRed] [Appearance [Some [Composed PanelLamp [[Colors [Some [[Lamp Red]]]]]]]] [Place [[At [Some [2.21 1]]] [Height [Some 1.42]]]]]]]]
+ [While [Flagged PowerRestored]
+  [[Prop [[Name PanelLampGreen] [Appearance [Some [Composed PanelLamp [[Colors [Some [[Lamp Green]]]]]]]] [Place [[At [Some [2.21 1]]] [Height [Some 1.42]]]]]]]]
+ [Prop [[Name GeneratorShells] [Place [[At [Some [-1.8 1.8]]] [Height [Some 0.01]]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item ShotgunShells] [Count 4]]]]]]]]]
+
+ ; the creatures
+ [Enemy [[Name GeneratorPatient] [Creature Patient] [Place [[At [Some [2.1 -2.1]]] [Facing 300]]]]]]

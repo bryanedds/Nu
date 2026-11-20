@@ -1,0 +1,28 @@
+; The security office - monitors over the desk, the gun locker, and the shotgun.
+
+[[Palette [[Lino [0.28 0.29 0.3 1]] [Paint [0.45 0.5 0.55 1]] [Dado [0.22 0.25 0.3 1]] [Desk [0.3 0.3 0.32 1]] [Locker [0.25 0.27 0.25 1]] [Screen [0.4 0.6 0.7 1]]]]
+
+ [Area [[Type [Hospital Security]] [Name "Security Office"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-3 -0.5 -2.8] [6 4 5.6]]] [Songs [[[Song HospitalPoweredSong] [When [Some [Flagged PowerRestored]]]] [[Song HospitalSong]]]]]]
+ [Layout [Chamber [[Size [5 4.6]] [Floor Lino] [Walls Paint] [Dado Dado]]]]
+
+ ; the doors
+ [Prop [[Name SecurityDoor] [Appearance [Some [Composed SteelWallDoor []]]] [Place [[Against [Some West]] [Along 0]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Hospital EastHall]] [Style SteelDoor]]]]]]]]]
+
+ [Prop [[Name Lamp] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 2]]]]]] [Place [[At [Some [0 0]]] [Height [Some 2.7]]]]]]
+ [Camera [[Zone [[-2.5 -2.3] [5 4.6]]] [At [-2 2.75 2]] [LookAt [0.8 0.5 -0.8]] [FieldOfView 66]]]
+
+ [Prop [[Name Desk] [Appearance [Some [Composed Desk [[Colors [Some [[Wood Desk]]]] [Stretch [Some [2.2 1 0.8]]]]]]] [Place [[At [Some [0.6 -1.6]]]]]]]
+ [Prop [[Name Monitors] [Appearance [Some [Composed Monitors []]]] [Place [[At [Some [0.6 -1.9]]] [Height [Some 0.87]]]]]]
+ [Prop [[Name GunLocker] [Appearance [Some [Slab [[Size [0.6 1.9 1]] [Surface Steel] [Tint Locker] [Solid True]]]]] [Place [[At [Some [2.15 0.6]]]]]]]
+ [Prop [[Name SecurityShotgun] [Place [[At [Some [1.6 0.6]]] [Height [Some 0.01]] [Facing 90]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item Shotgun] [Count 1]]]]]]]]]
+ [Prop [[Name SecurityShells] [Place [[At [Some [1.3 -1.6]]] [Height [Some 0.79]]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item ShotgunShells] [Count 6]]]]]]]]]
+ [Prop [[Name SecurityBullets] [Place [[At [Some [0 -1.5]]] [Height [Some 0.79]]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item HandgunBullets] [Count 15]]]]]]]]]
+ [Prop [[Name SecuritySpray] [Place [[At [Some [-2 1.8]]] [Height [Some 0.01]]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item FirstAidSpray] [Count 1]]]]]]]]]
+
+ ; the creatures - the patrol's dogs, sprawled as though dead till one comes near
+ [Enemy [[Name EastDogPack] [Creature Dog] [Place [[At [Some [1 1.8]]]]] [Lying True]]]]

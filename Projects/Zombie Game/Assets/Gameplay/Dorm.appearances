@@ -1,0 +1,130 @@
+; Appearances composed of parts for the dorm's rooms, each placed in a scene as [Composed Name settings].
+
+[
+ ; a bunk bed - its steel frame, two mattresses and the ladder at its foot; its origin beneath its middle
+ [Compose Bunk
+  [[Colors [[Frame [0.3 0.32 0.34 1]]
+            [Mattress [0.5 0.52 0.58 1]]]]
+   [Depth [1 1]]
+   [Pieces [[Part [[Surface Steel] [Shape PartBox] [At [-0.45 0.85 -0.95]] [Size [0.05 1.7 0.05]] [Color Frame]]]
+            [Part [[Surface Steel] [Shape PartBox] [At [0.45 0.85 -0.95]] [Size [0.05 1.7 0.05]] [Color Frame]]]
+            [Part [[Surface Steel] [Shape PartBox] [At [-0.45 0.85 0.95]] [Size [0.05 1.7 0.05]] [Color Frame]]]
+            [Part [[Surface Steel] [Shape PartBox] [At [0.45 0.85 0.95]] [Size [0.05 1.7 0.05]] [Color Frame]]]
+            [Part [[Surface Cloth] [Shape PartBox] [At [0 0.42 0]] [Size [0.9 0.14 1.9]] [Color Mattress]]]
+            [Part [[Surface Cloth] [Shape PartBox] [At [0 1.42 0]] [Size [0.9 0.14 1.9]] [Color Mattress]]]
+            [Part [[Surface Steel] [Shape PartBox] [At [0 0.33 0]] [Size [0.9 0.04 1.9]] [Color Frame]]]
+            [Part [[Surface Steel] [Shape PartBox] [At [0 1.33 0]] [Size [0.9 0.04 1.9]] [Color Frame]]]
+            [SolidBox [0 0] [0.47 0.98]]]]]]
+
+ ; a lounge couch, a meter and a half long unless stretched
+ [Compose Couch
+  [[Colors [[Upholstery [0.35 0.22 0.2 1]]]]
+   [Depth [0.45 0.45]]
+   [Pieces [[Part [[Surface Cloth] [Shape PartBox] [At [0 0.22 0.05]] [Size [1.5 0.44 0.8]] [Color Upholstery] [Stretches True]]]
+            [Part [[Surface Cloth] [Shape PartBox] [At [0 0.6 -0.33]] [Size [1.5 0.5 0.18]] [Color Upholstery] [Stretches True]]]
+            [Part [[Surface Cloth] [Shape PartBox] [At [-0.72 0.4 0.05]] [Size [0.16 0.36 0.8]] [Color Upholstery]]]
+            [Part [[Surface Cloth] [Shape PartBox] [At [0.72 0.4 0.05]] [Size [0.16 0.36 0.8]] [Color Upholstery]]]
+            [SolidBox [0 0] [0.8 0.45]]]]]]
+
+ ; a row of washing machines - set Count for more or fewer; its origin at the row's middle, their fronts facing out
+ [Compose Washers
+  [[Colors [[Body [0.86 0.86 0.84 1]]
+            [Glass [0.2 0.25 0.3 1]]]]
+   [Depth [0.32 0.32]]
+   [Pieces [[Copies [[Count [Some 3]] [Arrange [Some [Row 0.7]]]]
+              [[Part [[Surface Paint] [Shape PartBox] [At [0 0.45 0]] [Size [0.64 0.9 0.62]] [Color Body]]]
+               [Part [[Surface Glass] [Shape PartCylinder] [At [0 0.5 0.31]] [Size [0.36 0.03 0.36]] [Turn [0 90 0]] [Color Glass] [Flat True]]]
+               [SolidBox [0 0] [0.33 0.32]]]]]]]]
+
+ ; a row of shower stalls, their partitions and curtains - set Count for more or fewer; its origin at the row's middle
+ [Compose Stalls
+  [[Colors [[Partition [0.7 0.74 0.72 1]]
+            [Curtain [0.55 0.65 0.7 1]]]]
+   [Depth [0.5 0.5]]
+   [Pieces [[Copies [[Count [Some 3]] [Arrange [Some [Row 1.1]]]]
+              [[Part [[Surface Tile] [Shape PartBox] [At [-0.55 1 0]] [Size [0.06 2 1]] [Color Partition]]]
+               [Part [[Surface Cloth] [Shape PartBox] [At [0 1.05 0.5]] [Size [1 1.7 0.02]] [Color Curtain] [Flat True]]]
+               [SolidBox [-0.55 0] [0.04 0.5]]]]
+            [Part [[Surface Tile] [Shape PartBox] [At [1.65 1 0]] [Size [0.06 2 1]] [Color Partition]]]
+            [SolidBox [1.65 0] [0.04 0.5]]]]]]
+
+ ; a bank of tall steel lockers - set Count for more or fewer; its origin at the row's middle
+ [Compose Lockers
+  [[Colors [[Steel [0.3 0.36 0.45 1]]]]
+   [Depth [0.25 0.25]]
+   [Pieces [[Copies [[Count [Some 4]] [Arrange [Some [Row 0.42]]]]
+              [[Part [[Surface Steel] [Shape PartBox] [At [0 0.9 0]] [Size [0.4 1.8 0.5]] [Color Steel]]]
+               [SolidBox [0 0] [0.21 0.25]]]]]]]]
+
+ ; the gym's bleachers - three tiers stepping up and back; its origin at the front tier's middle
+ [Compose Bleachers
+  [[Colors [[Wood [0.55 0.42 0.28 1]]
+            [Frame [0.35 0.36 0.38 1]]]]
+   [Depth [1.6 0.3]]
+   [Pieces [[Part [[Surface Wood] [Shape PartBox] [At [0 0.25 0]] [Size [5 0.5 0.6]] [Color Wood] [Stretches True]]]
+            [Part [[Surface Wood] [Shape PartBox] [At [0 0.5 -0.6]] [Size [5 1 0.6]] [Color Wood] [Stretches True]]]
+            [Part [[Surface Wood] [Shape PartBox] [At [0 0.75 -1.2]] [Size [5 1.5 0.6]] [Color Wood] [Stretches True]]]
+            [Part [[Surface Steel] [Shape PartBox] [At [0 1.7 -1.48]] [Size [5 0.05 0.05]] [Color Frame] [Stretches True]]]
+            [SolidBox [0 -0.6] [2.5 0.9]]]]]]
+
+ ; a television on a low stand, its screen glowing blue with nothing on - its origin beneath its middle
+ [Compose Television
+  [[Colors [[Stand [0.2 0.18 0.16 1]]
+            [Casing [0.08 0.08 0.09 1]]
+            [Screen [0.3 0.45 0.8 1]]]]
+   [Depth [0.25 0.25]]
+   [Pieces [[Part [[Surface Wood] [Shape PartBox] [At [0 0.25 0]] [Size [1 0.5 0.45]] [Color Stand]]]
+            [Part [[Surface Plastic] [Shape PartBox] [At [0 0.82 0]] [Size [0.9 0.6 0.12]] [Color Casing]]]
+            [Part [[Surface Light] [Shape PartBox] [At [0 0.82 0.065]] [Size [0.8 0.5 0.01]] [Color Screen] [Flat True] [Glow [Some 1.4]]]]
+            [SolidBox [0 0] [0.5 0.23]]]]]]
+
+ ; a parking lot's lamp post and its sodium light - its origin at its foot
+ [Compose LampPost
+  [[Colors [[Post [0.25 0.26 0.27 1]]
+            [Lamp [1 0.75 0.4 1]]
+            [Lamplight [1 0.7 0.4 1]]]]
+   [Depth [0.15 0.15]]
+   [Pieces [[Part [[Surface Steel] [Shape PartCylinder] [At [0 1.4 0]] [Size [0.12 2.8 0.12]] [Color Post]]]
+            [Part [[Surface Light] [Shape PartBox] [At [0 2.82 0]] [Size [0.5 0.08 0.25]] [Color Lamp] [Glow [Some 3]]]]
+            [Shine [[At [0 2.6 0]] [Color Lamplight] [Brightness 2.2] [Reach 9] [Shadowed True]]]
+            [SolidCircle [0 0] 0.12]]]]]
+
+ ; a parked car, left where its owner ran from it - its origin beneath its middle, its nose facing out
+ [Compose Car
+  [[Colors [[Body [0.3 0.1 0.1 1]]
+            [Glass [0.08 0.1 0.12 1]]
+            [Tire [0.06 0.06 0.06 1]]]]
+   [Depth [2.2 2.2]]
+   [Pieces [[Part [[Surface Paint] [Shape PartBox] [At [0 0.55 0]] [Size [1.8 0.7 4.3]] [Color Body]]]
+            [Part [[Surface Glass] [Shape PartBox] [At [0 1.15 -0.2]] [Size [1.6 0.5 2.2]] [Color Glass]]]
+            [Part [[Surface Rubber] [Shape PartCylinder] [At [-0.9 0.32 1.35]] [Size [0.64 0.25 0.64]] [Turn [0 0 90]] [Color Tire]]]
+            [Part [[Surface Rubber] [Shape PartCylinder] [At [0.9 0.32 1.35]] [Size [0.64 0.25 0.64]] [Turn [0 0 90]] [Color Tire]]]
+            [Part [[Surface Rubber] [Shape PartCylinder] [At [-0.9 0.32 -1.35]] [Size [0.64 0.25 0.64]] [Turn [0 0 90]] [Color Tire]]]
+            [Part [[Surface Rubber] [Shape PartCylinder] [At [0.9 0.32 -1.35]] [Size [0.64 0.25 0.64]] [Turn [0 0 90]] [Color Tire]]]
+            [SolidBox [0 0] [0.95 2.2]]]]]]
+
+ ; the campus facilities van, white with the college's green stripe - its origin beneath its middle, its nose facing out
+ [Compose Van
+  [[Colors [[Body [0.86 0.86 0.84 1]]
+            [Stripe [0.15 0.4 0.25 1]]
+            [Glass [0.08 0.1 0.12 1]]
+            [Tire [0.06 0.06 0.06 1]]]]
+   [Depth [2.6 2.6]]
+   [Pieces [[Part [[Surface Paint] [Shape PartBox] [At [0 1.15 0]] [Size [2 2 5]] [Color Body]]]
+            [Part [[Surface Paint] [Shape PartBox] [At [0 0.9 0]] [Size [2.02 0.25 5.02]] [Color Stripe]]]
+            [Part [[Surface Glass] [Shape PartBox] [At [0 1.6 2.4]] [Size [1.8 0.6 0.22]] [Color Glass]]]
+            [Part [[Surface Rubber] [Shape PartCylinder] [At [-1 0.34 1.6]] [Size [0.68 0.25 0.68]] [Turn [0 0 90]] [Color Tire]]]
+            [Part [[Surface Rubber] [Shape PartCylinder] [At [1 0.34 1.6]] [Size [0.68 0.25 0.68]] [Turn [0 0 90]] [Color Tire]]]
+            [Part [[Surface Rubber] [Shape PartCylinder] [At [-1 0.34 -1.6]] [Size [0.68 0.25 0.68]] [Turn [0 0 90]] [Color Tire]]]
+            [Part [[Surface Rubber] [Shape PartCylinder] [At [1 0.34 -1.6]] [Size [0.68 0.25 0.68]] [Turn [0 0 90]] [Color Tire]]]
+            [SolidBox [0 0] [1.05 2.55]]]]]]
+
+ ; a basketball hoop on the wall - its backboard, rim and net; its origin at the wall
+ [Compose Hoop
+  [[Colors [[Board [0.85 0.86 0.84 1]]
+            [Rim [0.85 0.35 0.1 1]]
+            [Net [0.9 0.9 0.88 1]]]]
+   [Depth [0 0.6]] [Height 2.6]
+   [Pieces [[Part [[Surface Plastic] [Shape PartBox] [At [0 0.5 0.1]] [Size [1.8 1.05 0.04]] [Color Board] [Flat True]]]
+            [Part [[Surface Steel] [Shape PartCylinder] [At [0 0.2 0.45]] [Size [0.46 0.02 0.46]] [Color Rim]]]
+            [Part [[Surface Cloth] [Shape PartCone] [At [0 0 0.45]] [Size [0.4 0.4 0.4]] [Turn [0 180 0]] [Color Net] [Flat True]]]]]]]]

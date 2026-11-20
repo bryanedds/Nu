@@ -1,0 +1,31 @@
+; The lounge off the lobby - the safe room, where nothing comes, with a typewriter left from a creative writing class,
+; the item box, a couch and a television showing nothing.
+
+[[Palette [[Carpet [0.32 0.26 0.22 1]] [Paint [0.55 0.6 0.55 1]] [Dado [0.32 0.38 0.32 1]] [Wood [0.4 0.32 0.22 1]] [Typewriter [0.18 0.2 0.18 1]] [Box [0.3 0.34 0.4 1]] [Upholstery [0.4 0.24 0.18 1]]]]
+
+ [Area [[Type [Dorm Lounge]] [Name "Lounge"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-3.5 -0.5 -3] [7 4 6]]] [Songs [[[Song SafeRoomSong]]]]]]
+ [Layout [Chamber [[Size [6 5]] [Floor Carpet] [Walls Paint] [Dado Dado] [FloorSurface [Some Cloth]]]]]
+
+ ; the doors
+ [Prop [[Name LoungeDoor] [Appearance [Some [Composed WoodenWallDoor []]]] [Place [[Against [Some East]] [Along 0.5]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Dorm Lobby]] [Style WoodenDoor]]]]]]]]]
+
+ [Prop [[Name Lamp] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 2.2]]]]]] [Place [[At [Some [0 0]]] [Height [Some 2.7]]]]]]
+ [Camera [[Zone [[-3 -2.5] [6 5]]] [At [2.5 2.75 2]] [LookAt [-1 0.6 -1]] [FieldOfView 68]]]
+
+ ; the typewriter, where one saves for an ink ribbon
+ [Prop [[Name TypewriterDesk] [Appearance [Some [Composed Desk [[Colors [Some [[Wood Wood]]]] [Stretch [Some [1.4 1 0.6]]]]]]] [Place [[At [Some [-1 -2]]]]]]]
+ [Prop [[Name Typewriter] [Appearance [Some [Composed Typewriter [[Colors [Some [[Body Typewriter]]]]]]]] [Place [[At [Some [-1 -2.05]]] [Height [Some 0.78]]]]
+   [Interact [Some [[InteractionType Use] [Cue [If [Carries InkRibbon]
+                                         [Sequence [[Say ["A typewriter someone brought for a writing class. There's an ink ribbon in your pocket."]] Save]]
+                                         [Say ["A typewriter someone brought for a writing class. If only you had an ink ribbon."]]]]]]]]]
+ ; the item box - the same box, wherever one finds it
+ [Prop [[Name ItemBox] [Appearance [Some [Composed ItemBox [[Colors [Some [[Box Box]]]]]]]] [Place [[At [Some [-2.4 1]]]]]
+   [Interact [Some [[InteractionType Open] [Cue OpenBox]]]]]]
+ ; the couch and the television
+ [Prop [[Name Couch] [Appearance [Some [Composed Couch [[Colors [Some [[Upholstery Upholstery]]]]]]]] [Place [[At [Some [0.8 1.7]]] [Facing 180]]]]]
+ [Prop [[Name Television] [Appearance [Some [Composed Television []]]] [Place [[At [Some [0.8 -2.2]]]]]]]
+ [Prop [[Name LoungeRibbons] [Place [[At [Some [-0.5 -2]]] [Height [Some 0.79]]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item InkRibbon] [Count 2]]]]]]]]]
+ [Prop [[Name LoungeAntiseptic] [Place [[At [Some [-2.4 -1.8]]] [Height [Some 0.01]]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item Antiseptic] [Count 1]]]]]]]]]]

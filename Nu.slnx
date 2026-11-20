@@ -64,6 +64,12 @@
     <Project Path="Projects/Sand Box 3d/Sand Box 3d.fsproj">
       <BuildType Solution="Mixed|*" Project="Debug" />
     </Project>
+    <Project Path="Projects/Zombie Game/Zombie Game.fsproj">
+      <BuildType Solution="Mixed|*" Project="Debug" />
+    </Project>
+    <Project Path="Projects/Zombie Game Tests/Zombie Game Tests.fsproj">
+      <BuildType Solution="Mixed|*" Project="Debug" />
+    </Project>
     <Project Path="Projects/Terra Firma/Terra Firma.fsproj">
       <BuildType Solution="Mixed|*" Project="Debug" />
     </Project>

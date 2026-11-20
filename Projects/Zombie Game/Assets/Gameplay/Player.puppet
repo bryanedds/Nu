@@ -1,0 +1,30 @@
+; The player - a paramedic in a navy uniform with reflective bands on the sleeves and legs, a radio on the chest,
+; short dark hair, gloved hands and heavy boots.
+
+[[Body
+  [Biped [[Legs 0.84] [Torso 0.6] [Shoulders 0.21] [Hips 0.1] [Arms 0.62] [Limbs 0.1]
+          [Clothes [Some [[Arms [Uniform Cloth]] [Hands [Glove Rubber]] [Legs [Uniform Cloth]] [Feet [Boot Leather]]]]]]]]
+ [Scale 1]
+ [Palette
+  [[Uniform [0.1 0.13 0.22 1]]
+   [Band [0.75 0.78 0.55 1]]
+   [Radio [0.06 0.06 0.06 1]]
+   [Badge [0.83 0.66 0.24 1]]
+   [Belt [0.06 0.06 0.06 1]]
+   [Skin [0.72 0.52 0.4 1]]
+   [Hair [0.08 0.06 0.05 1]]
+   [Glove [0.15 0.2 0.45 1]]
+   [Boot [0.05 0.05 0.05 1]]]]
+ [Parts
+  [[[Bone Pelvis] [Shape PartBox] [At [0 0 0]] [Size [0.34 0.16 0.22]] [Color Uniform]]
+   [[Bone Pelvis] [Shape PartBox] [At [0 0.08 0]] [Size [0.36 0.06 0.24]] [Color Belt] [Surface Leather]] ; belt
+   [[Bone Pelvis] [Shape PartBox] [At [-0.2 -0.05 0]] [Size [0.06 0.18 0.12]] [Color Belt] [Surface Leather]] ; holster
+   [[Bone Torso] [Shape PartBox] [At [0 0.3 0]] [Size [0.38 0.58 0.22]] [Color Uniform]]
+   [[Bone Torso] [Shape PartBox] [At [0 0.2 0]] [Size [0.39 0.05 0.23]] [Color Band] [Surface Plastic] [Emission 0.15]] ; reflective band
+   [[Bone Torso] [Shape PartBox] [At [-0.1 0.42 0.12]] [Size [0.06 0.12 0.04]] [Color Radio] [Surface Plastic]] ; radio
+   [[Bone Torso] [Shape PartBall] [At [0.1 0.44 0.112]] [Size [0.08 0.08 0.02]] [Color Badge] [Surface Steel]] ; gold star of life badge, domed to catch the light
+   [[Bone Torso] [Shape PartBox] [At [0 0.6 0]] [Size [0.12 0.06 0.12]] [Color Skin] [Surface Skin]] ; neck
+   [[Bone Head] [Shape PartBall] [At [0 0.15 0]] [Size [0.25 0.3 0.27]] [Color Skin] [Surface Skin]]
+   [[Bone Head] [Shape PartBall] [At [0 0.21 -0.025]] [Size [0.27 0.24 0.28]] [Color Hair] [Surface Hair]] ; short hair
+   [[Bone ArmLeft] [Shape PartBox] [At [0 -0.2 0]] [Size [0.11 0.04 0.11]] [Color Band] [Surface Plastic] [Emission 0.15] [Mirror True]] ; sleeve bands
+   [[Bone LegLeft] [Shape PartBox] [At [0 -0.55 0]] [Size [0.12 0.04 0.12]] [Color Band] [Surface Plastic] [Emission 0.15] [Mirror True]]]]] ; leg bands

@@ -1,0 +1,34 @@
+; The ground floor's east corridor - the laundry, room 104, room 102 with something throwing itself at its door, and
+; the showers at its end. A sprinter from the track team waits at the far end.
+
+[[Palette [[Carpet [0.28 0.24 0.22 1]] [Paint [0.62 0.6 0.52 1]] [Dado [0.38 0.32 0.26 1]] [Cork [0.55 0.42 0.28 1]]]]
+
+ [Area [[Type [Dorm EastCorridor]] [Name "East Corridor"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-2.1 -0.5 -8.5] [4.2 4 17]]] [Songs [[[Song DormSong]]]]]]
+ [Layout [Chamber [[Size [3.2 16]] [Floor Carpet] [Walls Paint] [Dado Dado] [FloorSurface [Some Cloth]]]]]
+
+ ; the doors
+ [Prop [[Name EastCorridorDoors] [Appearance [Some [Composed DoubleWallDoor []]]] [Place [[Against [Some South]] [Along 0]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Dorm Lobby]] [Style DoubleDoor]]]]]]]]]
+ [Prop [[Name LaundryDoor] [Appearance [Some [Composed WoodenWallDoor []]]] [Place [[Against [Some West]] [Along -2]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Dorm Laundry]] [Style WoodenDoor]]]]]]]]]
+ [Prop [[Name Room104Door] [Appearance [Some [Composed WoodenWallDoor []]]] [Place [[Against [Some East]] [Along -2]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Dorm Room104]] [Style WoodenDoor]]]]]]]]]
+ [Prop [[Name ShowersDoor] [Appearance [Some [Composed WoodenWallDoor []]]] [Place [[Against [Some North]] [Along 0]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Dorm Showers]] [Style WoodenDoor]]]]]]]]]
+ ; room 102's door, held shut
+ [Prop [[Name Room102Door] [Appearance [Some [Composed WoodenWallDoor []]]] [Place [[Against [Some East]] [Along 4]]] [Spot [0 0.05]]
+   [Interact [Some [[InteractionType Examine] [Cue [Say ["Room 102. Something on the other side throws itself at the door, over and over." "Someone's wedged a chair under the handle. Leave it."]]]]]]]]
+
+ [Prop [[Name LampNorth] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.5]]]]]] [Place [[At [Some [0 -4.5]]] [Height [Some 2.7]]]]]]
+ [Prop [[Name LampSouth] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.8]]]]]] [Place [[At [Some [0 4.5]]] [Height [Some 2.7]]]]]]
+ [Camera [[Zone [[-1.6 -8] [3.2 8]]] [At [1.2 2.75 4]] [LookAt [0 0.4 -6]] [FieldOfView 52]]]
+ [Camera [[Zone [[-1.6 0] [3.2 8]]] [At [-1.2 2.75 -3.5]] [LookAt [0 0.4 6]] [FieldOfView 52]]]
+
+ [Prop [[Name Corkboard] [Appearance [Some [Slab [[Size [0.03 0.8 1.4]] [Surface Wood] [Tint Cork]]]]] [Place [[At [Some [-1.57 2]]] [Height [Some 1.1]]]]]]
+ [Prop [[Name CorridorBullets] [Place [[At [Some [1.2 6.6]]] [Height [Some 0.01]]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item HandgunBullets] [Count 15]]]]]]]]]
+
+ ; the creatures
+ [Enemy [[Name CorridorStudent] [Creature Student] [Place [[At [Some [0 1.6]]] [Facing 180]]]]]
+ [Enemy [[Name CorridorSprinter] [Creature Sprinter] [Place [[At [Some [-1.2 1.2]]]]] [Lying True]]]
+ [Enemy [[Name CorridorStudentLying] [Creature Student] [Place [[At [Some [1.2 1.2]]] [Facing 90]]] [Lying True]]]]

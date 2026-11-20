@@ -1,0 +1,33 @@
+; The boiler room - the plant's boiler, its firebox glowing, the defrost valve for cold storage on the wall, and the
+; steel door to the control room behind its card reader.
+
+[[Palette [[Concrete [0.28 0.27 0.26 1]] [Paint [0.4 0.38 0.34 1]] [Dado [0.3 0.24 0.18 1]] [Reader [0.15 0.15 0.16 1]]]]
+
+ [Area [[Type [Plant Boiler]] [Name "Boiler Room"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-4 -0.5 -3.5] [8 4 7]]] [Songs [[[Song PlantSong]]]]]]
+ [Layout [Chamber [[Size [7 6]] [Floor Concrete] [Walls Paint] [Dado Dado] [FloorSurface [Some Concrete]] [WallSurface [Some Concrete]]]]]
+
+ ; the doors
+ [Prop [[Name GrinderBoilerDoor] [Appearance [Some [Composed SteelWallDoor []]]] [Place [[Against [Some South]] [Along -1.5]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant Grinder]] [Style SteelDoor]]]]]]]]]
+ [Prop [[Name BoilerControlDoor] [Appearance [Some [Composed SteelWallDoor []]]] [Place [[Against [Some East]] [Along 1.2]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant ControlRoom]] [Style SteelDoor] [Key [Some Keycard]] [Locked [Some "A steel door with a card reader beside it, its lamp red. CONTROL ROOM - SUPERVISORS ONLY."]]]]]]]]]]
+ [Prop [[Name CardReader] [Appearance [Some [Slab [[Size [0.02 0.16 0.1]] [Surface Plastic] [Tint Reader]]]]] [Place [[At [Some [3.48 0.2]]] [Height [Some 1.2]]]]]]
+
+ [Prop [[Name Lamp] [Appearance [Some [Composed CageLamp []]]] [Place [[Against [Some South]] [Along 1.5]]]]]
+ [Camera [[Zone [[-3.5 -3] [7 6]]] [At [2.9 2.75 2.4]] [LookAt [-1 0.3 -1]] [FieldOfView 72]]]
+
+ ; the boiler, and the defrost valve
+ [Prop [[Name Boiler] [Appearance [Some [Composed Boiler []]]] [Place [[At [Some [-0.4 -1.95]]]]]]]
+ [Prop [[Name BoilerValve] [Appearance [Some [Composed Valve []]]] [Place [[Against [Some West]] [Along 1]]] [Spot [0 0.15]]
+   [Interact [Some [[InteractionType Use] [Cue [If [Flagged [Examined BoilerValve]]
+                                         [Say ["The defrost valve's open. The pipes knock and hiss."]]
+                                         [Sequence [[Say ["A big valve wheel painted red, its tag reading COLD STORAGE DEFROST."]]
+                                                    [SetFlag [Examined BoilerValve]] [Sound SteamSound]
+                                                    [Say ["You heave it round. Steam hammers off through the pipes toward the back of the plant." "Somewhere back there, ice cracks."]]]]]]]]]]]
+ [Prop [[Name BoilerAntiseptic] [Place [[At [Some [-2.9 2.4]]] [Height [Some 0.01]]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item Antiseptic] [Count 1]]]]]]]]]
+ [Prop [[Name BoilerShells] [Place [[At [Some [2.8 2.4]]] [Height [Some 0.01]]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item ShotgunShells] [Count 4]]]]]]]]]
+
+ ; the creatures
+ [Enemy [[Name BoilerButcher] [Creature Butcher] [Place [[At [Some [1.6 -2.4]]] [Facing 0]]]]]]

@@ -1,0 +1,38 @@
+; The ambulance bay - Unit 9 waiting with its doors open, and the surgeon between it and the player. The keys
+; fall from the surgeon once it's dead, and the ambulance drives on to the dorm.
+
+[[Palette [[Floor [0.28 0.28 0.27 1]] [Walls [0.38 0.38 0.37 1]] [Dado [0.3 0.3 0.29 1]] [Body [0.85 0.85 0.82 1]] [Stripe [0.7 0.12 0.1 1]] [Siren [1 0.2 0.15 1]]]]
+
+ [Area [[Type [Hospital AmbulanceBay]] [Name "Ambulance Bay"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-6 -0.5 -5] [12 4 10]]] [Songs [[[Song BossSong] [When [Some [Not [Flagged [Killed Surgeon]]]]]] [[Song HospitalPoweredSong] [When [Some [Flagged PowerRestored]]]] [[Song HospitalSong]]]]]]
+ [Layout [Chamber [[Size [11 9]] [Floor Floor] [Walls Walls] [Dado Dado] [FloorSurface [Some Concrete]] [WallSurface [Some Concrete]]]]]
+
+ ; the doors
+ [Prop [[Name BayShutter] [Appearance [Some [Composed ShutterWallDoor []]]] [Place [[Against [Some North]] [Along 0]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Hospital EastHall]] [Style Shutter]]]]]]]]]
+
+ [Prop [[Name LampWest] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 2.2]]]]]] [Place [[At [Some [-3 -1]]] [Height [Some 2.7]]]]]]
+ [Prop [[Name LampEast] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.8]]]]]] [Place [[At [Some [3 2]]] [Height [Some 2.7]]]]]]
+ [Camera [[Zone [[-5.5 -4.5] [11 9]]] [At [0 2.75 -4.2]] [LookAt [0 0.3 1.6]] [FieldOfView 76]]]
+
+ ; the ambulance, Unit 9, waiting with its doors open
+ [Prop [[Name Ambulance] [Appearance [Some [Composed Ambulance [[Colors [Some [[Body Body] [Stripe Stripe]]]]]]]] [Place [[At [Some [2.8 1.6]]]]]
+   [Interact [Some [[InteractionType Drive] [Cue [If [Carries AmbulanceKeys]
+                                           [Sequence [[SetFlag [Examined Ambulance]] [Take AmbulanceKeys] [Sound EngineSound]
+                                                      [Say ["The key turns. The engine catches first time." "You don't look back." "You drive until the needle's past empty. It dies at the edge of a college campus, outside a dorm with its lights still on."]]
+                                                      [Travel [[To [Dorm Lot]] [Arrival FromHospital] [Caption "Waverly State College, Hollis Hall - 4:41 a.m."]]]]]
+                                           [Say ["Unit 9. The keys aren't in it."]]]]]]]]]
+ ; its lights, flashing up once the surgeon's dead
+ [While [Not [Flagged [Killed Surgeon]]]
+  [[Prop [[Name SirenDim] [Appearance [Some [Composed Siren [[Colors [Some [[Siren Siren]]]]]]]] [Place [[At [Some [2.8 -0.7]]] [Height [Some 2.2]]]]]]]]
+ [While [Flagged [Killed Surgeon]]
+  [[Prop [[Name SirenLit] [Appearance [Some [Composed SirenLit [[Colors [Some [[Siren Siren]]]]]]]] [Place [[At [Some [2.8 -0.7]]] [Height [Some 2.2]]]]]]]]
+ [Prop [[Name BayShells] [Place [[At [Some [-4.6 3.6]]] [Height [Some 0.01]]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item ShotgunShells] [Count 7]]]]]]]]]
+ [Prop [[Name BayAntiseptic] [Place [[At [Some [-4.8 -3.6]]] [Height [Some 0.01]]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item Antiseptic] [Count 1]]]]]]]]]
+ [While [Flagged [Killed Surgeon]]
+  [[Prop [[Name SurgeonKeys] [Place [[At [Some [-1 0.6]]] [Height [Some 0.01]]]]
+     [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item AmbulanceKeys] [Count 1]]]]]]]]]]]
+
+ ; the creatures
+ [Enemy [[Name Surgeon] [Creature Surgeon] [Place [[At [Some [-1 0.6]]] [Facing 180]]]]]]

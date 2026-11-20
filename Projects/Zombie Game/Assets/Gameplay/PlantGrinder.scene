@@ -1,0 +1,30 @@
+; The grinding room - two grinders, their hoppers still clotted, a conveyor feeding them, and doors on to the boiler room
+; and the smokehouse.
+
+[[Palette [[Tile [0.5 0.5 0.48 1]] [Paint [0.58 0.6 0.58 1]] [Dado [0.42 0.1 0.08 1]]]]
+
+ [Area [[Type [Plant Grinder]] [Name "Grinding Room"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-5.5 -0.5 -4.5] [11 4 9]]] [Songs [[[Song PlantSong]]]]]]
+ [Layout [Chamber [[Size [10 8]] [Floor Tile] [Walls Paint] [Dado Dado] [FloorSurface [Some Tile]] [WallSurface [Some Tile]]]]]
+
+ ; the doors
+ [Prop [[Name KillGrinderDoors] [Appearance [Some [Composed DoubleWallDoor []]]] [Place [[Against [Some West]] [Along 0]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant KillFloor]] [Style DoubleDoor]]]]]]]]]
+ [Prop [[Name GrinderBoilerDoor] [Appearance [Some [Composed SteelWallDoor []]]] [Place [[Against [Some North]] [Along 1.5]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant Boiler]] [Style SteelDoor]]]]]]]]]
+ [Prop [[Name GrinderSmokeDoor] [Appearance [Some [Composed WoodenWallDoor []]]] [Place [[Against [Some East]] [Along 1.2]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant Smokehouse]] [Style WoodenDoor]]]]]]]]]
+
+ [Prop [[Name Lamp] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.8]]]]]] [Place [[At [Some [0 0]]] [Height [Some 2.7]]]]]]
+ [Camera [[Zone [[-5 -4] [10 8]]] [At [-4.4 2.75 3.4]] [LookAt [1 0.3 -1]] [FieldOfView 76]]]
+
+ ; the grinders and the line feeding them
+ [Prop [[Name GrinderWest] [Appearance [Some [Composed Grinder []]]] [Place [[At [Some [-1.4 -1.9]]]]]
+   [Interact [Some [[InteractionType Examine] [Cue [Say ["The grinder's hopper is packed to the brim, and none of it is beef."]]]]]]]]
+ [Prop [[Name GrinderEast] [Appearance [Some [Composed Grinder []]]] [Place [[At [Some [-0.2 1.9]]] [Facing 180]]]]]
+ [Prop [[Name Conveyor] [Appearance [Some [Composed Conveyor [[Stretch [Some [2.4 1 1]]]]]]] [Place [[At [Some [1.9 2.3]]]]]]]
+ [Prop [[Name GrinderRounds] [Place [[At [Some [4.2 -3.2]]] [Height [Some 0.01]]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item MagnumRounds] [Count 6]]]]]]]]]
+
+ ; the creatures
+ [Enemy [[Name GrinderButcher] [Creature Butcher] [Place [[At [Some [0.3 3]]] [Facing 270]]]]]
+ [Enemy [[Name GrinderWorker] [Creature Worker] [Place [[At [Some [0.6 0.5]]] [Facing 270]]]]]]

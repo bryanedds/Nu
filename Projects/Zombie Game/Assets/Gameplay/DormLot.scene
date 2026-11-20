@@ -1,0 +1,34 @@
+; The parking lot outside Hollis Hall - where the ambulance gave out on empty, a car abandoned with its door open, the
+; campus facilities van, and the dorm's front doors, its lights still on.
+
+[[Palette [[Asphalt [0.16 0.16 0.17 1]] [Brick [0.36 0.2 0.16 1]] [Dado [0.26 0.15 0.12 1]] [Body [0.85 0.85 0.82 1]] [Stripe [0.7 0.12 0.1 1]]]]
+
+ [Area [[Type [Dorm Lot]] [Name "Parking Lot"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-6.5 -0.5 -5.5] [13 4 11]]] [Songs [[[Song DormSong]]]]]]
+ [Layout [Chamber [[Size [12 10]] [Floor Asphalt] [Walls Brick] [Dado Dado] [FloorSurface [Some Concrete]] [WallSurface [Some Concrete]] [Outdoors True]]]]
+
+ ; the doors
+ [Prop [[Name LobbyDoors] [Appearance [Some [Composed DoubleWallDoor []]]] [Place [[Against [Some North]] [Along 0]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Dorm Lobby]] [Style DoubleDoor]]]]]]]]]
+
+ [Prop [[Name LampWest] [Appearance [Some [Composed LampPost []]]] [Place [[At [Some [-5 -4]]]]]]]
+ [Prop [[Name LampEast] [Appearance [Some [Composed LampPost []]]] [Place [[At [Some [5 4]]]]]]]
+ [Camera [[Zone [[-6 -5] [12 10]]] [At [0 3 4.6]] [LookAt [0 0.3 -2]] [FieldOfView 78]]]
+ [Arrival [[Name FromHospital] [At [-1.2 3.6]] [Facing 180]]]
+
+ ; the ambulance, out of fuel where it rolled to a stop
+ [Prop [[Name Ambulance] [Appearance [Some [Composed Ambulance [[Colors [Some [[Body Body] [Stripe Stripe]]]]]]]] [Place [[At [Some [-3.5 1]]]]]
+   [Interact [Some [[InteractionType Examine] [Cue [Say ["Unit 9. The needle's below empty - it won't go another yard."]]]]]]]]
+ ; the facilities van, and the car left with its door open
+ [Prop [[Name Van] [Appearance [Some [Composed Van []]]] [Place [[At [Some [3.5 1.5]]]]]
+   [Interact [Some [[InteractionType Drive] [Cue [If [Carries VanKeys]
+                                           [Sequence [[SetFlag [Examined Van]] [Take VanKeys] [Sound EngineSound]
+                                                      [Say ["The van turns over on the second try. Its tank is full." "On the radio, through static: the Guard's pulling survivors out by rail, from the siding behind the Brandt packing plant." "You head for the tracks."]]
+                                                      [Travel [[To [Plant Yard]] [Arrival FromDorm] [Caption "Brandt Packing Co., the rail yard - 5:38 a.m."]]]]]
+                                           [Say ["The campus facilities van. Locked, and no keys in it."]]]]]]]]]
+ [Prop [[Name Car] [Appearance [Some [Composed Car []]]] [Place [[At [Some [3.5 -3]]] [Facing 90]]]]]
+ [Prop [[Name LotBullets] [Place [[At [Some [5.2 -0.6]]] [Height [Some 0.01]]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item HandgunBullets] [Count 15]]]]]]]]]
+
+ ; the creatures
+ [Enemy [[Name LotStudent] [Creature Student] [Place [[At [Some [1.8 -0.9]]] [Facing 200]]]]]
+ [Enemy [[Name LotStudentLying] [Creature Student] [Place [[At [Some [-4.6 -3]]] [Facing 60]]] [Lying True]]]]

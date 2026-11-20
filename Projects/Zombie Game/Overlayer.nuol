@@ -1,0 +1,6 @@
+﻿[[ZombieTextOverlay
+  [TextOverlay]
+  [TextDispatcher]
+  [[BackdropImageOpt None]
+   [FontSizing [Some 8]]
+   [Justification [Justified JustifyCenter JustifyMiddle]]]]]

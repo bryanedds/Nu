@@ -1,0 +1,58 @@
+; An orderly risen - a big man in green scrubs straining at the seams, a torn sleeve showing a bitten arm, his
+; head shaved, his jaw hanging.
+
+[[Body
+  [Biped [[Legs 0.86] [Torso 0.66] [Shoulders 0.25] [Hips 0.1] [Arms 0.68] [Limbs 0.1]
+          [Clothes [Some [[Arms [Flesh Skin]] [Hands [Flesh Skin]] [Legs [Scrubs Cloth]] [Feet [Shoe Rubber]]]]]]]]
+ [Scale 1.18]
+ [Palette
+  [[Flesh [0.46 0.48 0.42 1]]
+   [Rot [0.26 0.28 0.18 1]]
+   [Scrubs [0.22 0.4 0.34 1]]
+   [Blood [0.3 0.03 0.02 1]]
+   [Shoe [0.12 0.12 0.12 1]]
+   [Eye [0.75 0.78 0.7 1]]]]
+ [Parts
+  [[[Bone Pelvis] [Shape PartBox] [At [0 0 0]] [Size [0.42 0.18 0.26]] [Color Scrubs]]
+   [[Bone Torso] [Shape PartBox] [At [0 0.33 0]] [Size [0.48 0.64 0.28]] [Color Scrubs]] ; scrubs straining at the seams
+   [[Bone Torso] [Shape PartBox] [At [0.1 0.2 0.142]] [Size [0.2 0.2 0.01]] [Color Blood] [Surface Blood]]
+   [[Bone Torso] [Shape PartBox] [At [0 0.67 0]] [Size [0.15 0.06 0.15]] [Color Flesh] [Surface Skin]] ; neck
+   [[Bone Head] [Shape PartBall] [At [0 0.14 0.01]] [Size [0.27 0.3 0.29]] [Color Flesh] [Surface Skin]] ; a shaved head
+   [[Bone Head] [Shape PartBox] [At [0 0.02 0.12]] [Size [0.14 0.06 0.06]] [Turn [[Swing 15]]] [Color Rot] [Surface Rot]] ; jaw hanging
+   [[Bone Head] [Shape PartBall] [At [0.058 0.17 0.125]] [Size [0.04 0.03 0.03]] [Color Eye] [Surface Light] [Emission 0.25] [Mirror True]] ; milky eyes
+   [[Bone ArmRight] [Shape PartBox] [At [0 -0.42 0]] [Size [0.12 0.1 0.12]] [Color Blood] [Surface Blood]]]] ; a bitten arm
+ [Poses
+  [; standing hunched, head hung forward, its arms reaching out before it
+   [Pose Stance [[Turns [[Pelvis [[Lean 4.5837]]]
+                        [Torso [[Lean 14.3239] [Twist 4.5837]]]
+                        [Head [[Lean 11.4592] [Twist -8.5944]]]
+                        [ArmLeft [[Spread -4.5837] [Swing 74.4845]]]
+                        [ArmRight [[Spread 2.8648] [Swing 68.7549]]]
+                        [HandLeft [[Swing -14.3239]]]
+                        [HandRight [[Swing -20.0535]]]
+                        [LegLeft [[Spread 4.5837] [Swing 8.5944]]]
+                        [LegRight [[Spread -4.5837] [Swing -5.7296]]]]]]]
+
+   ; as standing ready, slack
+   [Pose Relaxed [[Turns [[Pelvis [[Lean 4.5837]]]
+                         [Torso [[Lean 14.3239] [Twist 4.5837]]]
+                         [Head [[Lean 11.4592] [Twist -8.5944]]]
+                         [ArmLeft [[Spread -4.5837] [Swing 74.4845]]]
+                         [ArmRight [[Spread 2.8648] [Swing 68.7549]]]
+                         [HandLeft [[Swing -14.3239]]]
+                         [HandRight [[Swing -20.0535]]]
+                         [LegLeft [[Spread 4.5837] [Swing 8.5944]]]
+                         [LegRight [[Spread -4.5837] [Swing -5.7296]]]]]]]
+
+   ; a lurching shamble - short, dragging steps, the body rolling side to side over them, the arms held out ahead and
+   ; bobbing loosely
+   [Cycling Stride [[Bob [Some [[Base -0.04] [Amplitude 0.03] [Wave Rebound] [Offset 90]]]]
+                    [Turns [[Pelvis [[Twisting [[Amplitude 8.5944]]] [Leaning [[Base 4.5837]]]]]
+                            [Torso [[Twisting [[Amplitude -4.5837]]] [Leaning [[Base 16.0428] [Amplitude 2.2918]]]]]
+                            [Head [[Twisting [[Amplitude 5.7296]]] [Leaning [[Base 11.4592] [Amplitude -4.5837]]]]]
+                            [LegLeft [[Spreading [[Base 4.0107]]] [Swinging [[Amplitude 17.1887]]]]]
+                            [LegRight [[Spreading [[Base -4.0107]]] [Swinging [[Amplitude -14.3239]]]]]
+                            [ArmLeft [[Spreading [[Base -4.5837]]] [Swinging [[Base 72.1927] [Amplitude 6.8755]]]]]
+                            [ArmRight [[Spreading [[Base 2.8648]]] [Swinging [[Base 66.4632] [Amplitude -6.8755]]]]]
+                            [HandLeft [[Swinging [[Base -14.3239]]]]]
+                            [HandRight [[Swinging [[Base -20.0535]]]]]]]]]]]]

@@ -1,0 +1,25 @@
+; A sprinter from the track team risen - lean and long-limbed in a team singlet and shorts, its spikes still on, the
+; skin gone grey and tight over its muscles, its jaw working. It runs as it did in life, crouches and pounces.
+
+[[Body
+  [Biped [[Legs 0.9] [Torso 0.56] [Shoulders 0.2] [Hips 0.1] [Arms 0.7] [Limbs 0.09]
+          [Clothes [Some [[Arms [Flesh Skin]] [Hands [Flesh Skin]] [Legs [Flesh Skin]] [Feet [Spikes Rubber]]]]]]]]
+ [Scale 1.02]
+ [Palette
+  [[Flesh [0.5 0.5 0.46 1]]
+   [Rot [0.3 0.28 0.24 1]]
+   [Singlet [0.15 0.4 0.25 1]]
+   [Trim [0.9 0.85 0.3 1]]
+   [Shorts [0.1 0.1 0.12 1]]
+   [Spikes [0.9 0.4 0.15 1]]
+   [Blood [0.3 0.03 0.02 1]]
+   [Eye [0.9 0.85 0.6 1]]]]
+ [Parts
+  [[[Bone Pelvis] [Shape PartBox] [At [0 -0.04 0]] [Size [0.36 0.24 0.24]] [Color Shorts] [Surface Cloth]] ; running shorts
+   [[Bone Torso] [Shape PartBox] [At [0 0.28 0]] [Size [0.36 0.56 0.22]] [Color Singlet] [Surface Cloth]] ; the team singlet
+   [[Bone Torso] [Shape PartBox] [At [0 0.3 0.112]] [Size [0.16 0.12 0.01]] [Color Trim] [Surface Cloth]] ; its race number
+   [[Bone Torso] [Shape PartBox] [At [-0.06 0.15 0.112]] [Size [0.12 0.18 0.01]] [Color Blood] [Surface Blood]]
+   [[Bone Torso] [Shape PartBox] [At [0 0.6 0]] [Size [0.11 0.06 0.11]] [Color Flesh] [Surface Skin]] ; neck
+   [[Bone Head] [Shape PartBall] [At [0 0.13 0.01]] [Size [0.23 0.27 0.25]] [Color Flesh] [Surface Skin]] ; a shaved head
+   [[Bone Head] [Shape PartBox] [At [0 0.03 0.12]] [Size [0.12 0.06 0.05]] [Turn [[Swing 20]]] [Color Rot] [Surface Rot]] ; its jaw working
+   [[Bone Head] [Shape PartBall] [At [0.052 0.15 0.115]] [Size [0.04 0.03 0.03]] [Color Eye] [Surface Light] [Emission 0.6] [Mirror True]]]]] ; yellowed, bright eyes

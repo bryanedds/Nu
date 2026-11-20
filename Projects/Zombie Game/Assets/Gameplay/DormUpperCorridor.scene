@@ -1,0 +1,37 @@
+; The second floor's corridor - the RA's office behind its keypad, room 212, room 210 quiet behind its door, and the
+; stairwell door at its end.
+
+[[Palette [[Carpet [0.26 0.26 0.3 1]] [Paint [0.6 0.6 0.56 1]] [Dado [0.36 0.36 0.4 1]] [Keypad [0.15 0.15 0.16 1]]]]
+
+ [Area [[Type [Dorm UpperCorridor]] [Name "Upper Corridor"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-2.1 -0.5 -8.5] [4.2 4 17]]] [Songs [[[Song DormSong]]]]]]
+ [Layout [Chamber [[Size [3.2 16]] [Floor Carpet] [Walls Paint] [Dado Dado] [FloorSurface [Some Cloth]]]]]
+
+ ; the doors
+ [Prop [[Name UpperDoor] [Appearance [Some [Composed SteelWallDoor []]]] [Place [[Against [Some South]] [Along 0.6]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Dorm Stairwell]] [Style SteelDoor]]]]]]]]]
+ [Prop [[Name RaOfficeDoor] [Appearance [Some [Composed WoodenWallDoor []]]] [Place [[Against [Some West]] [Along -4]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Dorm RaOffice]] [Style WoodenDoor] [Opens [Some [Flagged [Examined RaKeypad]]]] [Locked [Some "The RA's office. The keypad beside it holds it shut."]]]]]]]]]]
+ [Prop [[Name Room212Door] [Appearance [Some [Composed WoodenWallDoor []]]] [Place [[Against [Some East]] [Along 2]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Dorm Room212]] [Style WoodenDoor]]]]]]]]]
+ ; room 210's door, quiet
+ [Prop [[Name Room210Door] [Appearance [Some [Composed WoodenWallDoor []]]] [Place [[Against [Some East]] [Along -4.5]]] [Spot [0 0.05]]
+   [Interact [Some [[InteractionType Examine] [Cue [Say ["Room 210. Locked, and quiet. A dry-erase board on the door: 'GONE HOME - BACK SUNDAY.'"]]]]]]]]
+ ; the RA's keypad - its code the year the hall opened
+ [Prop [[Name RaKeypad] [Appearance [Some [Slab [[Size [0.02 0.18 0.12]] [Surface Plastic] [Tint Keypad]]]]] [Place [[At [Some [-1.58 -5.4]]] [Height [Some 1.15]]]]
+   [Interact [Some [[InteractionType Use] [Cue [If [Flagged [Examined RaKeypad]]
+                                         [Say ["The keypad's light is green."]]
+                                         [Sequence [[Say ["A keypad beside the RA's door, its light red."]]
+                                                    [Keypad [[Code "1962"] [Then [Sequence [[SetFlag [Examined RaKeypad]] [Sound LockReleaseSound] [Say ["The keypad chirps and the RA's door unlatches."]]]]]]]]]]]]]]]]
+
+ [Prop [[Name LampNorth] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.4]]]]]] [Place [[At [Some [0 -4.5]]] [Height [Some 2.7]]]]]]
+ [Prop [[Name LampSouth] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.6]]]]]] [Place [[At [Some [0 4.5]]] [Height [Some 2.7]]]]]]
+ [Camera [[Zone [[-1.6 -8] [3.2 8]]] [At [1.2 2.75 4]] [LookAt [0 0.4 -6]] [FieldOfView 52]]]
+ [Camera [[Zone [[-1.6 0] [3.2 8]]] [At [-1.2 2.75 -3.5]] [LookAt [0 0.4 6]] [FieldOfView 52]]]
+
+ [Prop [[Name UpperBullets] [Place [[At [Some [-1.2 6]]] [Height [Some 0.01]]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item HandgunBullets] [Count 12]]]]]]]]]
+
+ ; the creatures
+ [Enemy [[Name UpperSprinter] [Creature Sprinter] [Place [[At [Some [0 -7.1]]]]] [Lying True]]]
+ [Enemy [[Name UpperStudent] [Creature Student] [Place [[At [Some [1.2 -7.2]]] [Facing 180]]]]]
+ [Enemy [[Name UpperStudentLying] [Creature Student] [Place [[At [Some [-0.6 -1]]] [Facing 90]]] [Lying True]]]]

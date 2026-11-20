@@ -1,0 +1,23 @@
+#version 450 core
+
+struct Eye3dStruct
+{
+    vec3 center;
+    mat4 view;
+    mat4 viewInverse;
+    mat4 projection;
+    mat4 projectionInverse;
+    mat4 viewProjection;
+};
+
+layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
+
+layout(location = 0) in vec3 position;
+layout(location = 6) in mat4 model;
+
+void main()
+{
+	vec4 positionOut = model * vec4(position, 1.0);
+	gl_Position = eye.viewProjection * positionOut;
+	gl_Position.z = max(gl_Position.z, 0.0); // pancake casters nearer the light than the near plane so they still cast (orthographic, so w = 1)
+}

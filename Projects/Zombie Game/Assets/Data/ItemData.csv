@@ -1,0 +1,26 @@
+Item,ItemName,Description,Stack,ItemKind
+Knife,Knife,"A trauma shears and scalpel kit, the scalpel the sharpest thing in it. Better than nothing.",1,[Weapon [None 6 0.9 0.6 False 1 KnifeSwingSound]]
+Handgun,Handgun,A nine millimetre pistol from the security office. It fires handgun bullets.,1,[Weapon [[Some HandgunBullets] 10 100 0.45 False 1 HandgunShotSound]]
+Shotgun,Shotgun,The security office's pump shotgun. It throws a creature off its feet.,1,[Weapon [[Some ShotgunShells] 9 100 1.1 True 5 ShotgunShotSound]]
+HandgunBullets,Handgun Bullets,Rounds for the handgun.,60,Ammunition
+ShotgunShells,Shotgun Shells,Shells for the shotgun.,30,Ammunition
+Magnum,Magnum,A .44 revolver the RA confiscated and never handed in. It throws anything off its feet.,1,[Weapon [[Some MagnumRounds] 40 100 0.95 True 1 MagnumShotSound]]
+MagnumRounds,Magnum Rounds,Heavy rounds for the magnum.,18,Ammunition
+GrenadeLauncher,Grenade Launcher,"The Guardsman's grenade launcher, a single-shot break action. It fells anything.",1,[Weapon [[Some Grenades] 90 100 1.5 True 1 GrenadeShotSound]]
+Grenades,Grenades,40mm grenades for the launcher.,8,Ammunition
+Antiseptic,Antiseptic,A tube of antiseptic gel and a dressing. It eases wounds a little.,1,[Remedy 25]
+Coagulant,Coagulant,A vial of clotting agent. Useless alone - but mixed with antiseptic its power grows.,1,Ingredient
+DoubleAntiseptic,Antiseptic (x2),Two dressings with antiseptic. They ease wounds a good deal.,1,[Remedy 60]
+TraumaMix,Trauma Dressing,Antiseptic and coagulant on a dressing. It heals wounds entirely.,1,[Remedy 100]
+FirstAidSpray,First Aid Spray,A spray that heals wounds entirely.,1,[Remedy 100]
+InkRibbon,Ink Ribbon,A typewriter ribbon. One ribbon saves once.,10,Ribbon
+PharmacyKey,Pharmacy Key,A key on a green tag marked PHARMACY.,1,KeyItem
+MorgueKey,Morgue Key,A heavy key on a black tag marked B-MORGUE.,1,KeyItem
+Fuse,Fuse,A big ceramic cartridge fuse for the emergency generator.,1,KeyItem
+AmbulanceKeys,Ambulance Keys,The keys to Unit 9. The surgeon's hand was still closed on them.,1,KeyItem
+StudentId,Student ID,A Waverly State ID card on a lanyard - D. Okafor. The dorm's doors still read it.,1,KeyItem
+MasterKey,Master Key,The RA's master key on a red Hollis Hall fob.,1,KeyItem
+VanKeys,Van Keys,Keys to the campus facilities van. They were clipped to the linebacker's belt.,1,KeyItem
+BoltCutters,Bolt Cutters,Long-handled bolt cutters from Ray's locker. They'd bite through a padlock's chain.,1,KeyItem
+Keycard,Keycard,"The foreman's keycard - G. BRANDT, LINE SUPERVISOR. It's still furred with frost.",1,KeyItem
+ElevatorKey,Elevator Key,The freight elevator's key on a red plastic tag. It came out of the sow.,1,KeyItem

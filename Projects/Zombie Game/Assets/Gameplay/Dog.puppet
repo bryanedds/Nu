@@ -1,0 +1,38 @@
+; A dog - the security patrol's shepherd, its black and tan coat torn open in places to the ribs, a collar and
+; tag still on it, its jaws hung open on bared teeth, its eyes a dull glowing red.
+
+[[Body
+  [Quadruped [[Legs 0.42] [Body 0.56] [Shoulders 0.1] [Hips 0.09] [HeadRise 0.22] [HeadForward 0.66]
+             [Tail [Some [[Segments 3] [Root [0 0.04 -0.08]] [Step [0 -0.05 -0.12]]]]]]]]
+ [Scale 1]
+ [Palette
+  [[Hide [0.32 0.22 0.12 1]]
+   [Dark [0.06 0.05 0.04 1]]
+   [Raw [0.42 0.1 0.08 1]]
+   [Rib [0.78 0.72 0.6 1]]
+   [Tooth [0.86 0.82 0.7 1]]
+   [Eye [0.95 0.12 0.06 1]]
+   [Collar [0.5 0.08 0.06 1]]
+   [Nose [0.03 0.03 0.03 1]]]]
+ [Parts
+  [[[Bone Pelvis] [Shape PartBall] [At [0 0.01 0]] [Size [0.2 0.2 0.24]] [Color Hide] [Surface Hide]] ; the haunches
+   [[Bone Torso] [Shape PartBall] [At [0 0.02 0.28]] [Size [0.22 0.26 0.56]] [Color Hide] [Surface Hide]] ; the lean body
+   [[Bone Torso] [Shape PartBox] [At [0.105 0.02 0.3]] [Size [0.02 0.12 0.18]] [Color Raw] [Surface Skin]] ; torn open to the ribs
+   [[Bone Torso] [Shape PartBox] [At [0.112 0.02 0.26]] [Size [0.01 0.11 0.02]] [Color Rib] [Surface Bone]]
+   [[Bone Torso] [Shape PartBox] [At [0.112 0.02 0.31]] [Size [0.01 0.11 0.02]] [Color Rib] [Surface Bone]]
+   [[Bone Torso] [Shape PartBox] [At [0.112 0.02 0.36]] [Size [0.01 0.1 0.02]] [Color Rib] [Surface Bone]]
+   [[Bone Torso] [Shape PartCylinder] [At [0 0.12 0.58]] [Size [0.17 0.04 0.17]] [Turn [[Lean -34.3775]]] [Color Collar] [Surface Leather]] ; a collar
+   [[Bone Torso] [Shape PartBall] [At [0 0.1 0.56]] [Size [0.15 0.18 0.22]] [Turn [[Lean -34.3775]]] [Color Hide] [Surface Hide]] ; the neck
+   [[Bone [Tail 0]] [Shape PartCylinder] [At [0 -0.02 -0.06]] [Size [0.05 0.14 0.05]] [Turn [[Lean -60]]] [Color Dark] [Surface Hide]] ; a thin tail
+   [[Bone [Tail 1]] [Shape PartCylinder] [At [0 -0.02 -0.06]] [Size [0.04 0.14 0.04]] [Turn [[Lean -60]]] [Color Dark] [Surface Hide]]
+   [[Bone [Tail 2]] [Shape PartCylinder] [At [0 -0.02 -0.05]] [Size [0.03 0.12 0.03]] [Turn [[Lean -60]]] [Color Dark] [Surface Hide]]
+   [[Bone Head] [Shape PartBall] [At [0 0.03 0.02]] [Size [0.15 0.15 0.17]] [Color Hide] [Surface Hide]] ; the skull
+   [[Bone Head] [Shape PartBox] [At [0 0.0 0.14]] [Size [0.09 0.07 0.16]] [Color Hide] [Surface Hide]] ; the muzzle
+   [[Bone Head] [Shape PartBox] [At [0 -0.055 0.12]] [Size [0.08 0.025 0.14]] [Turn [[Lean 14.3239]]] [Color Raw] [Surface Skin]] ; the jaw hung open
+   [[Bone Head] [Shape PartCone] [At [0.03 -0.03 0.18]] [Size [0.015 0.035 0.015]] [Turn [[Lean 180]]] [Color Tooth] [Surface Bone] [Mirror True]] ; bared teeth
+   [[Bone Head] [Shape PartCone] [At [0.03 -0.03 0.14]] [Size [0.015 0.03 0.015]] [Turn [[Lean 180]]] [Color Tooth] [Surface Bone] [Mirror True]]
+   [[Bone Head] [Shape PartBall] [At [0 0.025 0.22]] [Size [0.035 0.03 0.03]] [Color Nose] [Surface Hide]] ; nose
+   [[Bone Head] [Shape PartCone] [At [0.05 0.1 -0.03]] [Size [0.05 0.09 0.03]] [Turn [[Lean -57.2958] [Spread -17.1887]]] [Color Dark] [Surface Hide] [Mirror True]] ; ears laid back
+   [[Bone Head] [Shape PartBall] [At [0.045 0.06 0.08]] [Size [0.025 0.02 0.025]] [Color Eye] [Surface Light] [Emission 1.5] [Pulse [Some [[Depth 0.3] [Period 2.2]]]] [Mirror True]] ; dull red eyes
+   [[Bone ArmLeft] [Shape PartBox] [At [0 -0.2 0.01]] [Size [0.06 0.42 0.07]] [Color Hide] [Surface Hide] [Mirror True]] ; the forelegs
+   [[Bone LegLeft] [Shape PartBox] [At [0 -0.2 -0.01]] [Size [0.07 0.42 0.09]] [Color Hide] [Surface Hide] [Mirror True]]]]] ; the hind legs

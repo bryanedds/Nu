@@ -1,0 +1,41 @@
+; The linebacker - the football team's, swollen huge inside his pads, his jersey split down the back, his helmet's
+; cage bent in, one arm hanging long, his breath steaming. He swings, and charges as he was taught.
+
+[[Body
+  [Biped [[Legs 0.66] [Torso 0.72] [Shoulders 0.38] [Hips 0.18] [Arms 0.76]
+          [Clothes [Some [[Arms [Flesh Skin]] [Hands [Glove Leather]] [Legs [Pants Cloth]] [Feet [Cleat Rubber]]]]]]]]
+ [Scale 1.55]
+ [Palette
+  [[Flesh [0.5 0.44 0.42 1]]
+   [Jersey [0.15 0.4 0.25 1]]
+   [Number [0.92 0.9 0.82 1]]
+   [Pad [0.88 0.88 0.85 1]]
+   [Helmet [0.9 0.75 0.2 1]]
+   [Cage [0.3 0.3 0.32 1]]
+   [Pants [0.88 0.86 0.78 1]]
+   [Glove [0.12 0.12 0.12 1]]
+   [Cleat [0.08 0.08 0.08 1]]
+   [Blood [0.28 0.03 0.02 1]]
+   [Eye [1 0.5 0.2 1]]]]
+ [Parts
+  [[[Bone Pelvis] [Shape PartBox] [At [0 0 0]] [Size [0.52 0.26 0.34]] [Color Pants]]
+   [[Bone Torso] [Shape PartBox] [At [0 0.36 0]] [Size [0.72 0.72 0.46]] [Color Jersey] [Surface Cloth]] ; the jersey, split
+   [[Bone Torso] [Shape PartBox] [At [0 0.42 0.232]] [Size [0.3 0.3 0.01]] [Color Number] [Surface Cloth]] ; his number, 54
+   [[Bone Torso] [Shape PartBox] [At [0.1 0.2 0.234]] [Size [0.2 0.24 0.01]] [Color Blood] [Surface Blood]]
+   [[Bone Torso] [Shape PartBall] [At [0.3 0.68 0]] [Size [0.42 0.22 0.5]] [Color Pad] [Surface Plastic] [Mirror True]] ; shoulder pads
+   [[Bone Head] [Shape PartBall] [At [0 0.1 0.04]] [Size [0.36 0.36 0.38]] [Color Helmet] [Surface Plastic]] ; his helmet
+   [[Bone Head] [Shape PartBox] [At [0 0.04 0.2]] [Size [0.26 0.14 0.04]] [Color Cage] [Surface Steel]] ; its cage, bent in
+   [[Bone Head] [Shape PartBall] [At [0.06 0.11 0.16]] [Size [0.05 0.035 0.03]] [Color Eye] [Surface Light] [Emission 1.5] [Mirror True]] ; eyes burning behind the cage
+   [[Bone ArmLeft] [Shape PartBox] [At [0 -0.38 0]] [Size [0.26 0.76 0.26]] [Color Flesh] [Surface Skin] [Mirror True]]
+   [[Bone HandRight] [Shape PartBall] [At [0 -0.06 0]] [Size [0.3 0.3 0.28]] [Color Glove] [Surface Leather]] ; great gloved fists
+   [[Bone HandLeft] [Shape PartBall] [At [0 -0.06 0]] [Size [0.3 0.3 0.28]] [Color Glove] [Surface Leather]]
+   [[Bone LegLeft] [Shape PartBox] [At [0 -0.3 0]] [Size [0.3 0.64 0.3]] [Color Pants] [Surface Cloth] [Mirror True]]]]
+ [Animations
+  [; wind back, then drive a shoulder and a fist down through the foe, and settle
+   [Animation Swing [[[From [Some Idle]] [To [Still Coil]] [Over 0.45] [Ease Out]]
+                     [[To [Still Cut]] [Over 0.2] [Ease Snap] [Marks [[Sweep 0.6] [Follow 1]]]]
+                     [[To [Still Cut]] [Over 0.3]]
+                     [[To Idle] [Over 0.55] [Marks [[End 1]]]]]]
+
+   ; charge headlong, helmet down, as he was taught, to flatten whatever's in the way
+   [Animation Tackle [[[From [Some [Still Coil]]] [To [Still Grab]] [Over 0.3] [Ease Out] [Layers [[[Lay [Overlay [[Cycle Stride] [Rate 2.4]]]] [Onward True]]]]]]]]]]

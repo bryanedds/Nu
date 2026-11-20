@@ -1,0 +1,62 @@
+; The biped's animations, one for each kind - each a list of segments, each blending toward a target over its time,
+; carrying the body along a move, with its angles, layers and marks. Times are seconds, angles degrees.
+
+[; standing ready, breathing - the torso lifting and lowering straight up and down over planted hips and feet
+ [Animation Idle [[[To [Still Stance]] [Layers [[[Lay [Waver [[On OnRise] [Sway [[Base 0.0175] [Amplitude 0.0175]]] [Rate 0.75] [Clock Idle]]]] [Onward True]]]]]]]
+
+ ; at ease, breathing gently
+ [Animation Relax [[[To [Still Relaxed]] [Layers [[[Lay [Waver [[On OnRise] [Sway [[Base 0.0105] [Amplitude 0.0105]]] [Rate 0.75] [Clock Idle]]]]]]]]]]
+
+ ; ease into the stride over its first steps, so setting off doesn't snap
+ [Animation Walk [[[From [Some [Still Relaxed]]] [To [Cycled Stride [PerStep 0.5]]] [Over 0.2]]]]
+
+ ; the stride in reverse
+ [Animation WalkBack [[[From [Some [Still Relaxed]]] [To [Cycled Stride [PerStep -0.5]]] [Over 0.2]]]]
+
+ ; bring the gun up and hold it out, aimed up, level or down, breathing
+ [Animation Aim [[[From [Some [Still Relaxed]]] [To [Choose AimingUp [Still AimUp] [Choose AimingDown [Still AimDown] [Still Aim]]]] [Over 0.25]
+                  [Layers [[[Lay [Waver [[On OnRise] [Sway [[Base 0.0105] [Amplitude 0.0105]]] [Rate 0.75] [Clock Idle]]]] [Onward True]]]]]]]
+
+ ; bring the knife up and hold it out, high, level or low, breathing
+ [Animation Ready [[[From [Some [Still Relaxed]]] [To [Choose AimingUp [Still ReadyUp] [Choose AimingDown [Still ReadyDown] [Still Ready]]]] [Over 0.25]
+                    [Layers [[[Lay [Waver [[On OnRise] [Sway [[Base 0.0105] [Amplitude 0.0105]]] [Rate 0.75] [Clock Idle]]]] [Onward True]]]]]]]
+
+ ; fire the gun held out, its kick throwing the arms up and the body back a touch before they settle
+ [Animation Shoot [[[From [Some [Choose AimingUp [Still AimUp] [Choose AimingDown [Still AimDown] [Still Aim]]]]]
+                    [To [Choose AimingUp [Still AimUp] [Choose AimingDown [Still AimDown] [Still Aim]]]] [Over 0.3]
+                    [Layers [[[Lay [Waver [[On [OnBone ArmRight Swinging]] [Sway [[Amplitude 14] [Wave Lift]]] [Rate 0.5] [Clock Progress] [Fade True]]]]]
+                             [[Lay [Waver [[On [OnBone ArmLeft Swinging]] [Sway [[Amplitude 11] [Wave Lift]]] [Rate 0.5] [Clock Progress] [Fade True]]]]]
+                             [[Lay [Waver [[On [OnRoot [0 0 -1]]] [Sway [[Amplitude 0.03] [Wave Lift]]] [Rate 0.5] [Clock Progress] [Fade True]]]]]]]
+                    [Marks [[Release 0] [End 1]]]]]]
+
+ ; a backhand slash - the body coils to bring the blade across the front to the off side, the arm rising late so it
+ ; doesn't sweep inward, then uncoils to sweep it flat out past the blade side, and settles at ease
+ [Animation Swing [[[From [Some [Still Relaxed]]] [To [Still Whirling]] [Over 0.12] [Ease Late] [Spin [Some [[To 137.5099]]]] [Marks [[Sweep 1]]]]
+                   [[To [Still Whirling]] [Over 0.15] [Spin [Some [[To -34.3775]]]] [Marks [[Follow 1]]]]
+                   [[To [Still Whirling]] [Over 0.08]]
+                   [[To [Still Relaxed]] [Over 0.2] [Spin [Some [[To 0]]]] [Marks [[End 1]]]]]]
+
+ ; snap back hard, shuddering, then recover slowly
+ [Animation Hurt [[[From [Some Idle]] [To [Still Struck]] [Over 0.096] [Ease Linear] [Layers [[[Lay [Waver [[On [OnRoot [1 0 0]]] [Sway [[Amplitude 0.03]]] [Rate 11.140846] [Fade True]]]] [Over [Some 0.28]]]]]]
+                  [[To Idle] [Over 0.704] [Ease Out] [Marks [[End 1]]]]]]
+
+ ; fall, and lie where fallen
+ [Animation Wound [[[From [Some Idle]] [To [Still Felled]] [Over 0.9] [Marks [[End 1]]]]]]
+
+ ; lunge in with both arms out, seize the foe, gnaw at it shuddering, then lose the grip and fall back to stand
+ [Animation Grab [[[From [Some Idle]] [To [Still Grab]] [Over 0.35] [Ease Out]]
+                  [[To [Still Grab]] [Over 1.25] [Layers [[[Lay [Waver [[On [OnBone Head Leaning]] [Sway [[Amplitude 9]]] [Rate 3.5] [RampIn 0.3]]]]]
+                                                         [[Lay [Waver [[On [OnRoot [0 0 1]]] [Sway [[Amplitude 0.02]]] [Rate 7]]]]]]]
+                   [Marks [[Impact 0.45] [End 1]]]]
+                  [[To Idle] [Over 0.45]]]]
+
+ ; gather low to spring
+ [Animation Crouch [[[From [Some Idle]] [To [Still Coil]] [Over 0.3]]]]
+
+ ; spring out of the crouch and pitch forward into a headlong dive
+ [Animation Tackle [[[From [Some [Still Coil]]] [To [Still Leap]] [Over 0.5] [Reach [Some 0.25]] [Ease Out] [Fall [Some [[To 68.7549] [Ease Linear]]]]]]]
+
+ ; slam down face first, lie there a while, then heave back up onto the feet - the heave starting at its release
+ [Animation Sprawl [[[From [Some [Still Leap]]] [To [Still Prone]] [Over 0.12] [Ease Linear] [Fall [Some [[From [Some 68.7549]] [To 0] [Ease Linear]]]]]
+                    [[To [Still Prone]] [Over 3.58] [Layers [[[Lay [Waver [[On [OnRoot [0 1 0]]] [Sway [[Amplitude 0.02]]] [Rate 6.366198] [Fade True]]]] [Over [Some 0.25]]]]]]
+                    [[To Idle] [Over 1.2] [Marks [[Release 0] [End 1]]]]]]]

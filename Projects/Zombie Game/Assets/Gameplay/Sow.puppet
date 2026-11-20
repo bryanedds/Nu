@@ -1,0 +1,42 @@
+; The sow from the rendering room's pen - swollen monstrous on what the line threw away, her hide grey-pink and split
+; with sores, her belly dragging, tusks grown out of her jaw, her eyes red and wet. She gores, and charges.
+
+[[Body
+  [Quadruped [[Legs 0.3] [Body 0.78] [Shoulders 0.17] [Hips 0.16] [HeadRise 0.04] [HeadForward 0.5]
+             [Tail [Some [[Segments 2] [Root [0 0.08 -0.1]] [Step [0.03 0.02 -0.06]]]]]]]]
+ [Scale 2.1]
+ [Palette
+  [[Hide [0.62 0.48 0.46 1]]
+   [Sore [0.5 0.12 0.1 1]]
+   [Belly [0.56 0.42 0.4 1]]
+   [Snout [0.6 0.38 0.38 1]]
+   [Tusk [0.85 0.8 0.66 1]]
+   [Hoof [0.15 0.12 0.1 1]]
+   [Eye [0.95 0.12 0.06 1]]]]
+ [Parts
+  [[[Bone Pelvis] [Shape PartBall] [At [0 0.04 -0.02]] [Size [0.42 0.4 0.42]] [Color Hide] [Surface Hide]] ; the haunches
+   [[Bone Torso] [Shape PartBall] [At [0 0.04 0.38]] [Size [0.5 0.48 0.96]] [Color Hide] [Surface Hide]] ; the great body
+   [[Bone Torso] [Shape PartBall] [At [0 -0.14 0.36]] [Size [0.4 0.24 0.7]] [Color Belly] [Surface Hide]] ; her belly, dragging
+   [[Bone Torso] [Shape PartBall] [At [0.2 0.12 0.3]] [Size [0.1 0.12 0.16]] [Color Sore] [Surface Rot]] ; sores
+   [[Bone Torso] [Shape PartBall] [At [-0.22 0.06 0.5]] [Size [0.08 0.1 0.12]] [Color Sore] [Surface Rot]]
+   [[Bone Torso] [Shape PartBall] [At [0.08 0.24 0.12]] [Size [0.12 0.06 0.14]] [Color Sore] [Surface Rot]]
+   [[Bone [Tail 0]] [Shape PartCylinder] [At [0 0.01 -0.03]] [Size [0.03 0.07 0.03]] [Turn [[Lean -60]]] [Color Hide] [Surface Hide]] ; a curl of a tail
+   [[Bone [Tail 1]] [Shape PartCylinder] [At [0.01 0.01 -0.03]] [Size [0.025 0.06 0.025]] [Turn [[Lean -60] [Spread 40]]] [Color Hide] [Surface Hide]]
+   [[Bone Head] [Shape PartBall] [At [0 0 0.08]] [Size [0.32 0.3 0.34]] [Color Hide] [Surface Hide]] ; the head, low and heavy
+   [[Bone Head] [Shape PartCylinder] [At [0 -0.04 0.26]] [Size [0.14 0.08 0.14]] [Turn [[Lean 90]]] [Color Snout] [Surface Skin]] ; the snout
+   [[Bone Head] [Shape PartCone] [At [0.07 -0.06 0.24]] [Size [0.025 0.1 0.025]] [Turn [[Lean -30]]] [Color Tusk] [Surface Bone] [Mirror True]] ; tusks grown out of her jaw
+   [[Bone Head] [Shape PartCone] [At [0.12 0.14 0.02]] [Size [0.1 0.12 0.04]] [Turn [[Lean 40] [Spread -20]]] [Color Hide] [Surface Hide] [Mirror True]] ; ears flopping forward
+   [[Bone Head] [Shape PartBall] [At [0.09 0.06 0.17]] [Size [0.03 0.025 0.025]] [Color Eye] [Surface Light] [Emission 2] [Mirror True]] ; red, wet eyes
+   [[Bone ArmLeft] [Shape PartBox] [At [0 -0.14 0.01]] [Size [0.11 0.3 0.11]] [Color Hide] [Surface Hide] [Mirror True]] ; the forelegs
+   [[Bone ArmLeft] [Shape PartBox] [At [0 -0.29 0.01]] [Size [0.12 0.04 0.12]] [Color Hoof] [Surface Bone] [Mirror True]]
+   [[Bone LegLeft] [Shape PartBox] [At [0 -0.14 -0.01]] [Size [0.12 0.3 0.12]] [Color Hide] [Surface Hide] [Mirror True]] ; the hind legs
+   [[Bone LegLeft] [Shape PartBox] [At [0 -0.29 -0.01]] [Size [0.13 0.04 0.13]] [Color Hoof] [Surface Bone] [Mirror True]]]]
+ [Animations
+  [; gather back on her haunches, then drive her tusks up through the foe, and settle
+   [Animation Swing [[[From [Some Idle]] [To [Still Coil]] [Over 0.4] [Ease Out]]
+                     [[To [Still Bite]] [Over 0.18] [Ease Snap] [Marks [[Sweep 0.6] [Follow 1]]]]
+                     [[To [Still Bite]] [Over 0.3]]
+                     [[To Idle] [Over 0.55] [Marks [[End 1]]]]]]
+
+   ; charge headlong, tusks low, to bowl over whatever's in the way
+   [Animation Tackle [[[From [Some [Still Coil]]] [To [Still Leap]] [Over 0.25] [Ease Out] [Layers [[[Lay [Overlay [[Cycle Stride] [Rate 2.6]]]] [Onward True]]]]]]]]]]

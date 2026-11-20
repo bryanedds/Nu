@@ -1,0 +1,228 @@
+; Appearances composed of parts for the meat packing plant's rooms, each placed in a scene as [Composed Name settings].
+
+[
+ ; a side of beef hung from a hook - the hook's shank, the carcass, its fat and its ribs just showing through the meat
+ ; across it, sloping a little; its origin on the floor beneath it
+ [Compose Carcass
+  [[Colors [[Hook [0.45 0.46 0.48 1]]
+            [Meat [0.48 0.1 0.08 1]]
+            [Fat [0.82 0.76 0.62 1]]]]
+   [Depth [0.3 0.3]]
+   [Pieces [[Part [[Surface Steel] [Shape PartCylinder] [At [0 2.5 0]] [Size [0.03 0.4 0.03]] [Color Hook]]]
+            [Part [[Surface Rot] [Shape PartBall] [At [0 1.55 0]] [Size [0.5 1.5 0.34]] [Color Meat] [Jitter 0.08]]]
+            [Part [[Surface Skin] [Shape PartBall] [At [0 1.6 -0.06]] [Size [0.42 1.3 0.26]] [Color Fat]]]
+            [Part [[Surface Bone] [Shape PartBall] [At [0 1.221 0.13]] [Size [0.3 0.045 0.08]] [Turn [0 0 10]] [Color Fat]]]
+            [Part [[Surface Bone] [Shape PartBall] [At [0 1.286 0.13]] [Size [0.3 0.045 0.08]] [Turn [0 0 10]] [Color Fat]]]
+            [Part [[Surface Bone] [Shape PartBall] [At [0 1.35 0.13]] [Size [0.3 0.045 0.08]] [Turn [0 0 10]] [Color Fat]]]
+            [Part [[Surface Bone] [Shape PartBall] [At [0 1.414 0.13]] [Size [0.3 0.045 0.08]] [Turn [0 0 10]] [Color Fat]]]
+            [Part [[Surface Bone] [Shape PartBall] [At [0 1.479 0.13]] [Size [0.3 0.045 0.08]] [Turn [0 0 10]] [Color Fat]]]
+            [Part [[Surface Bone] [Shape PartBall] [At [0 1.543 0.13]] [Size [0.3 0.045 0.08]] [Turn [0 0 10]] [Color Fat]]]
+            [Part [[Surface Bone] [Shape PartBall] [At [0 1.607 0.13]] [Size [0.3 0.045 0.08]] [Turn [0 0 10]] [Color Fat]]]
+            [Part [[Surface Bone] [Shape PartBall] [At [0 1.671 0.13]] [Size [0.3 0.045 0.08]] [Turn [0 0 10]] [Color Fat]]]
+            [SolidCircle [0 0] 0.26]]]]]
+
+ ; an overhead rail the carcasses ride along on their hooks, a meter long unless stretched - its origin on the floor
+ ; beneath its middle
+ [Compose Rail
+  [[Colors [[Rail [0.4 0.41 0.43 1]]]]
+   [Depth [0.05 0.05]]
+   [Pieces [[Part [[Surface Steel] [Shape PartBox] [At [0 2.72 0]] [Size [1 0.08 0.06]] [Color Rail] [Stretches True] [Flat True]]]]]]]
+
+ ; a waist-high conveyor line, a meter long unless stretched - its frame, its belt and its legs; its origin on the floor
+ ; beneath its middle
+ [Compose Conveyor
+  [[Colors [[Frame [0.5 0.52 0.54 1]]
+            [Belt [0.08 0.08 0.08 1]]]]
+   [Depth [0.4 0.4]]
+   [Pieces [[Part [[Surface Steel] [Shape PartBox] [At [0 0.8 0]] [Size [1 0.12 0.8]] [Color Frame] [Stretches True]]]
+            [Part [[Surface Rubber] [Shape PartBox] [At [0 0.87 0]] [Size [1 0.02 0.7]] [Color Belt] [Stretches True]]]
+            [Part [[Surface Steel] [Shape PartBox] [At [0 0.37 -0.35]] [Size [1 0.06 0.06]] [Color Frame] [Stretches True]]]
+            [Part [[Surface Steel] [Shape PartBox] [At [0 0.37 0.35]] [Size [1 0.06 0.06]] [Color Frame] [Stretches True]]]
+            [SolidBox [0 0] [0.5 0.4]]]]]]
+
+ ; a steel vat, a scald tank or a rendering kettle - its rim and what's steaming in it; its origin beneath its middle
+ [Compose Vat
+  [[Colors [[Steel [0.5 0.52 0.54 1]]
+            [Brew [0.35 0.3 0.2 1]]]]
+   [Depth [0.8 0.8]]
+   [Pieces [[Part [[Surface Steel] [Shape PartCylinder] [At [0 0.55 0]] [Size [1.6 1.1 1.6]] [Color Steel]]]
+            [Part [[Surface Steel] [Shape PartCylinder] [At [0 1.1 0]] [Size [1.7 0.06 1.7]] [Color Steel]]]
+            [Part [[Surface Glass] [Shape PartCylinder] [At [0 1.125 0]] [Size [1.5 0.02 1.5]] [Color Brew] [Flat True]]]
+            [SolidCircle [0 0] 0.82]]]]]
+
+ ; the plant's boiler, a great drum on its side over its firebox, the fire glowing through the door - its origin beneath
+ ; its middle, its long side facing out
+ [Compose Boiler
+  [[Colors [[Drum [0.3 0.28 0.26 1]]
+            [Brick [0.4 0.22 0.16 1]]
+            [Fire [1 0.45 0.15 1]]
+            [Firelight [1 0.5 0.2 1]]]]
+   [Depth [0.9 0.9]]
+   [Pieces [[Part [[Surface Concrete] [Shape PartBox] [At [0 0.4 0]] [Size [3 0.8 1.6]] [Color Brick]]]
+            [Part [[Surface Steel] [Shape PartCylinder] [At [0 1.55 0]] [Size [1.6 3 1.6]] [Turn [0 0 90]] [Color Drum]]]
+            [Part [[Surface Light] [Shape PartBox] [At [0 0.4 0.81]] [Size [0.6 0.4 0.02]] [Color Fire] [Flat True] [Glow [Some 4]]]]
+            [Part [[Surface Steel] [Shape PartCylinder] [At [1.2 2.6 0]] [Size [0.2 0.8 0.2]] [Color Drum]]]
+            [Shine [[At [0 0.6 1.3]] [Color Firelight] [Brightness 1.6] [Reach 5] [Shadowed True]]]
+            [SolidBox [0 0] [1.5 0.85]]]]]]
+
+ ; a valve's red wheel on a pipe out of the wall - its origin at the wall
+ [Compose Valve
+  [[Colors [[Pipe [0.35 0.36 0.38 1]]
+            [Wheel [0.7 0.1 0.08 1]]]]
+   [Depth [0 0.3]] [Height 1.2]
+   [Pieces [[Part [[Surface Steel] [Shape PartCylinder] [At [0 0 0.12]] [Size [0.12 0.24 0.12]] [Turn [0 90 0]] [Color Pipe]]]
+            [Part [[Surface Steel] [Shape PartCylinder] [At [0 0 0.26]] [Size [0.44 0.04 0.44]] [Turn [0 90 0]] [Color Wheel]]]
+            [Part [[Surface Steel] [Shape PartBox] [At [0 0.6 0.06]] [Size [0.12 1.2 0.12]] [Color Pipe]]]
+            [Part [[Surface Steel] [Shape PartBox] [At [0 1.4 0.06]] [Size [3 0.12 0.12]] [Color Pipe]]]]]]]
+
+ ; a grinder - its housing, the hopper's steel funnel over it and the chute below, a tub to catch what comes out; its
+ ; origin beneath its middle
+ [Compose Grinder
+  [[Colors [[Steel [0.55 0.57 0.6 1]]
+            [Mess [0.4 0.08 0.07 1]]]]
+   [Depth [0.7 0.9]]
+   [Pieces [[Part [[Surface Steel] [Shape PartBox] [At [0 0.6 0]] [Size [1.1 1.2 1.1]] [Color Steel]]]
+            [Part [[Surface Steel] [Shape PartCone] [At [0 1.75 0]] [Size [1.4 1.1 1.4]] [Turn [0 180 0]] [Color Steel]]]
+            [Part [[Surface Steel] [Shape PartBox] [At [0 0.75 0.62]] [Size [0.3 0.2 0.3]] [Color Steel]]]
+            [Part [[Surface Plastic] [Shape PartCylinder] [At [0 0.2 0.85]] [Size [0.6 0.4 0.6]] [Color Steel]]]
+            [Part [[Surface Rot] [Shape PartCylinder] [At [0 0.39 0.85]] [Size [0.52 0.04 0.52]] [Color Mess] [Flat True]]]
+            [SolidBox [0 0.15] [0.6 0.75]]]]]]
+
+ ; a smokehouse rack of sausages hung on rods, a meter and a half long unless stretched - its origin on the floor beneath
+ ; its middle
+ [Compose SmokerRack
+  [[Colors [[Frame [0.2 0.18 0.16 1]]
+            [Sausage [0.42 0.2 0.12 1]]]]
+   [Depth [0.35 0.35]]
+   [Pieces [[Part [[Surface Steel] [Shape PartBox] [At [-0.75 1.1 0]] [Size [0.05 2.2 0.6]] [Color Frame]]]
+            [Part [[Surface Steel] [Shape PartBox] [At [0.75 1.1 0]] [Size [0.05 2.2 0.6]] [Color Frame]]]
+            [Part [[Surface Steel] [Shape PartBox] [At [0 1.9 0]] [Size [1.5 0.03 0.03]] [Color Frame] [Stretches True]]]
+            [Copies [[Count [Some 10]] [Arrange [Some [Row 0.14]]] [Vary [0.1 0.2 0.1]]]
+              [[Part [[Surface Rot] [Shape PartCylinder] [At [0 1.55 -0.15]] [Size [0.07 0.7 0.07]] [Color Sausage] [Jitter 0.1]]]
+               [Part [[Surface Rot] [Shape PartCylinder] [At [0 1.55 0.15]] [Size [0.07 0.6 0.07]] [Color Sausage] [Jitter 0.1]]]]]
+            [SolidBox [0 0] [0.78 0.32]]]]]]
+
+ ; a refrigerated trailer left in the yard, the packing company's red stripe along it - its origin beneath its middle, its
+ ; long side facing out
+ [Compose Trailer
+  [[Colors [[Body [0.86 0.86 0.84 1]]
+            [Stripe [0.6 0.1 0.08 1]]
+            [Tire [0.06 0.06 0.06 1]]]]
+   [Depth [1.3 1.3]]
+   [Pieces [[Part [[Surface Paint] [Shape PartBox] [At [0 1.95 0]] [Size [7 2.6 2.4]] [Color Body]]]
+            [Part [[Surface Paint] [Shape PartBox] [At [0 1.4 0]] [Size [7.02 0.3 2.42]] [Color Stripe]]]
+            [Part [[Surface Steel] [Shape PartBox] [At [3.2 3.35 0]] [Size [0.5 0.3 1.6]] [Color Body]]]
+            [Part [[Surface Rubber] [Shape PartCylinder] [At [-2.6 0.4 -1.1]] [Size [0.8 0.3 0.8]] [Turn [0 90 0]] [Color Tire]]]
+            [Part [[Surface Rubber] [Shape PartCylinder] [At [-2.6 0.4 1.1]] [Size [0.8 0.3 0.8]] [Turn [0 90 0]] [Color Tire]]]
+            [Part [[Surface Rubber] [Shape PartCylinder] [At [-1.6 0.4 -1.1]] [Size [0.8 0.3 0.8]] [Turn [0 90 0]] [Color Tire]]]
+            [Part [[Surface Rubber] [Shape PartCylinder] [At [-1.6 0.4 1.1]] [Size [0.8 0.3 0.8]] [Turn [0 90 0]] [Color Tire]]]
+            [Part [[Surface Steel] [Shape PartBox] [At [2.6 0.45 0]] [Size [0.1 0.9 0.1]] [Color Tire]]]
+            [SolidBox [0 0] [3.5 1.2]]]]]]
+
+ ; railway track, two rails on their ties, a meter long unless stretched - its origin at its middle
+ [Compose Track
+  [[Colors [[Rail [0.4 0.36 0.32 1]]
+            [Tie [0.28 0.2 0.14 1]]]]
+   [Depth [0.8 0.8]]
+   [Pieces [[Part [[Surface Steel] [Shape PartBox] [At [0 0.1 -0.72]] [Size [1 0.08 0.07]] [Color Rail] [Stretches True]]]
+            [Part [[Surface Steel] [Shape PartBox] [At [0 0.1 0.72]] [Size [1 0.08 0.07]] [Color Rail] [Stretches True]]]
+            [Copies [[Arrange [Some [Fill 0.6]]] [Spread [0.04 0 0.04]]]
+              [[Part [[Surface Wood] [Shape PartBox] [At [0 0.03 0]] [Size [0.22 0.06 2]] [Color Tie] [Jitter 0.1]]]]]]]]]
+
+ ; a railway handcar on the track, its pump handle up - its origin beneath its middle, its long side facing out
+ [Compose Handcar
+  [[Colors [[Deck [0.35 0.3 0.24 1]]
+            [Iron [0.2 0.2 0.22 1]]]]
+   [Depth [1 1]]
+   [Pieces [[Part [[Surface Wood] [Shape PartBox] [At [0 0.55 0]] [Size [2.2 0.1 1.8]] [Color Deck]]]
+            [Part [[Surface Steel] [Shape PartCylinder] [At [-0.7 0.3 -0.72]] [Size [0.5 0.08 0.5]] [Turn [0 90 0]] [Color Iron]]]
+            [Part [[Surface Steel] [Shape PartCylinder] [At [0.7 0.3 -0.72]] [Size [0.5 0.08 0.5]] [Turn [0 90 0]] [Color Iron]]]
+            [Part [[Surface Steel] [Shape PartCylinder] [At [-0.7 0.3 0.72]] [Size [0.5 0.08 0.5]] [Turn [0 90 0]] [Color Iron]]]
+            [Part [[Surface Steel] [Shape PartCylinder] [At [0.7 0.3 0.72]] [Size [0.5 0.08 0.5]] [Turn [0 90 0]] [Color Iron]]]
+            [Part [[Surface Steel] [Shape PartBox] [At [0 0.95 0]] [Size [0.12 0.8 0.12]] [Color Iron]]]
+            [Part [[Surface Steel] [Shape PartBox] [At [0 1.4 0]] [Size [1.6 0.08 0.08]] [Turn [0 0 12]] [Color Iron]]]
+            [SolidBox [0 0] [1.1 0.9]]]]]]
+
+ ; a stack of wooden pallets and boxes on the dock - its origin beneath its middle
+ [Compose Crates
+  [[Colors [[Wood [0.5 0.38 0.24 1]]
+            [Box [0.55 0.48 0.36 1]]]]
+   [Depth [0.6 0.6]]
+   [Pieces [[Part [[Surface Wood] [Shape PartBox] [At [0 0.08 0]] [Size [1.2 0.16 1.2]] [Color Wood]]]
+            [Copies [[Count [Some 4]] [Arrange [Some [Tiled 2 0.58]]] [Spread [0.03 0 0.03]] [Vary [0.08 0.25 0.08]] [Tilt [6 0 0]]]
+              [[Part [[Surface Cloth] [Shape PartBox] [At [-0.29 0.45 -0.29]] [Size [0.55 0.58 0.55]] [Color Box] [Jitter 0.1]]]]]
+            [SolidBox [0 0] [0.6 0.6]]]]]]
+
+ ; a control console, a row of lamps and switches lit along its sloping face - its origin beneath its middle
+ [Compose Console
+  [[Colors [[Casing [0.32 0.36 0.34 1]]
+            [Lamp [0.9 0.75 0.3 1]]]]
+   [Depth [0.4 0.4]]
+   [Pieces [[Part [[Surface Paint] [Shape PartBox] [At [0 0.45 0]] [Size [2 0.9 0.7]] [Color Casing]]]
+            [Part [[Surface Paint] [Shape PartBox] [At [0 0.98 -0.1]] [Size [2 0.2 0.5]] [Turn [0 -25 0]] [Color Casing]]]
+            [Copies [[Count [Some 8]] [Arrange [Some [Row 0.22]]]]
+              [[Part [[Surface Light] [Shape PartBox] [At [0 1.03 0.05]] [Size [0.06 0.02 0.06]] [Color Lamp] [Flat True] [Glow [Some 2]]]]]]
+            [SolidBox [0 0] [1 0.35]]]]]]
+
+ ; a body lying on the floor face up, as the characters are built - its head, chest, hips and belt, an arm at its side
+ ; and the other flung out, its legs and its boots; its origin beneath its middle, its head toward -x
+ [Compose Body
+  [[Colors [[Clothes [0.3 0.33 0.22 1]]
+            [Skin [0.55 0.5 0.46 1]]
+            [Hair [0.12 0.11 0.1 1]]
+            [Belt [0.06 0.06 0.06 1]]
+            [Boots [0.1 0.09 0.08 1]]]]
+   [Depth [0.3 0.3]]
+   [Pieces [[Part [[Surface Skin] [Shape PartBall] [At [-0.81 0.135 0]] [Size [0.3 0.27 0.25]] [Color Skin]]] ; its head, face up
+            [Part [[Surface Hair] [Shape PartBall] [At [-0.87 0.11 0]] [Size [0.28 0.24 0.27]] [Color Hair]]]
+            [Part [[Surface Skin] [Shape PartBox] [At [-0.665 0.1 0]] [Size [0.07 0.12 0.12]] [Color Skin]]]
+            [Part [[Surface Cloth] [Shape PartBox] [At [-0.34 0.11 0]] [Size [0.6 0.22 0.38]] [Color Clothes]]] ; its chest, hips and belt
+            [Part [[Surface Cloth] [Shape PartBox] [At [0.04 0.11 0]] [Size [0.16 0.22 0.34]] [Color Clothes]]]
+            [Part [[Surface Leather] [Shape PartBox] [At [-0.03 0.12 0]] [Size [0.06 0.24 0.36]] [Color Belt]]]
+            [Part [[Surface Cloth] [Shape PartBox] [At [-0.28 0.05 -0.25]] [Size [0.62 0.1 0.1]] [Color Clothes]]] ; an arm at its side, the other flung out
+            [Part [[Surface Skin] [Shape PartBall] [At [0.08 0.065 -0.25]] [Size [0.13 0.13 0.13]] [Color Skin]]]
+            [Part [[Surface Cloth] [Shape PartBox] [At [-0.54 0.05 0.49]] [Size [0.1 0.1 0.62]] [Color Clothes]]]
+            [Part [[Surface Skin] [Shape PartBall] [At [-0.54 0.065 0.86]] [Size [0.13 0.13 0.13]] [Color Skin]]]
+            [Part [[Surface Cloth] [Shape PartBox] [At [0.54 0.055 -0.1]] [Size [0.84 0.11 0.11]] [Color Clothes]]] ; its legs, and its boots toes up
+            [Part [[Surface Cloth] [Shape PartBox] [At [0.54 0.055 0.1]] [Size [0.84 0.11 0.11]] [Color Clothes]]]
+            [Part [[Surface Leather] [Shape PartBox] [At [0.93 0.11 -0.1]] [Size [0.07 0.22 0.127]] [Color Boots]]]
+            [Part [[Surface Leather] [Shape PartBox] [At [0.93 0.11 0.1]] [Size [0.07 0.22 0.127]] [Color Boots]]]]]]]
+
+ ; a heap of offal in the pit - its origin beneath its middle
+ [Compose Offal
+  [[Colors [[Offal [0.38 0.08 0.07 1]]
+            [Gristle [0.6 0.45 0.38 1]]]]
+   [Depth [0.6 0.6]]
+   [Pieces [[Copies [[Count [Some 6]] [Arrange [Some [Around 0.35 0]]] [Spread [0.15 0 0.15]] [Grow [Some [0.7 1.3]]]]
+              [[Part [[Surface Rot] [Shape PartBall] [At [0 0.12 0]] [Size [0.5 0.3 0.45]] [Color Offal] [Jitter 0.12]]]]]
+            [Part [[Surface Rot] [Shape PartBall] [At [0 0.25 0]] [Size [0.7 0.5 0.6]] [Color Gristle] [Jitter 0.1]]]]]]]
+
+ ; the pit's furnace mouth in the wall, its fire banked low, glowing - its origin at the wall
+ [Compose Furnace
+  [[Colors [[Brick [0.25 0.15 0.12 1]]
+            [Fire [1 0.4 0.12 1]]
+            [Firelight [1 0.45 0.18 1]]]]
+   [Depth [0 0.45]]
+   [Pieces [[Part [[Surface Concrete] [Shape PartBox] [At [0 1 0.2]] [Size [2.4 2 0.4]] [Color Brick]]]
+            [Part [[Surface Light] [Shape PartBox] [At [0 0.75 0.41]] [Size [1.4 0.9 0.02]] [Color Fire] [Flat True] [Glow [Some 2.5]]]]
+            [Shine [[At [0 0.9 1.4]] [Color Firelight] [Brightness 1.4] [Reach 7] [Shadowed True]]]]]]]
+
+ ; the furnace roaring up, white-hot and red, as the meat king rages - its origin at the wall
+ [Compose FurnaceRaging
+  [[Colors [[Brick [0.25 0.15 0.12 1]]
+            [Fire [1 0.2 0.06 1]]
+            [Firelight [1 0.15 0.05 1]]]]
+   [Depth [0 0.45]]
+   [Pieces [[Part [[Surface Concrete] [Shape PartBox] [At [0 1 0.2]] [Size [2.4 2 0.4]] [Color Brick]]]
+            [Part [[Surface Light] [Shape PartBox] [At [0 0.75 0.41]] [Size [1.4 0.9 0.02]] [Color Fire] [Flat True] [Glow [Some 7]]]]
+            [Shine [[At [0 0.9 1.4]] [Color Firelight] [Brightness 4.5] [Reach 12] [Shadowed True]]]]]]]
+
+ ; a caged work lamp on the wall, its bulb bare - its origin at the wall
+ [Compose CageLamp
+  [[Colors [[Cage [0.2 0.2 0.2 1]]
+            [Bulb [1 0.85 0.6 1]]
+            [Lamplight [1 0.82 0.55 1]]]]
+   [Depth [0 0.25]] [Height 2.4]
+   [Pieces [[Part [[Surface Light] [Shape PartBall] [At [0 0 0.15]] [Size [0.14 0.18 0.14]] [Color Bulb] [Glow [Some 3]]]]
+            [Part [[Surface Steel] [Shape PartBox] [At [0 0 0.06]] [Size [0.08 0.08 0.12]] [Color Cage]]]
+            [Shine [[At [0 -0.1 0.4]] [Color Lamplight] [Brightness 1.6] [Reach 7] [Shadowed True]]]]]]]]

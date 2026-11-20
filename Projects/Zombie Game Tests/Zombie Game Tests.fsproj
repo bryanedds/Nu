@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net11.0</TargetFramework>
+	</PropertyGroup>
+
+	<!-- these tests run the game itself headless - its game, screens and entities in a stub world, frame by frame - from
+	     the game's own output folder, where Nu.Pipe put its assets as the game runs them. Nothing's copied here but the
+	     game's settings: Nu.Gaia references every project, so whatever a project copies to its output is copied to
+	     Gaia's too -->
+	<PropertyGroup>
+		<OutputType>Library</OutputType>
+		<IsPackable>false</IsPackable>
+		<PlatformTarget>x64</PlatformTarget>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Include="Common.fs" />
+		<Compile Include="DataTests.fs" />
+		<Compile Include="AreaTests.fs" />
+		<Compile Include="Bot.fs" />
+		<Compile Include="PlayTests.fs" />
+		<Compile Include="ReloadTests.fs" />
+	</ItemGroup>
+
+	<!-- the game's own settings, as the test host reads them - it reads its own config, not the game's or the tests' -->
+	<ItemGroup>
+		<None Include="../Zombie Game/App.config" Link="testhost.dll.config" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="../Zombie Game/Zombie Game.fsproj" />
+	</ItemGroup>
+
+	<!-- Nu's TiledSharp, which Nu's optimized Release build exposes through what it inlines - the game has it from
+	     Nu.targets, which these tests don't import -->
+	<ItemGroup>
+		<Reference Include="TiledSharp">
+			<HintPath>../../Nu/Nu.Dependencies/TiledSharp/lib/netstandard2.0/TiledSharp.dll</HintPath>
+		</Reference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+		<PackageReference Include="NUnit" Version="3.14.0" />
+		<PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+		<PackageReference Include="FSharp.Compiler.Service" Version="43.12.204" />
+	</ItemGroup>
+
+</Project>

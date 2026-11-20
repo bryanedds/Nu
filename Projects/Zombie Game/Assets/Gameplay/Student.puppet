@@ -1,0 +1,63 @@
+; A student risen - grey in the face, in a college hoodie with its hood half up, torn jeans and sneakers, one sleeve
+; dark with blood, its eyes gone milky.
+
+[[Body
+  [Biped [[Legs 0.82] [Torso 0.6] [Shoulders 0.22] [Hips 0.1] [Arms 0.66] [Limbs 0.11]
+          [Clothes [Some [[Arms [Hoodie Cloth]] [Hands [Flesh Skin]] [Legs [Jeans Cloth]] [Feet [Sneaker Rubber]]]]]]]]
+ [Scale 1]
+ [Palette
+  [[Flesh [0.52 0.54 0.47 1]]
+   [Rot [0.28 0.3 0.22 1]]
+   [Hoodie [0.18 0.32 0.24 1]]
+   [Letters [0.85 0.82 0.72 1]]
+   [Jeans [0.2 0.25 0.38 1]]
+   [Sneaker [0.85 0.85 0.82 1]]
+   [Blood [0.3 0.03 0.02 1]]
+   [Hair [0.12 0.08 0.06 1]]
+   [Eye [0.75 0.78 0.7 1]]]]
+ [Parts
+  [[[Bone Pelvis] [Shape PartBox] [At [0 -0.02 0]] [Size [0.38 0.22 0.25]] [Color Jeans]]
+   [[Bone Torso] [Shape PartBox] [At [0 0.3 0]] [Size [0.44 0.6 0.27]] [Color Hoodie] [Surface Cloth]] ; the hoodie
+   [[Bone Torso] [Shape PartBox] [At [0 0.38 0.138]] [Size [0.26 0.07 0.01]] [Color Letters] [Surface Cloth]] ; WAVERLY across its chest
+   [[Bone Torso] [Shape PartBox] [At [0 0.62 -0.1]] [Size [0.34 0.16 0.12]] [Color Hoodie] [Surface Cloth]] ; its hood, half up
+   [[Bone Torso] [Shape PartBox] [At [0 0.62 0]] [Size [0.12 0.06 0.12]] [Color Flesh] [Surface Skin]] ; neck
+   [[Bone Head] [Shape PartBall] [At [0 0.14 0.01]] [Size [0.25 0.29 0.27]] [Color Flesh] [Surface Skin]]
+   [[Bone Head] [Shape PartBall] [At [0 0.22 -0.02]] [Size [0.27 0.16 0.27]] [Color Hair] [Surface Hair]] ; messy hair
+   [[Bone Head] [Shape PartBox] [At [0 0.05 0.13]] [Size [0.1 0.03 0.02]] [Color Blood] [Surface Blood]] ; slack mouth
+   [[Bone Head] [Shape PartBall] [At [0.055 0.16 0.12]] [Size [0.04 0.03 0.03]] [Color Eye] [Surface Light] [Emission 0.25] [Mirror True]] ; milky eyes
+   [[Bone ArmRight] [Shape PartBox] [At [0 -0.38 0.01]] [Size [0.13 0.22 0.13]] [Color Blood] [Surface Blood]]]] ; a sleeve dark with blood
+ [Poses
+  [; standing hunched, head hung forward, its arms reaching out before it
+   [Pose Stance [[Turns [[Pelvis [[Lean 4.5837]]]
+                        [Torso [[Lean 14.3239] [Twist 4.5837]]]
+                        [Head [[Lean 11.4592] [Twist -8.5944]]]
+                        [ArmLeft [[Spread -4.5837] [Swing 74.4845]]]
+                        [ArmRight [[Spread 2.8648] [Swing 68.7549]]]
+                        [HandLeft [[Swing -14.3239]]]
+                        [HandRight [[Swing -20.0535]]]
+                        [LegLeft [[Spread 4.5837] [Swing 8.5944]]]
+                        [LegRight [[Spread -4.5837] [Swing -5.7296]]]]]]]
+
+   ; as standing ready, slack
+   [Pose Relaxed [[Turns [[Pelvis [[Lean 4.5837]]]
+                         [Torso [[Lean 14.3239] [Twist 4.5837]]]
+                         [Head [[Lean 11.4592] [Twist -8.5944]]]
+                         [ArmLeft [[Spread -4.5837] [Swing 74.4845]]]
+                         [ArmRight [[Spread 2.8648] [Swing 68.7549]]]
+                         [HandLeft [[Swing -14.3239]]]
+                         [HandRight [[Swing -20.0535]]]
+                         [LegLeft [[Spread 4.5837] [Swing 8.5944]]]
+                         [LegRight [[Spread -4.5837] [Swing -5.7296]]]]]]]
+
+   ; a lurching shamble - short, dragging steps, the body rolling side to side over them, the arms held out ahead and
+   ; bobbing loosely
+   [Cycling Stride [[Bob [Some [[Base -0.04] [Amplitude 0.03] [Wave Rebound] [Offset 90]]]]
+                    [Turns [[Pelvis [[Twisting [[Amplitude 8.5944]]] [Leaning [[Base 4.5837]]]]]
+                            [Torso [[Twisting [[Amplitude -4.5837]]] [Leaning [[Base 16.0428] [Amplitude 2.2918]]]]]
+                            [Head [[Twisting [[Amplitude 5.7296]]] [Leaning [[Base 11.4592] [Amplitude -4.5837]]]]]
+                            [LegLeft [[Spreading [[Base 4.0107]]] [Swinging [[Amplitude 17.1887]]]]]
+                            [LegRight [[Spreading [[Base -4.0107]]] [Swinging [[Amplitude -14.3239]]]]]
+                            [ArmLeft [[Spreading [[Base -4.5837]]] [Swinging [[Base 72.1927] [Amplitude 6.8755]]]]]
+                            [ArmRight [[Spreading [[Base 2.8648]]] [Swinging [[Base 66.4632] [Amplitude -6.8755]]]]]
+                            [HandLeft [[Swinging [[Base -14.3239]]]]]
+                            [HandRight [[Swinging [[Base -20.0535]]]]]]]]]]]]

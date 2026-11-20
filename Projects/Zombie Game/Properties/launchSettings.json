@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Nu": {
+      "commandName": "Project",
+      "debugEngines": "managed,native"
+    }
+  }
+}

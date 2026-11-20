@@ -1,0 +1,47 @@
+; The offal pit beneath the plant, down the freight elevator - where everything the line threw away has rotted into the
+; meat king, a cleaver in each hand. The line workers lie in the muck around him, and the furnace glows in the wall. The
+; door up to the rail platform is behind him.
+
+[[Palette [[Muck [0.2 0.12 0.1 1]] [Concrete [0.3 0.26 0.24 1]] [Dado [0.24 0.1 0.08 1]]]]
+
+ [Area [[Type [Plant Pit]] [Name "The Pit"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-7.5 -0.5 -6.5] [15 4 13]]]
+   [Songs [[[Song FinalBossRageSong] [When [Some [AllOf [[Flagged [Enraged MeatKing]] [Not [Flagged [Killed MeatKing]]]]]]]]
+           [[Song FinalBossSong] [When [Some [Not [Flagged [Killed MeatKing]]]]]]
+           [[Song PlantSong]]]]]]
+ [Layout [Chamber [[Size [14 12]] [Floor Muck] [Walls Concrete] [Dado Dado] [FloorSurface [Some Rot]] [WallSurface [Some Concrete]]]]]
+
+ ; the doors
+ [Prop [[Name ElevatorDoor] [Appearance [Some [Composed ShutterWallDoor []]]] [Place [[Against [Some North]] [Along -3]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant Rendering]] [Style Shutter]]]]]]]]]
+ [Prop [[Name PlatformDoor] [Appearance [Some [Composed SteelWallDoor []]]] [Place [[Against [Some South]] [Along 3]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant Platform]] [Style SteelDoor] [Opens [Some [Flagged [Killed MeatKing]]]] [Locked [Some "The door up to the rail platform. A beam's wedged across it - you can't shift it with that thing coming at you."]]]]]]]]]]
+
+ ; the furnace - glowing low, then roaring up red as the meat king rages
+ [While [Not [Flagged [Enraged MeatKing]]]
+  [[Prop [[Name Furnace] [Appearance [Some [Composed Furnace []]]] [Place [[Against [Some West]] [Along 0]]]]]]]
+ [While [Flagged [Enraged MeatKing]]
+  [[Prop [[Name FurnaceRaging] [Appearance [Some [Composed FurnaceRaging []]]] [Place [[Against [Some West]] [Along 0]]]]]]]
+
+ [Prop [[Name LampNorth] [Appearance [Some [Composed CageLamp []]]] [Place [[Against [Some North]] [Along 3]]]]]
+ [Prop [[Name LampSouth] [Appearance [Some [Composed CageLamp [[Brightness [Some 1.4]]]]]] [Place [[Against [Some South]] [Along -3]]]]]
+ [Prop [[Name LampEast] [Appearance [Some [Composed CageLamp [[Brightness [Some 1.2]]]]]] [Place [[Against [Some East]] [Along 0]]]]]
+ [Camera [[Zone [[-7 -6] [14 6]]] [At [0 2.75 5.4]] [LookAt [0 0.3 -3]] [FieldOfView 78]]]
+ [Camera [[Zone [[-7 0] [14 6]]] [At [0 2.75 -5.4]] [LookAt [0 0.3 3]] [FieldOfView 78]]]
+
+ ; the muck heaped about, and carcasses still on their hooks along the east wall
+ [Prop [[Name OffalNorthWest] [Appearance [Some [Composed Offal []]]] [Place [[At [Some [-4.6 -3.4]]]]]]]
+ [Prop [[Name OffalNorthEast] [Appearance [Some [Composed Offal []]]] [Place [[At [Some [3.6 -2.8]]]]]]]
+ [Prop [[Name OffalSouthWest] [Appearance [Some [Composed Offal []]]] [Place [[At [Some [-3.4 3.2]]]]]]]
+ [Prop [[Name OffalSouthEast] [Appearance [Some [Composed Offal []]]] [Place [[At [Some [4.6 3.8]]]]]]]
+ [Prop [[Name Rail] [Appearance [Some [Composed Rail [[Stretch [Some [8 1 1]]]]]]] [Place [[At [Some [6.2 0]]] [Facing 90]]]]]
+ [Prop [[Name CarcassNorth] [Appearance [Some [Composed Carcass []]]] [Place [[At [Some [6.2 -2.2]]] [Facing 30]]]]]
+ [Prop [[Name CarcassSouth] [Appearance [Some [Composed Carcass []]]] [Place [[At [Some [6.2 1.4]]] [Facing 110]]]]]
+ [Prop [[Name PitGrenades] [Place [[At [Some [-1.4 -5.3]]] [Height [Some 0.01]]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item Grenades] [Count 2]]]]]]]]]
+ [Prop [[Name PitRounds] [Place [[At [Some [-5 -5.3]]] [Height [Some 0.01]]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item MagnumRounds] [Count 4]]]]]]]]]
+
+ ; the creatures - the meat king, and the workers lying in the muck about him, to get up as he rages
+ [Enemy [[Name MeatKing] [Creature MeatKing] [Place [[At [Some [0 0.8]]] [Facing 180]]]]]
+ [Enemy [[Name PitWorkerNorthEast] [Creature Worker] [Place [[At [Some [4.8 -4.6]]] [Facing 300]]] [Lying True]]]
+ [Enemy [[Name PitWorkerSouthWest] [Creature Worker] [Place [[At [Some [-5.6 4.6]]] [Facing 120]]] [Lying True]]]]

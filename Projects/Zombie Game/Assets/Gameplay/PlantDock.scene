@@ -1,0 +1,32 @@
+; The loading dock - pallets stacked where the last shipment was left, the foreman's office off to one side, and the
+; swinging doors through to the kill floor.
+
+[[Palette [[Concrete [0.3 0.3 0.29 1]] [Paint [0.5 0.5 0.46 1]] [Dado [0.55 0.45 0.15 1]]]]
+
+ [Area [[Type [Plant Dock]] [Name "Loading Dock"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-5.5 -0.5 -4.5] [11 4 9]]] [Songs [[[Song PlantSong]]]]]]
+ [Layout [Chamber [[Size [10 8]] [Floor Concrete] [Walls Paint] [Dado Dado] [FloorSurface [Some Concrete]] [WallSurface [Some Concrete]]]]]
+
+ ; the doors
+ [Prop [[Name YardDock] [Appearance [Some [Composed ShutterWallDoor []]]] [Place [[Against [Some South]] [Along 2]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant Yard]] [Style Shutter]]]]]]]]]
+ [Prop [[Name DockOfficeDoor] [Appearance [Some [Composed WoodenWallDoor []]]] [Place [[Against [Some West]] [Along 1]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant Office]] [Style WoodenDoor]]]]]]]]]
+ [Prop [[Name DockKillDoors] [Appearance [Some [Composed DoubleWallDoor []]]] [Place [[Against [Some North]] [Along -1.5]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant KillFloor]] [Style DoubleDoor]]]]]]]]]
+
+ [Prop [[Name LampWest] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.8]]]]]] [Place [[At [Some [-2 0]]] [Height [Some 2.7]]]]]]
+ [Prop [[Name LampEast] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.6]]]]]] [Place [[At [Some [2.5 0]]] [Height [Some 2.7]]]]]]
+ [Camera [[Zone [[-5 -4] [10 8]]] [At [4 2.75 3.4]] [LookAt [-1.5 0.3 -1.5]] [FieldOfView 76]]]
+
+ ; the pallets, and the shipment's papers
+ [Prop [[Name CratesNorth] [Appearance [Some [Composed Crates []]]] [Place [[At [Some [3.4 -2.6]]]]]]]
+ [Prop [[Name CratesEast] [Appearance [Some [Composed Crates []]]] [Place [[At [Some [4 -0.6]]] [Facing 20]]]]]
+ [Prop [[Name CratesWest] [Appearance [Some [Composed Crates []]]] [Place [[At [Some [-3.6 -2.6]]] [Facing 70]]]]]
+ [Prop [[Name Manifest] [Appearance [Some [Slab [[Size [0.22 0.01 0.3]] [Surface Cloth] [Tint Paint]]]]] [Place [[At [Some [3.4 -1.9]]] [Height [Some 0.76]]]]
+   [Interact [Some [[InteractionType Examine] [Cue [Say ["A shipping manifest on a clipboard. The last load out was signed for Thursday." "Scrawled across the bottom: 'Night shift sent home sick. All of them. - G.B.'"]]]]]]]]
+ [Prop [[Name DockAntiseptic] [Place [[At [Some [4.3 3.3]]] [Height [Some 0.01]]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item Antiseptic] [Count 1]]]]]]]]]
+
+ ; the creatures
+ [Enemy [[Name DockWorker] [Creature Worker] [Place [[At [Some [1.1 -0.5]]] [Facing 0]]]]]
+ [Enemy [[Name DockWorkerWest] [Creature Worker] [Place [[At [Some [2.3 -0.6]]] [Facing 90]]]]]]

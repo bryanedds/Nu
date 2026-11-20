@@ -1,0 +1,98 @@
+#version 450 core
+
+const float DOF_FOCAL_FAR_SCALAR = 0.5; // HACK: until we do #1452, we scale down blur effect on distant surfaces.
+
+struct Eye3dStruct
+{
+    vec3 center;
+    mat4 view;
+    mat4 viewInverse;
+    mat4 projection;
+    mat4 projectionInverse;
+    mat4 viewProjection;
+};
+
+struct DepthOfFieldStruct
+{
+    float nearDistance;
+    float farDistance;
+    int focalType;
+    float focalDistance;
+    vec2 focalPoint;
+};
+
+layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
+layout(set = 0, binding = 1) uniform DepthOfFieldUniform { DepthOfFieldStruct depthOfField; };
+layout(set = 0, binding = 2) uniform texture2D depthTexture;
+layout(set = 0, binding = 3) uniform texture2D blurredTexture;
+layout(set = 0, binding = 4) uniform texture2D unblurredTexture;
+
+layout(set = 1, binding = 0) uniform sampler unfilteredSampler;
+layout(set = 1, binding = 1) uniform sampler filteredSampler;
+
+layout(location = 0) in vec2 texCoords;
+
+layout(location = 0) out vec4 frag;
+
+vec4 depthToPosition(float depth, vec2 texCoords)
+{
+    vec4 clip = vec4(texCoords * 2.0 - 1.0, 1.0, 1.0);
+    vec4 rayView = eye.projectionInverse * clip;
+    rayView /= rayView.w;
+    vec3 positionView = rayView.xyz * (depth / -rayView.z);
+    return eye.viewInverse * vec4(positionView, 1.0);
+}
+
+void main()
+{
+    // retrieve unblurred color
+    vec4 unblurredColor = texture(sampler2D(unblurredTexture, unfilteredSampler), texCoords);
+
+    // sample depth values that may be invalid when 0.0
+    vec2 texelSize = vec2(1.0) / textureSize(sampler2D(depthTexture, unfilteredSampler), 0);
+    float depths[] =
+        float[](
+            texture(sampler2D(depthTexture, unfilteredSampler), texCoords + texelSize * vec2(-1.0, -1.0)).r,
+            texture(sampler2D(depthTexture, unfilteredSampler), texCoords + texelSize * vec2(1.0, -1.0)).r,
+            texture(sampler2D(depthTexture, unfilteredSampler), texCoords + texelSize * vec2(-1.0, 1.0)).r,
+            texture(sampler2D(depthTexture, unfilteredSampler), texCoords + texelSize * vec2(1.0, 1.0)).r);
+
+    // compute average of valid depth values
+    int depthCount = 0;
+    float depth = 0.0;
+    for (int i = 0; i < 4; ++i)
+    {
+        float depthCurrent = depths[i];
+        if (depthCurrent != 0.0)
+        {
+            depth += depthCurrent;
+            ++depthCount;
+        }
+    }
+    depth /= float(depthCount);
+
+    // compute frag
+    if (depthCount > 0)
+    {
+        vec4 blurredColor = texture(sampler2D(blurredTexture, filteredSampler), texCoords); // filtered since half-res
+        if (depthOfField.focalType == 0)
+        {
+            float blur =
+                depth <= depthOfField.focalDistance ?
+                1.0 - smoothstep(depthOfField.nearDistance, depthOfField.focalDistance, depth) :
+                smoothstep(depthOfField.focalDistance, depthOfField.farDistance, depth) * DOF_FOCAL_FAR_SCALAR;
+            frag = mix(unblurredColor, blurredColor, blur);
+        }
+        else
+        {
+            vec2 focalTexCoords = depthOfField.focalPoint + vec2(0.5);
+            float focalDepth = texture(sampler2D(depthTexture, unfilteredSampler), focalTexCoords).r;
+            float distance = length(depthToPosition(depth, texCoords).xyz - depthToPosition(focalDepth, focalTexCoords).xyz);
+            float midDistance = (depthOfField.nearDistance + depthOfField.farDistance) * 0.5;
+            float scalar = distance < midDistance ? 1.0 : DOF_FOCAL_FAR_SCALAR;
+            float blur = smoothstep(depthOfField.nearDistance, depthOfField.farDistance, distance) * scalar;
+            frag = mix(unblurredColor, blurredColor, blur);
+        }
+    }
+    else frag = unblurredColor;
+}

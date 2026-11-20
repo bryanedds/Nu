@@ -1,0 +1,73 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net11.0</TargetFramework>
+	</PropertyGroup>
+
+	<Import Project="../../Nu/Nu.targets" />
+
+	<ItemGroup>
+		<None Include="Assets\*" />
+		<None Include="Assets\*\*" />
+		<Compile Include="Core\Assets.fs" />
+		<Compile Include="Core\Constants.fs" />
+		<Compile Include="Core\Simulants.fs" />
+		<Compile Include="Core\Math.fs" />
+		<Compile Include="Core\RandomKey.fs" />
+		<Compile Include="Core\Collider.fs" />
+		<Compile Include="Core\Surface.fs" />
+		<Compile Include="Core\Sound.fs" />
+		<Compile Include="Core\Item.fs" />
+		<Compile Include="Core\Character.fs" />
+		<Compile Include="Core\Credit.fs" />
+		<Compile Include="Core\Scene.fs" />
+		<Compile Include="Core\Puppet.fs" />
+		<Compile Include="Core\Prop.fs" />
+		<Compile Include="Core\Area.fs" />
+		<Compile Include="Core\Progression.fs" />
+		<Compile Include="Core\Builder.fs" />
+		<Compile Include="Core\Appearances.fs" />
+		<Compile Include="Core\Layouts.fs" />
+		<Compile Include="Core\Resolver.fs" />
+		<Compile Include="Core\Data.fs" />
+		<Compile Include="Core\Inventory.fs" />
+		<Compile Include="Core\Save.fs" />
+		<Compile Include="Core\Events.fs" />
+		<Compile Include="Visuals\Draw.fs" />
+		<Compile Include="Gameplay_\Block.fs" />
+		<Compile Include="Gameplay_\Puppet.fs" />
+		<Compile Include="Gameplay_\Interactable.fs" />
+		<Compile Include="Gameplay_\Scenery.fs" />
+		<Compile Include="Gameplay_\Part.fs" />
+		<Compile Include="Gameplay_\Light.fs" />
+		<Compile Include="Gameplay_\CameraZone.fs" />
+		<Compile Include="Gameplay_\Pickup.fs" />
+		<Compile Include="Gameplay_\Door.fs" />
+		<Compile Include="Gameplay_\Feature.fs" />
+		<Compile Include="Gameplay_\HeadBurst.fs" />
+		<Compile Include="Gameplay_\Creature.fs" />
+		<Compile Include="Gameplay_\Player.fs" />
+		<Compile Include="Gameplay_\ActionPrompt.fs" />
+		<Compile Include="Gameplay_\Controls.fs" />
+		<Compile Include="Gameplay_\Danger.fs" />
+		<Compile Include="Gameplay_\Inventory.fs" />
+		<Compile Include="Gameplay_\ItemBox.fs" />
+		<Compile Include="Gameplay_\Keypad.fs" />
+		<Compile Include="Gameplay_\SavePrompt.fs" />
+		<Compile Include="Gameplay_\Reading.fs" />
+		<Compile Include="Gameplay_\Gameplay.fs" />
+		<Compile Include="Menu\Menu.fs" />
+		<Compile Include="Menu\Credits.fs" />
+		<Compile Include="Game\ZombieGame.fs" />
+		<Compile Include="Game\ZombieGamePlugin.fs" />
+		<Compile Include="Program.fs" />
+		<Content Include="AssetGraph.nuag">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Include="Overlayer.nuol">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<None Include="App.config" />
+	</ItemGroup>
+
+</Project>

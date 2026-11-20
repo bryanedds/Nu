@@ -1,0 +1,31 @@
+; The gym - a basketball court, the bleachers along one side, a hoop at either end, and the linebacker waiting in the
+; middle of the court in his pads. The facilities van's keys are clipped to his belt.
+
+[[Palette [[Court [0.62 0.46 0.28 1]] [Paint [0.55 0.55 0.52 1]] [Dado [0.25 0.35 0.3 1]]]]
+
+ [Area [[Type [Dorm Gym]] [Name "Gym"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-6.5 -0.5 -5.5] [13 4 11]]] [Songs [[[Song DormBossSong] [When [Some [Not [Flagged [Killed Linebacker]]]]]] [[Song DormSong]]]]]]
+ [Layout [Chamber [[Size [12 10]] [Floor Court] [Walls Paint] [Dado Dado] [FloorSurface [Some Wood]]]]]
+
+ ; the doors
+ [Prop [[Name GymDoors] [Appearance [Some [Composed DoubleWallDoor []]]] [Place [[Against [Some South]] [Along 0]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Dorm Lobby]] [Style DoubleDoor]]]]]]]]]
+
+ [Prop [[Name LampWest] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 2]]]]]] [Place [[At [Some [-3 0]]] [Height [Some 2.7]]]]]]
+ [Prop [[Name LampEast] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 2]]]]]] [Place [[At [Some [3 0]]] [Height [Some 2.7]]]]]]
+ [Camera [[Zone [[-6 -5] [12 10]]] [At [0 2.75 4.6]] [LookAt [0 0.3 -1.5]] [FieldOfView 80]]]
+
+ ; the bleachers and the hoops
+ [Prop [[Name Bleachers] [Appearance [Some [Composed Bleachers [[Stretch [Some [1.6 1 1]]]]]]] [Place [[At [Some [0 -3.3]]]]]]]
+ [Prop [[Name HoopWest] [Appearance [Some [Composed Hoop []]]] [Place [[Against [Some West]] [Along 0.5]]]]]
+ [Prop [[Name HoopEast] [Appearance [Some [Composed Hoop []]]] [Place [[Against [Some East]] [Along 0.5]]]]]
+ [Prop [[Name GymShells] [Place [[At [Some [-5.2 3.9]]] [Height [Some 0.01]]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item ShotgunShells] [Count 4]]]]]]]]]
+ [Prop [[Name GymRounds] [Place [[At [Some [5.2 3.9]]] [Height [Some 0.01]]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item MagnumRounds] [Count 4]]]]]]]]]
+ ; the van's keys, fallen from the linebacker's belt once he's dead
+ [While [Flagged [Killed Linebacker]]
+  [[Prop [[Name GymVanKeys] [Place [[At [Some [0 0.6]]] [Height [Some 0.01]]]]
+     [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item VanKeys] [Count 1]]]]]]]]]]]
+
+ ; the creatures
+ [Enemy [[Name Linebacker] [Creature Linebacker] [Place [[At [Some [-0.8 -0.1]]] [Facing 0]]]]]]

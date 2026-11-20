@@ -1,0 +1,50 @@
+; The meat king - everything the line threw away, rotted together in the pit into one great body: heaped red meat and
+; yellow fat, ribs showing through it, a cow's skull pushed up where a head should be with eyes burning in it, a heart
+; glowing through the meat like the furnace, and a cleaver in each fist.
+
+[[Body
+  [Biped [[Legs 0.56] [Torso 0.84] [Shoulders 0.48] [Hips 0.22] [Arms 0.9]]]]
+ [Scale 1.75]
+ [Palette
+  [[Meat [0.46 0.1 0.08 1]]
+   [Dark [0.28 0.06 0.05 1]]
+   [Fat [0.78 0.68 0.46 1]]
+   [Rib [0.82 0.76 0.62 1]]
+   [Skull [0.84 0.8 0.7 1]]
+   [Heart [1 0.25 0.06 1]]
+   [Eye [1 0.35 0.1 1]]
+   [Blade [0.62 0.64 0.66 1]]
+   [Handle [0.22 0.13 0.07 1]]]]
+ [Parts
+  [[[Bone Pelvis] [Shape PartBall] [At [0 0 0]] [Size [0.7 0.4 0.5]] [Color Dark] [Surface Rot]]
+   [[Bone Torso] [Shape PartBall] [At [0 0.42 0]] [Size [1.04 0.9 0.72]] [Color Meat] [Surface Rot]] ; the great heap of him
+   [[Bone Torso] [Shape PartBall] [At [0.22 0.3 0.2]] [Size [0.42 0.4 0.36]] [Color Fat] [Surface Skin]] ; slabs of fat
+   [[Bone Torso] [Shape PartBall] [At [-0.3 0.6 0.1]] [Size [0.36 0.3 0.4]] [Color Fat] [Surface Skin]]
+   [[Bone Torso] [Shape PartBall] [At [0 0.64 -0.22]] [Size [0.7 0.4 0.4]] [Color Dark] [Surface Rot]] ; a hump of meat
+   [[Bone Torso] [Shape PartBall] [At [0.36 0.72 0]] [Size [0.42 0.38 0.44]] [Color Meat] [Surface Rot] [Mirror True]] ; heaped shoulders
+   [[Bone Torso] [Shape PartBox] [At [-0.12 0.38 0.35]] [Size [0.04 0.4 0.03]] [Turn [[Twist 90]]] [Color Rib] [Surface Bone]] ; ribs showing through
+   [[Bone Torso] [Shape PartBox] [At [-0.12 0.46 0.35]] [Size [0.04 0.42 0.03]] [Turn [[Twist 90]]] [Color Rib] [Surface Bone]]
+   [[Bone Torso] [Shape PartBox] [At [-0.12 0.54 0.34]] [Size [0.04 0.38 0.03]] [Turn [[Twist 90]]] [Color Rib] [Surface Bone]]
+   [[Bone Torso] [Shape PartBall] [At [0.1 0.5 0.33]] [Size [0.16 0.18 0.1]] [Color Heart] [Surface Light] [Emission 2.5] [Pulse [Some [[Depth 0.6] [Period 0.9]]]]] ; his heart, glowing like the furnace
+   [[Bone Head] [Shape PartBall] [At [0 0.1 0.08]] [Size [0.28 0.26 0.4]] [Color Skull] [Surface Bone]] ; a cow's skull for a head
+   [[Bone Head] [Shape PartBox] [At [0 0.02 0.3]] [Size [0.14 0.12 0.2]] [Color Skull] [Surface Bone]] ; its long face
+   [[Bone Head] [Shape PartCone] [At [0.17 0.2 0.02]] [Size [0.05 0.24 0.05]] [Turn [[Spread -70] [Lean -20]]] [Color Rib] [Surface Bone] [Mirror True]] ; its horns
+   [[Bone Head] [Shape PartBall] [At [0.08 0.12 0.22]] [Size [0.06 0.05 0.04]] [Color Eye] [Surface Light] [Emission 2.5] [Mirror True]] ; eyes burning in the sockets
+   [[Bone ArmLeft] [Shape PartBox] [At [0 -0.42 0]] [Size [0.3 0.9 0.3]] [Color Meat] [Surface Rot] [Mirror True]] ; arms like sides of beef
+   [[Bone ArmLeft] [Shape PartBall] [At [0 -0.2 0.06]] [Size [0.28 0.34 0.28]] [Color Fat] [Surface Skin] [Mirror True]]
+   [[Bone HandLeft] [Shape PartBall] [At [0 -0.05 0]] [Size [0.26 0.26 0.24]] [Color Dark] [Surface Rot]] ; great fists
+   [[Bone HandRight] [Shape PartBall] [At [0 -0.05 0]] [Size [0.26 0.26 0.24]] [Color Dark] [Surface Rot]]
+   [[Bone HandLeft] [Shape PartBox] [At [0 -0.12 0]] [Size [0.06 0.2 0.06]] [Color Handle] [Surface Wood]] ; the cleavers
+   [[Bone HandLeft] [Shape PartBox] [At [0 -0.38 0.12]] [Size [0.03 0.36 0.32]] [Color Blade] [Surface Steel]]
+   [[Bone HandRight] [Shape PartBox] [At [0 -0.12 0]] [Size [0.06 0.2 0.06]] [Color Handle] [Surface Wood]]
+   [[Bone HandRight] [Shape PartBox] [At [0 -0.38 0.12]] [Size [0.03 0.36 0.32]] [Color Blade] [Surface Steel]]
+   [[Bone LegLeft] [Shape PartBox] [At [0 -0.28 0]] [Size [0.36 0.6 0.36]] [Color Dark] [Surface Rot] [Mirror True]]]]
+ [Animations
+  [; heave both cleavers up over his shoulders, then bring them chopping down through the foe, and settle
+   [Animation Swing [[[From [Some Idle]] [To [Still Coil]] [Over 0.5] [Ease Out]]
+                     [[To [Still Cut]] [Over 0.2] [Ease Snap] [Marks [[Sweep 0.6] [Follow 1]]]]
+                     [[To [Still Cut]] [Over 0.35]]
+                     [[To Idle] [Over 0.6] [Marks [[End 1]]]]]]
+
+   ; charge headlong, cleavers out, to cut down whatever's in the way
+   [Animation Tackle [[[From [Some [Still Coil]]] [To [Still Grab]] [Over 0.3] [Ease Out] [Layers [[[Lay [Overlay [[Cycle Stride] [Rate 2.2]]]] [Onward True]]]]]]]]]]

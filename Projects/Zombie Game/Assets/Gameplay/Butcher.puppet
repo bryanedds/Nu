@@ -1,0 +1,42 @@
+; A butcher - heavyset in a butcher's cap and a leather apron gone black with blood, his sleeves rolled up over thick
+; grey forearms, a meat cleaver in his fist. He swings it, and charges.
+
+[[Body
+  [Biped [[Legs 0.74] [Torso 0.66] [Shoulders 0.3] [Hips 0.15] [Arms 0.7]]]]
+ [Scale 1.2]
+ [Palette
+  [[Flesh [0.52 0.48 0.46 1]]
+   [Shirt [0.78 0.78 0.74 1]]
+   [Apron [0.16 0.08 0.06 1]]
+   [Trousers [0.22 0.22 0.24 1]]
+   [Cap [0.82 0.82 0.78 1]]
+   [Blood [0.32 0.03 0.02 1]]
+   [Blade [0.7 0.72 0.75 1]]
+   [Handle [0.25 0.15 0.08 1]]
+   [Eye [0.9 0.85 0.6 1]]]]
+ [Parts
+  [[[Bone Pelvis] [Shape PartBox] [At [0 0 0]] [Size [0.48 0.24 0.32]] [Color Trousers]]
+   [[Bone Torso] [Shape PartBall] [At [0 0.34 0]] [Size [0.62 0.68 0.46]] [Color Shirt] [Surface Cloth]] ; a barrel chest and gut
+   [[Bone Torso] [Shape PartBox] [At [0 0.26 0.2]] [Size [0.5 0.62 0.06]] [Color Apron] [Surface Leather]] ; the apron, gone black
+   [[Bone Pelvis] [Shape PartBox] [At [0 -0.24 0.18]] [Size [0.46 0.5 0.04]] [Color Apron] [Surface Leather]]
+   [[Bone Torso] [Shape PartBox] [At [0.1 0.34 0.235]] [Size [0.2 0.3 0.01]] [Color Blood] [Surface Blood]]
+   [[Bone Head] [Shape PartBall] [At [0 0.12 0.04]] [Size [0.28 0.3 0.3]] [Color Flesh] [Surface Skin]] ; a jowled head
+   [[Bone Head] [Shape PartCylinder] [At [0 0.26 0.02]] [Size [0.27 0.08 0.27]] [Color Cap] [Surface Cloth]] ; his cap
+   [[Bone Head] [Shape PartBox] [At [0 0.03 0.18]] [Size [0.12 0.04 0.03]] [Color Blood] [Surface Blood]] ; a mouth hung open
+   [[Bone Head] [Shape PartBall] [At [0.06 0.14 0.17]] [Size [0.04 0.03 0.03]] [Color Eye] [Surface Light] [Emission 0.8] [Mirror True]] ; yellowed eyes
+   [[Bone ArmLeft] [Shape PartBox] [At [0 -0.18 0]] [Size [0.18 0.36 0.18]] [Color Shirt] [Surface Cloth] [Mirror True]] ; sleeves rolled up
+   [[Bone ArmLeft] [Shape PartBox] [At [0 -0.52 0]] [Size [0.16 0.36 0.16]] [Color Flesh] [Surface Skin] [Mirror True]] ; thick forearms
+   [[Bone HandLeft] [Shape PartBall] [At [0 -0.05 0]] [Size [0.16 0.18 0.16]] [Color Flesh] [Surface Skin]]
+   [[Bone HandRight] [Shape PartBall] [At [0 -0.05 0]] [Size [0.16 0.18 0.16]] [Color Flesh] [Surface Skin]]
+   [[Bone HandRight] [Shape PartBox] [At [0 -0.1 0]] [Size [0.04 0.16 0.04]] [Color Handle] [Surface Wood]] ; the cleaver
+   [[Bone HandRight] [Shape PartBox] [At [0 -0.28 0.085]] [Size [0.02 0.22 0.2]] [Color Blade] [Surface Chrome]]
+   [[Bone LegLeft] [Shape PartBox] [At [0 -0.34 0]] [Size [0.22 0.7 0.22]] [Color Trousers] [Surface Cloth] [Mirror True]]]]
+ [Animations
+  [; raise the cleaver high, then bring it chopping down through the foe, and settle
+   [Animation Swing [[[From [Some Idle]] [To [Still Coil]] [Over 0.4] [Ease Out]]
+                     [[To [Still Cut]] [Over 0.18] [Ease Snap] [Marks [[Sweep 0.6] [Follow 1]]]]
+                     [[To [Still Cut]] [Over 0.3]]
+                     [[To Idle] [Over 0.5] [Marks [[End 1]]]]]]
+
+   ; charge headlong, cleaver up, to cut down whatever's in the way
+   [Animation Tackle [[[From [Some [Still Coil]]] [To [Still Grab]] [Over 0.3] [Ease Out] [Layers [[[Lay [Overlay [[Cycle Stride] [Rate 2.4]]]] [Onward True]]]]]]]]]]

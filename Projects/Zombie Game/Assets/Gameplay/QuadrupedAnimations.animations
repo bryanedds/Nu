@@ -1,0 +1,34 @@
+; The quadruped's animations, one for each kind. Times are seconds, angles degrees.
+
+[[Always [[[Lay [Overlay [[Cycle Swish] [Rate 0.3] [Clock Idle]]]]]]]
+
+ ; standing square on all fours, breathing
+ [Animation Idle [[[To [Still Stance]] [Layers [[[Lay [Overlay [[Cycle Breath] [Rate 0.45] [Clock Idle]]]]]]]]]]
+
+ ; as idle
+ [Animation Relax [[[To Idle]]]]
+
+ ; walking on all fours
+ [Animation Walk [[[From [Some Idle]] [To [Cycled Stride [PerStep 0.5]]] [Over 0.2]]]]
+
+ ; walking on all fours, backward
+ [Animation WalkBack [[[From [Some Idle]] [To [Cycled Stride [PerStep -0.5]]] [Over 0.2]]]]
+
+ ; rocked back hard, shuddering, then recovering slowly
+ [Animation Hurt [[[From [Some Idle]] [To [Still Struck]] [Over 0.096] [Ease Linear] [Layers [[[Lay [Waver [[On [OnRoot [1 0 0]]] [Sway [[Amplitude 0.03]]] [Rate 9.549297] [Fade True]]]] [Over [Some 0.28]]]]]]
+                  [[To Idle] [Over 0.704] [Ease Out] [Marks [[End 1]]]]]]
+
+ ; collapse, keeling over onto its side, and lie there
+ [Animation Wound [[[From [Some Idle]] [To [Still Felled]] [Over 0.9] [Roll [Some [[To 20.0535]]]] [Marks [[End 1]]]]]]
+
+ ; gathered to spring, growling
+ [Animation Crouch [[[From [Some Idle]] [To [Still Coil]] [Over 0.3] [Layers [[[Lay [Waver [[On [OnRoot [1 0 0]]] [Sway [[Amplitude 0.008]]] [Rate 9]]]] [Onward True]]]]]]]
+
+ ; springing, jaws first
+ [Animation Tackle [[[From [Some [Still Coil]]] [To [Still Leap]] [Over 0.18] [Ease Out]]
+                    [[To [Still Bite]] [Over 0.3]]]]
+
+ ; down on the ground a while, then up again - the getting up starting at its release
+ [Animation Sprawl [[[From [Some [Still Leap]]] [To [Still Felled]] [Over 0.15] [Ease Linear]]
+                    [[To [Still Felled]] [Over 3.55]]
+                    [[To Idle] [Over 0.8] [Marks [[Release 0] [End 1]]]]]]]

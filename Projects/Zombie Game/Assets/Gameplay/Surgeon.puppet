@@ -1,0 +1,43 @@
+; The surgeon - a hulking thing that was once a surgeon, swollen with muscle through a gown soaked dark, his mask
+; hanging from one ear, one great arm ending in bone claws like scalpels, a raw heart pulsing red through his chest.
+
+[[Body
+  [Biped [[Legs 0.62] [Torso 0.7] [Shoulders 0.36] [Hips 0.16] [Arms 0.74]]]]
+ [Scale 1.6]
+ [Palette
+  [[Pale [0.66 0.6 0.58 1]]
+   [Gown [0.2 0.32 0.3 1]]
+   [Blood [0.28 0.03 0.02 1]]
+   [Mask [0.6 0.72 0.75 1]]
+   [Vein [0.42 0.3 0.36 1]]
+   [Heart [0.9 0.08 0.06 1]]
+   [Claw [0.8 0.82 0.85 1]]
+   [Eye [1 0.75 0.3 1]]]]
+ [Parts
+  [[[Bone Pelvis] [Shape PartBox] [At [0 0 0]] [Size [0.5 0.24 0.34]] [Color Gown]] ; the gown's skirt
+   [[Bone Torso] [Shape PartBall] [At [0 0.38 0]] [Size [0.78 0.74 0.5]] [Color Pale] [Surface Skin]] ; a swollen chest
+   [[Bone Torso] [Shape PartBox] [At [0 0.3 -0.12]] [Size [0.7 0.6 0.2]] [Color Gown]] ; the gown, torn open in front
+   [[Bone Torso] [Shape PartBox] [At [0 0.25 -0.225]] [Size [0.5 0.4 0.01]] [Color Blood] [Surface Blood]] ; soaked dark
+   [[Bone Torso] [Shape PartBall] [At [0.24 0.56 -0.04]] [Size [0.32 0.3 0.36]] [Color Pale] [Surface Skin] [Mirror True]] ; hulking shoulders
+   [[Bone Torso] [Shape PartBox] [At [0.12 0.42 0.23]] [Size [0.04 0.4 0.02]] [Color Vein] [Surface Skin]] ; veins
+   [[Bone Torso] [Shape PartBall] [At [-0.13 0.46 0.21]] [Size [0.14 0.16 0.1]] [Color Heart] [Surface Light] [Emission 2] [Pulse [Some [[Depth 0.6] [Period 0.8]]]]] ; its raw heart, beating
+   [[Bone Head] [Shape PartBall] [At [0 0.08 0.1]] [Size [0.26 0.26 0.28]] [Color Pale] [Surface Skin]] ; a small head sunk between the shoulders
+   [[Bone Head] [Shape PartBox] [At [0.1 0.0 0.19]] [Size [0.14 0.1 0.01]] [Turn [[Twist 40]]] [Color Mask] [Surface Cloth]] ; his mask, hanging from one ear
+   [[Bone Head] [Shape PartBox] [At [0 0.02 0.22]] [Size [0.16 0.05 0.04]] [Color Vein] [Surface Skin]] ; a lipless mouth
+   [[Bone Head] [Shape PartBall] [At [0.055 0.12 0.22]] [Size [0.04 0.03 0.03]] [Color Eye] [Surface Light] [Emission 1.5] [Mirror True]] ; small bright eyes
+   [[Bone ArmLeft] [Shape PartBox] [At [0 -0.36 0]] [Size [0.24 0.74 0.24]] [Color Pale] [Surface Skin] [Mirror True]]
+   [[Bone HandLeft] [Shape PartBall] [At [0 -0.06 0]] [Size [0.28 0.3 0.26]] [Color Pale] [Surface Skin]] ; a great fist
+   [[Bone HandRight] [Shape PartBall] [At [0 -0.04 0]] [Size [0.26 0.24 0.24]] [Color Pale] [Surface Skin]] ; the claw hand
+   [[Bone HandRight] [Shape PartCone] [At [0.07 -0.3 0.04]] [Size [0.05 0.42 0.05]] [Turn [[Lean 180]]] [Color Claw] [Surface Chrome]] ; claws like scalpels
+   [[Bone HandRight] [Shape PartCone] [At [0 -0.32 0.06]] [Size [0.05 0.46 0.05]] [Turn [[Lean 180]]] [Color Claw] [Surface Chrome]]
+   [[Bone HandRight] [Shape PartCone] [At [-0.07 -0.3 0.04]] [Size [0.05 0.42 0.05]] [Turn [[Lean 180]]] [Color Claw] [Surface Chrome]]
+   [[Bone LegLeft] [Shape PartBox] [At [0 -0.3 0]] [Size [0.28 0.62 0.28]] [Color Pale] [Surface Skin] [Mirror True]]]]
+ [Animations
+  [; wind the claw back over the shoulder, then rake it down and across through the foe, and settle
+   [Animation Swing [[[From [Some Idle]] [To [Still Coil]] [Over 0.45] [Ease Out]]
+                     [[To [Still Cut]] [Over 0.2] [Ease Snap] [Marks [[Sweep 0.6] [Follow 1]]]]
+                     [[To [Still Cut]] [Over 0.3]]
+                     [[To Idle] [Over 0.55] [Marks [[End 1]]]]]]
+
+   ; charge headlong, head down and arms out to seize whatever's in the way
+   [Animation Tackle [[[From [Some [Still Coil]]] [To [Still Grab]] [Over 0.3] [Ease Out] [Layers [[[Lay [Overlay [[Cycle Stride] [Rate 2.4]]]] [Onward True]]]]]]]]]]

@@ -1,0 +1,30 @@
+; The pharmacy - shelves of what's left, a counter, and the morgue's key.
+
+[[Palette [[Lino [0.34 0.34 0.33 1]] [Paint [0.62 0.64 0.62 1]] [Dado [0.3 0.42 0.32 1]] [Shelf [0.6 0.62 0.64 1]] [Counter [0.55 0.55 0.52 1]]]]
+
+ [Area [[Type [Hospital Pharmacy]] [Name "Pharmacy"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-3.7 -0.5 -3] [7.4 4 6]]] [Songs [[[Song HospitalPoweredSong] [When [Some [Flagged PowerRestored]]]] [[Song HospitalSong]]]]]]
+ [Layout [Chamber [[Size [6.4 5]] [Floor Lino] [Walls Paint] [Dado Dado]]]]
+
+ ; the doors
+ [Prop [[Name PharmacyDoor] [Appearance [Some [Composed WoodenWallDoor []]]] [Place [[Against [Some South]] [Along 0]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Hospital WestHall]] [Style WoodenDoor]]]]]]]]]
+
+ [Prop [[Name Lamp] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 2]]]]]] [Place [[At [Some [0 0]]] [Height [Some 2.7]]]]]]
+ [Camera [[Zone [[-3.2 -2.5] [6.4 5]]] [At [-2.8 2.75 2.2]] [LookAt [1 0.5 -1]] [FieldOfView 64]]]
+
+ [Prop [[Name Shelves0] [Appearance [Some [Slab [[Size [1.4 2 0.45]] [Surface Steel] [Tint Shelf] [Solid True]]]]] [Place [[At [Some [-2.4 -2.2]]]]]]]
+ [Prop [[Name Shelves1] [Appearance [Some [Slab [[Size [1.4 2 0.45]] [Surface Steel] [Tint Shelf] [Solid True]]]]] [Place [[At [Some [-0.8 -2.2]]]]]]]
+ [Prop [[Name Shelves2] [Appearance [Some [Slab [[Size [1.4 2 0.45]] [Surface Steel] [Tint Shelf] [Solid True]]]]] [Place [[At [Some [0.8 -2.2]]]]]]]
+ [Prop [[Name Shelves3] [Appearance [Some [Slab [[Size [1.4 2 0.45]] [Surface Steel] [Tint Shelf] [Solid True]]]]] [Place [[At [Some [2.4 -2.2]]]]]]]
+ [Prop [[Name Counter] [Appearance [Some [Composed Desk [[Colors [Some [[Wood Counter]]]] [Stretch [Some [2.6 1 0.7]]]]]]] [Place [[At [Some [1.4 0.8]]]]]]]
+ [Prop [[Name PharmacyMorgueKey] [Place [[At [Some [2.2 0.8]]] [Height [Some 0.79]]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item MorgueKey] [Count 1]]]]]]]]]
+ [Prop [[Name PharmacyCoagulant] [Place [[At [Some [-2 -2.1]]] [Height [Some 1.02]]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item Coagulant] [Count 1]]]]]]]]]
+ [Prop [[Name PharmacyAntiseptic] [Place [[At [Some [0.6 -2.1]]] [Height [Some 1.02]]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item Antiseptic] [Count 1]]]]]]]]]
+ [Prop [[Name PharmacyBullets] [Place [[At [Some [0.6 0.8]]] [Height [Some 0.79]]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item HandgunBullets] [Count 10]]]]]]]]]
+
+ ; the creatures
+ [Enemy [[Name PharmacyNurse] [Creature Nurse] [Place [[At [Some [-2.8 -0.8]]] [Facing 49]]]]]]

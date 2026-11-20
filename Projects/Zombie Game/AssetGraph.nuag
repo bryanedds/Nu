@@ -1,0 +1,26 @@
+[[Default
+  [[Assets Assets/Default [bmp png psd ttf] [PsdToPng] [Render2d]]
+   [Assets Assets/Default [dds jpeg jpg ktx tga tif tiff] [BlockCompress] [Render3d]]
+   [Assets Assets/Default [cbm dae fbx glb gltf mtl obj raw] [] [Render3d]]
+   [Assets Assets/Default [mp3 ogg wav] [] [Audio]]
+   [Assets Assets/Default [cur] [] [Cursor]]
+   [Assets Assets/Default [csv nueffect nuscript] [] [Symbol]]
+   [Assets Assets/Default [bin frag nav nbrd nuentity nugroup tmx tsx vert] [] []]]]
+ [Data
+  [[Assets Assets/Data [csv] [] [Symbol]]]]
+ [Gameplay
+  [[Assets Assets/Gameplay [bmp png psd ttf] [PsdToPng] [Render2d]]
+   [Assets Assets/Gameplay [dds jpeg jpg ktx tga tif tiff] [BlockCompress] [Render3d]]
+   [Assets Assets/Gameplay [cbm dae fbx glb gltf mtl obj raw] [] [Render3d]]
+   [Assets Assets/Gameplay [mp3 ogg wav] [] [Audio]]
+   [Assets Assets/Gameplay [cur] [] [Cursor]]
+   [Assets Assets/Gameplay [csv nueffect nuscript] [] [Symbol]]
+   [Assets Assets/Gameplay [appearances bin frag nav nbrd nuentity nugroup animations poses puppet scene tmx tsx vert] [] []]]]
+ [Gui
+  [[Assets Assets/Gui [bmp png psd ttf] [PsdToPng] [Render2d]]
+   [Assets Assets/Gui [dds jpeg jpg ktx tga tif tiff] [BlockCompress] [Render3d]]
+   [Assets Assets/Gui [cbm dae fbx glb gltf mtl obj raw] [] [Render3d]]
+   [Assets Assets/Gui [mp3 ogg wav] [] [Audio]]
+   [Assets Assets/Gui [cur] [] [Cursor]]
+   [Assets Assets/Gui [csv nueffect nuscript] [] [Symbol]]
+   [Assets Assets/Gui [bin frag nav nbrd nuentity nugroup tmx tsx vert] [] []]]]]

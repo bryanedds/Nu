@@ -1,0 +1,61 @@
+; The quadruped's key poses and cycles - its front legs are its arm bones, its hind legs its leg bones, and every
+; bone a pose leaves out is held straight.
+
+[; standing square on all fours, head up
+ [Pose Stance [[Turns [[Head [[Lean -2.8648]]]]]]]
+
+ ; gathered to spring - legs splayed out fore and aft so the body sinks low, head drawn back
+ [Pose Coil [[Turns [[Torso [[Lean 4.5837]]]
+                    [Head [[Lean -14.3239]]]
+                    [ArmLeft [[Swing 20.0535]]]
+                    [ArmRight [[Swing 20.0535]]]
+                    [LegLeft [[Swing -20.0535]]]
+                    [LegRight [[Swing -20.0535]]]]]]]
+
+ ; springing - stretched out long, forelegs reaching, hind legs thrown back, head thrust ahead
+ [Pose Leap [[Turns [[Torso [[Lean -4.5837]]]
+                    [Head [[Lean 11.4592]]]
+                    [ArmLeft [[Swing 42.9718]]]
+                    [ArmRight [[Swing 34.3775]]]
+                    [LegLeft [[Swing -37.2423]]]
+                    [LegRight [[Swing -31.5127]]]]]]]
+
+ ; the blow - the head and shoulders driven down into the foe, a foreleg raking through it
+ [Pose Bite [[Turns [[Torso [[Lean 10.3132]]]
+                    [Head [[Lean 31.5127]]]
+                    [ArmLeft [[Swing -11.4592]]]
+                    [ArmRight [[Swing 54.431]]]
+                    [LegLeft [[Swing -17.1887]]]
+                    [LegRight [[Swing -14.3239]]]]]]]
+
+ ; rocked back by a blow - head thrown up, forelegs buckling apart
+ [Pose Struck [[Root [0 0 -0.25]]
+               [Turns [[Torso [[Lean -8.5944]]]
+                      [Head [[Lean -28.6479]]]
+                      [ArmLeft [[Spread 14.3239] [Swing 11.4592]]]
+                      [ArmRight [[Spread -14.3239] [Swing 14.3239]]]]]]]
+
+ ; collapsed on the ground - legs splayed out flat to the sides, head down
+ [Pose Felled [[Turns [[Torso [[Lean 5.7296]]]
+                      [Head [[Lean 34.3775]]]
+                      [ArmLeft [[Spread 68.7549]]]
+                      [ArmRight [[Spread -68.7549]]]
+                      [LegLeft [[Spread 63.0254]]]
+                      [LegRight [[Spread -63.0254]]]]]]]
+
+ ; a step of a four-legged walk - the legs moving in diagonal pairs, the left hind with the right fore and the right
+ ; hind with the left fore, the body rolling a little from side to side over them and the head swaying against it
+ [Cycling Stride [[Bob [Some [[Base -0.015] [Amplitude 0.02] [Wave Rebound] [Offset 90]]]]
+                  [Turns [[Pelvis [[Twisting [[Amplitude 3.4377]]]]]
+                          [Torso [[Twisting [[Amplitude -4.5837]]]]]
+                          [Head [[Twisting [[Amplitude 3.4377]]] [Leaning [[Base -2.8648]]]]]
+                          [LegLeft [[Swinging [[Amplitude 24.0642]]]]]
+                          [ArmRight [[Swinging [[Amplitude 24.0642]]]]]
+                          [LegRight [[Swinging [[Amplitude -24.0642]]]]]
+                          [ArmLeft [[Swinging [[Amplitude -24.0642]]]]]]]]]
+
+ ; slow, heavy breaths, the head rising and falling with them
+ [Cycling Breath [[Turns [[Head [[Leaning [[Base -2.8648] [Amplitude 3.4377]]]]]]]]]
+
+ ; a tail's slow swish from side to side, each segment turning a little further than the one before
+ [Cycling Swish [[Chains [[TailChain [[Twisting [[Amplitude 4.0107]]]]]]]]]]

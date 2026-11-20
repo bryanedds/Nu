@@ -1,0 +1,39 @@
+; Hollis Hall's lobby - the front desk with its sign-in sheet, the dedication plaque, the mailboxes, and the doors to
+; the lounge, the east corridor, the stairwell and the gym - the stairwell and the gym locked down.
+
+[[Palette [[Carpet [0.3 0.22 0.2 1]] [Paint [0.62 0.58 0.5 1]] [Dado [0.4 0.3 0.24 1]] [Wood [0.42 0.3 0.2 1]] [Brass [0.7 0.55 0.25 1]] [Mail [0.45 0.4 0.32 1]] [Paper [0.88 0.87 0.82 1]] [Upholstery [0.25 0.3 0.4 1]]]]
+
+ [Area [[Type [Dorm Lobby]] [Name "Lobby"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-6.5 -0.5 -5] [13 4 10]]] [Songs [[[Song DormSong]]]]]]
+ [Layout [Chamber [[Size [12 9]] [Floor Carpet] [Walls Paint] [Dado Dado] [FloorSurface [Some Cloth]]]]]
+
+ ; the doors
+ [Prop [[Name LobbyDoors] [Appearance [Some [Composed DoubleWallDoor []]]] [Place [[Against [Some South]] [Along 0]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Dorm Lot]] [Style DoubleDoor]]]]]]]]]
+ [Prop [[Name LoungeDoor] [Appearance [Some [Composed WoodenWallDoor []]]] [Place [[Against [Some West]] [Along 1.5]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Dorm Lounge]] [Style WoodenDoor]]]]]]]]]
+ [Prop [[Name EastCorridorDoors] [Appearance [Some [Composed DoubleWallDoor []]]] [Place [[Against [Some East]] [Along 1.5]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Dorm EastCorridor]] [Style DoubleDoor]]]]]]]]]
+ [Prop [[Name StairwellDoor] [Appearance [Some [Composed SteelWallDoor []]]] [Place [[Against [Some North]] [Along -3.5]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Dorm Stairwell]] [Style SteelDoor] [Key [Some StudentId]] [Locked [Some "The stairwell door. Lockdown - its card reader blinks red."]]]]]]]]]]
+ [Prop [[Name GymDoors] [Appearance [Some [Composed DoubleWallDoor []]]] [Place [[Against [Some North]] [Along 3]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Dorm Gym]] [Style DoubleDoor] [Key [Some MasterKey]] [Locked [Some "The gym's doors. Locked - it'd take a Hollis Hall master key."]]]]]]]]]]
+
+ [Prop [[Name LampWest] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 2]]]]]] [Place [[At [Some [-3 0]]] [Height [Some 2.7]]]]]]
+ [Prop [[Name LampEast] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.8]]]]]] [Place [[At [Some [3 0]]] [Height [Some 2.7]]]]]]
+ [Camera [[Zone [[-6 -4.5] [6 9]]] [At [4.5 2.75 3.8]] [LookAt [-3 0.4 -1.5]] [FieldOfView 70]]]
+ [Camera [[Zone [[0 -4.5] [6 9]]] [At [-4.5 2.75 3.8]] [LookAt [3 0.4 -1.5]] [FieldOfView 70]]]
+
+ ; the front desk and its sign-in sheet
+ [Prop [[Name FrontDesk] [Appearance [Some [Composed Desk [[Colors [Some [[Wood Wood]]]] [Stretch [Some [3 1 0.8]]]]]]] [Place [[At [Some [0 -1]]]]]]]
+ [Prop [[Name SignInSheet] [Appearance [Some [Slab [[Size [0.3 0.01 0.4]] [Surface Cloth] [Tint Paper]]]]] [Place [[At [Some [-0.6 -1]]] [Height [Some 0.79]]]]
+   [Interact [Some [[InteractionType Examine] [Cue [Say ["The front desk's sign-in sheet. Across the top, in marker:" "'LOCKDOWN - RESIDENTS STAY IN YOUR ROOMS. Stairwell is ID-card only until further notice.'" "'RA on duty: office 2F (by Rm 212). Gym is locked - see RA.'"]]]]]]]]
+ [Prop [[Name LobbyAntiseptic] [Place [[At [Some [0.9 -1]]] [Height [Some 0.79]]]]
+   [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item Antiseptic] [Count 1]]]]]]]]]
+ ; the dedication plaque, and the mailboxes
+ [Prop [[Name Plaque] [Appearance [Some [Slab [[Size [0.03 0.5 0.7]] [Surface Steel] [Tint Brass]]]]] [Place [[At [Some [-5.97 -2.5]]] [Height [Some 1.2]]]]
+   [Interact [Some [[InteractionType Examine] [Cue [Say ["A brass plaque, polished where people touch it for luck:" "'HOLLIS HALL - Waverly State College - Dedicated 1962.'"]]]]]]]]
+ [Prop [[Name Mailboxes] [Appearance [Some [Slab [[Size [0.15 1.4 2]] [Surface Steel] [Tint Mail] [Solid True]]]]] [Place [[At [Some [5.9 -2.6]]]]]]]
+ [Prop [[Name Couch] [Appearance [Some [Composed Couch [[Colors [Some [[Upholstery Upholstery]]]] [Stretch [Some [1.4 1 1]]]]]]] [Place [[At [Some [-3 3.4]]] [Facing 180]]]]]
+
+ ; the creatures
+ [Enemy [[Name LobbyStudent] [Creature Student] [Place [[At [Some [1.6 0.3]]] [Facing 300]]]]]]
