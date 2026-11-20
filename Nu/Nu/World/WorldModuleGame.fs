@@ -412,7 +412,6 @@ module WorldModuleGame =
 
         /// Convert the given relative 3d position to the absolute 2d position.
         /// Useful for gui entities that track 3d entities.
-        /// Where Z > 1.0f, position is behind view.
         static member position3dToPosition2d position (world : World) =
             let windowViewport = world.WindowViewport
             let eyeCenter = World.getEye3dCenter world

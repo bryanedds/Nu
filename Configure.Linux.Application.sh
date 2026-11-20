@@ -10,7 +10,7 @@ sudo apt-get install libx11-dev
 
 # configure .net
 # NOTE: there might be a way to install dotnet for deployment only without the full SDK we could use instead.
-sudo apt-get install -y dotnet-sdk-10.0
+sudo apt-get install -y dotnet-sdk-11.0
 
 # configure assimp
 sudo apt-get install libassimp-dev

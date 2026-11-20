@@ -9,7 +9,7 @@ sudo apt-get update
 sudo apt-get install libx11-dev
 
 # configure .net
-sudo apt-get install -y dotnet-sdk-10.0
+sudo apt-get install -y dotnet-sdk-11.0
 
 # configure assimp
 sudo apt-get install libassimp-dev

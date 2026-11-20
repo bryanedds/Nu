@@ -92,7 +92,7 @@ module WorldGameModule =
         member this.BodyRemovingEvent = Events.BodyRemovingEvent --> Game.Handle
         member this.BodySeparationImplicitEvent = Events.BodySeparationImplicitEvent --> Game.Handle
         member this.Gravity2dChangeEvent = Events.Gravity2dChangeEvent --> Game.Handle
-        member this.Gravity3dChangeEvent = Events.Gravity3dChangEvent --> Game.Handle
+        member this.Gravity3dChangeEvent = Events.Gravity3dChangeEvent --> Game.Handle
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world =
@@ -267,7 +267,7 @@ module WorldGameModule =
             File.Move (filePathTmp, filePath)
 
         /// Read a game from a game descriptor.
-        static member readGame gameDescriptor name world =
+        static member readGame gameDescriptor world =
 
             // make the dispatcher
             let dispatcherName = gameDescriptor.GameDispatcherName
@@ -283,7 +283,7 @@ module WorldGameModule =
             let gameState = Reflection.readPropertiesToTarget GameState.copy gameDescriptor.GameProperties gameState
 
             // set the game's state in the world
-            let game = Game name
+            let game = Nu.Game.Handle
             World.setGameState gameState game world
 
             // read the game's screens
