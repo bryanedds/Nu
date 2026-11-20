@@ -1151,6 +1151,10 @@ module WorldModule2 =
             | SDL_EventType.SDL_EVENT_WINDOW_LEAVE_FULLSCREEN ->
                 World.processWindowResize world
             | SDL_EventType.SDL_EVENT_WINDOW_FOCUS_GAINED ->
+                // NOTE: SDL clears key state on focus loss but not on focus gain, so a modifier pressed or released
+                // while focus moved here (such as when alt-tabbing to a starting program) can read as stuck. Resetting
+                // posts key up events for whatever SDL thinks is held, clearing ImGui's key state as well.
+                SDL3.SDL_ResetKeyboard ()
                 let io = ImGui.GetIO ()
                 io.AddFocusEvent true
             | SDL_EventType.SDL_EVENT_WINDOW_FOCUS_LOST ->
