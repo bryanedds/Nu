@@ -901,7 +901,7 @@ type Nav3dConfigDispatcher () =
 
                 // edge color compute lambda
                 let computeEdgeColor (edge : Segment3) =
-                    let middleY = edge.A.Y + edge.B.Y * 0.5f
+                    let middleY = (edge.A.Y + edge.B.Y) * 0.5f
                     let height = Math.Lerp (0.0f, 1.0f, (middleY - nbrData.NavEdgesMinY) / (nbrData.NavEdgesMaxY - nbrData.NavEdgesMinY))
                     Color (1.0f, 1.0f - height, height, 1.0f)
 

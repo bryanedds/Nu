@@ -216,7 +216,7 @@ module Events =
     let Gravity2dChangeEvent = stoa<ChangeData> "Gravity2d/Change/Event"
 
     /// Raised when 3d gravity is changed.
-    let Gravity3dChangEvent = stoa<ChangeData> "Gravity3d/Change/Event"
+    let Gravity3dChangeEvent = stoa<ChangeData> "Gravity3d/Change/Event"
 
     /// Raised when a fluid emitter updates.
     let FluidEmitterEvent = stoa<FluidEmitterMessage> "FluidEmitter/Event"

@@ -10,8 +10,7 @@ open FSharp.Core
 open Prime
 open Nu
 
-/// Modifies behaviors.
-/// TODO: P1: implement arrow choice combinators.
+/// Modifies behaviors. Modifiers form an arrow, with the choice and loop combinators of one.
 type Modifier<'a, 'b> =
     | Modifier of ('a Behavior -> 'b Behavior)
 
@@ -44,12 +43,49 @@ type Modifier<'a, 'b> =
             let bhvrC = Behavior.map f bhvrB
             bhvrC
 
-    // TODO: P1: make sure we implemented this properly.
     member internal this.ComposeRight (f : 'c -> 'a) : Modifier<'c, 'b> =
         Modifier $ fun (bhvrA : 'c Behavior) ->
             let bhvrA = Behavior.map f bhvrA
             let bhvrB = this.Run bhvrA
             bhvrB
+
+    member internal this.Choose (that : Modifier<'a2, 'b2>) : Modifier<Choice<'a, 'a2>, Choice<'b, 'b2>> =
+        Modifier $ fun (bhvrAA2 : Choice<'a, 'a2> Behavior) ->
+            let bhvrA =
+                Behavior $ fun time ->
+                    match Behavior.run time bhvrAA2 with
+                    | Choice1Of2 a -> a
+                    | Choice2Of2 _ -> Unchecked.defaultof<'a> // NOTE: never sampled on this branch.
+            let bhvrA2 =
+                Behavior $ fun time ->
+                    match Behavior.run time bhvrAA2 with
+                    | Choice1Of2 _ -> Unchecked.defaultof<'a2> // NOTE: never sampled on this branch.
+                    | Choice2Of2 a2 -> a2
+            let bhvrB = this.Run bhvrA
+            let bhvrB2 = that.Run bhvrA2
+            Behavior $ fun time ->
+                match Behavior.run time bhvrAA2 with
+                | Choice1Of2 _ -> Choice1Of2 (Behavior.run time bhvrB)
+                | Choice2Of2 _ -> Choice2Of2 (Behavior.run time bhvrB2)
+
+    member internal this.FanIn (that : Modifier<'a2, 'b>) : Modifier<Choice<'a, 'a2>, 'b> =
+        Modifier $ fun (bhvrAA2 : Choice<'a, 'a2> Behavior) ->
+            let bhvrA =
+                Behavior $ fun time ->
+                    match Behavior.run time bhvrAA2 with
+                    | Choice1Of2 a -> a
+                    | Choice2Of2 _ -> Unchecked.defaultof<'a> // NOTE: never sampled on this branch.
+            let bhvrA2 =
+                Behavior $ fun time ->
+                    match Behavior.run time bhvrAA2 with
+                    | Choice1Of2 _ -> Unchecked.defaultof<'a2> // NOTE: never sampled on this branch.
+                    | Choice2Of2 a2 -> a2
+            let bhvrB = this.Run bhvrA
+            let bhvrB2 = that.Run bhvrA2
+            Behavior $ fun time ->
+                match Behavior.run time bhvrAA2 with
+                | Choice1Of2 _ -> Behavior.run time bhvrB
+                | Choice2Of2 _ -> Behavior.run time bhvrB2
 
     /// Composes two modifiers, applying the left modifier first and then the right one.
     static member ( >>>> ) (left : Modifier<'a, 'b>, right : Modifier<'b, 'c>) = left.Compose right
@@ -75,6 +111,14 @@ type Modifier<'a, 'b> =
     /// Left-to-right behavior composition of a function with a modifier.
     static member ( <<<^ ) (left : Func<'c, 'a>, right : Modifier<'a, 'b>) = right.ComposeRight left.Invoke
 
+    /// Choice composition of two modifiers. It runs the left modifier on Choice1Of2 inputs and the right one on
+    /// Choice2Of2 inputs, tagging each output the same way.
+    static member ( ++++ ) (left : Modifier<'a, 'b>, right : Modifier<'a2, 'b2>) = left.Choose right
+
+    /// Fan-in composition of two modifiers. It runs the left modifier on Choice1Of2 inputs and the right one on
+    /// Choice2Of2 inputs, merging their outputs.
+    static member ( |||| ) (left : Modifier<'a, 'b>, right : Modifier<'a2, 'b>) = left.FanIn right
+
 /// Modifier operators.
 module Modifier =
 
@@ -83,7 +127,8 @@ module Modifier =
         match mdfr with
         | Modifier mdfr -> mdfr bhvr
 
-    /// Monadic return. Lifts a behavior into a modifier that leaves the behavior unchanged.
+    /// Monadic return. Lifts a behavior into a constant modifier, which ignores its input behavior and produces the
+    /// given one.
     let returnM bhvr : Modifier<'a, 'a> =
         Modifier (fun _ -> bhvr)
 
@@ -212,6 +257,24 @@ module Modifier =
     let fanOut (mdfr : Modifier<'a, 'b>) (mdfr2 : Modifier<'a, 'b2>) : Modifier<'a, 'b * 'b2> =
         mdfr.FanOut mdfr2
 
+    /// Choice composition of two modifiers.
+    /// It runs `mdfr` on Choice1Of2 inputs and `mdfr2` on Choice2Of2 inputs, tagging each output the same way.
+    let choose (mdfr : Modifier<'a, 'b>) (mdfr2 : Modifier<'a2, 'b2>) : Modifier<Choice<'a, 'a2>, Choice<'b, 'b2>> =
+        mdfr.Choose mdfr2
+
+    /// Fan-in composition of two modifiers.
+    /// It runs `mdfr` on Choice1Of2 inputs and `mdfr2` on Choice2Of2 inputs, merging their outputs.
+    let fanIn (mdfr : Modifier<'a, 'b>) (mdfr2 : Modifier<'a2, 'b>) : Modifier<Choice<'a, 'a2>, 'b> =
+        mdfr.FanIn mdfr2
+
+    /// Runs the given modifier `mdfr` on Choice1Of2 inputs, passing Choice2Of2 inputs through unchanged.
+    let left (mdfr : Modifier<'a, 'b>) : Modifier<Choice<'a, 'c>, Choice<'b, 'c>> =
+        mdfr.Choose (Modifier id)
+
+    /// Runs the given modifier `mdfr` on Choice2Of2 inputs, passing Choice1Of2 inputs through unchanged.
+    let right (mdfr : Modifier<'a, 'b>) : Modifier<Choice<'c, 'a>, Choice<'c, 'b>> =
+        (Modifier id).Choose mdfr
+
     /// Composes the given modifier `mdfr` with the provided function `f`.
     /// The `mdfr` is applied first, and then the resulting behavior is mapped using `f`.
     let composeLeft (f : 'b -> 'c) (mdfr : Modifier<'a, 'b>) : Modifier<'a, 'c> =
@@ -235,13 +298,19 @@ module Modifier =
                 let _ = delay (Behavior.run time bhvrA)
                 a
 
-    /// Looping behavior. Loops a behavior by tying the knot.
-    let loop (mdfr : Modifier<'a * 'c, 'b * 'c>) : Modifier<'a, 'b> =
+    /// Looping behavior with an initial feedback value. Ties the knot by feeding the second output of `mdfr` back into
+    /// its second input, starting from `initial`. Since behaviors are evaluated strictly, each sample receives the
+    /// feedback value produced by the previous sample, which makes the resulting behavior stateful.
+    let loopFrom (initial : 'c) (mdfr : Modifier<'a * 'c, 'b * 'c>) : Modifier<'a, 'b> =
         Modifier $ fun (bhvrA : 'a Behavior) ->
-            let mutable c = Unchecked.defaultof<'c>
-            let bhvrAC = Behavior.append c bhvrA
+            let feedback = ref initial
+            let bhvrAC = Behavior $ fun time -> (Behavior.run time bhvrA, feedback.Value)
             let bhvrBC = run bhvrAC mdfr
             Behavior $ fun time ->
-                let (b, c') = Behavior.run time bhvrBC
-                c <- c'
+                let (b, c) = Behavior.run time bhvrBC
+                feedback.Value <- c
                 b
+
+    /// Looping behavior. Like loopFrom, starting from the default value of the feedback type.
+    let loop (mdfr : Modifier<'a * 'c, 'b * 'c>) : Modifier<'a, 'b> =
+        loopFrom Unchecked.defaultof<'c> mdfr

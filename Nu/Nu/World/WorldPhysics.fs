@@ -438,7 +438,7 @@ module WorldPhysics =
             let applyExplosionMessage = ApplyExplosionMessage { Center = center; Radius = radius; Falloff = falloff; Impulse = impulse; CollisionMask = collisionMask }
             World.handlePhysicsMessage3d applyExplosionMessage world
 
-        /// Send a physics message to jump to a body with the given body id (KinematicCharacter only).
+        /// Send a physics message to jump to a body with the given body id.
         static member jumpBody canJumpInAir jumpSpeed bodyId world =
             let jumpBodyMessage = JumpBodyMessage { BodyId = bodyId; CanJumpInAir = canJumpInAir; JumpSpeed = jumpSpeed }
             World.handlePhysicsMessage3d jumpBodyMessage world

@@ -747,28 +747,70 @@ type [<Struct>] FluidParticle =
 /// NOTE: sfml-box2d-fluid is under rewrite, it is not recommended to tune for these parameters as a future update would change things up.
 /// NOTE: The fluid interaction solver operates in virtual-pixel space (matching upstream behavior),
 /// then impulses are converted back to Box2D meter space at application time.
-type [<SymbolicExpansion>] FluidParticleConfig = 
-    { Radius : single (* virtual pixels; converted to Box2D meters on shape creation *)
-      Density : single (* physical Box2D 2D density, mass/area (kg/m^2) in meter-space simulation *)
-      Friction : single (* unitless material coefficient *)
-      Restitution : single (* unitless material coefficient *)
-      LinearDamping : single (* Box2D damping scalar, unitless *)
-      Impact : single (* unitless interaction radius scalar; range ~= Radius * Impact *)
-      ForceMultiplier : single (* heuristic solver-space magnitude; not strict SI force (N = kg*m/s^2) *)
-      ForceSurface : single (* heuristic solver-space surface-tension magnitude *)
-      ForceAdhesion : single (* heuristic solver-space adhesion magnitude; currently unused *)
-      ShearViscosity : single (* heuristic shear/friction magnitude in solver space *)
-      Viscosity : single (* heuristic viscosity magnitude in solver space *)
-      ViscosityLeave : single (* unitless multiplier for separating-particle viscosity behavior *)
-      GetForceMax : single (* per-axis clamp magnitude in solver space *)
-      ForceMax : single (* max kernel force contribution in solver space *)
-      DensityMin : single (* pseudo-density clamp minimum in heuristic fluid solver (not strict SI density) *)
-      DensityMax : single (* pseudo-density clamp maximum in heuristic fluid solver (not strict SI density) *)
-      ForceDamping : single (* unitless damping coefficient on repulsion-derived term *)
-      SurfaceWithOther : bool (* applies cross-fluid surface interaction when true *)
-      CollisionCategories : uint64 (* Box2D collision category bitfield *)
-      CollisionMask : uint64 (* Box2D collision mask bitfield *)
-      Gravity : Gravity (* world/override/scale/ignore gravity mode *) }
+type [<SymbolicExpansion>] FluidParticleConfig =
+
+    { /// Virtual pixels; converted to Box2D meters on shape creation.
+      Radius : single
+
+      /// Physical Box2D 2D density, mass/area (kg/m^2) in meter-space simulation.
+      Density : single
+
+      /// Unitless material coefficient.
+      Friction : single
+
+      /// Unitless material coefficient.
+      Restitution : single
+
+      /// Box2D damping scalar, unitless.
+      LinearDamping : single
+
+      /// Unitless interaction radius scalar; range ~= Radius * Impact.
+      Impact : single
+
+      /// Heuristic solver-space magnitude; not strict SI force (N = kg*m/s^2).
+      ForceMultiplier : single
+
+      /// Heuristic solver-space surface-tension magnitude.
+      ForceSurface : single
+
+      /// Heuristic solver-space adhesion magnitude; currently unused.
+      ForceAdhesion : single
+
+      /// Heuristic shear/friction magnitude in solver space.
+      ShearViscosity : single
+
+      /// Heuristic viscosity magnitude in solver space.
+      Viscosity : single
+
+      /// Unitless multiplier for separating-particle viscosity behavior.
+      ViscosityLeave : single
+
+      /// Per-axis clamp magnitude in solver space.
+      GetForceMax : single
+
+      /// Max kernel force contribution in solver space.
+      ForceMax : single
+
+      /// Pseudo-density clamp minimum in heuristic fluid solver (not strict SI density).
+      DensityMin : single
+
+      /// Pseudo-density clamp maximum in heuristic fluid solver (not strict SI density).
+      DensityMax : single
+
+      /// Unitless damping coefficient on repulsion-derived term.
+      ForceDamping : single
+
+      /// Applies cross-fluid surface interaction when true.
+      SurfaceWithOther : bool
+
+      /// Box2D collision category bitfield.
+      CollisionCategories : uint64
+
+      /// Box2D collision mask bitfield.
+      CollisionMask : uint64
+
+      /// World/override/scale/ignore gravity mode.
+      Gravity : Gravity }
 
     /// The default fluid particle configuration.
     static member val defaultConfig =

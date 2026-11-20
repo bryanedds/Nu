@@ -1497,7 +1497,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                           """<PackageReference Include="Box2D.NET" Version="3.1.654" />"""
                           """<PackageReference Include="BCnEncoder.Net" Version="2.2.1" />"""
                           """<PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />"""
-                          """<PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />"""
+                          """<PackageReference Include="JoltPhysicsSharp" Version="2.24.0" />"""
                           """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="15.1.0" />"""
                           """<PackageReference Include="Pfim" Version="0.11.4" />"""
                           """<PackageReference Include="Prime" Version="11.5.5" />"""
@@ -1508,7 +1508,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                           """<PackageReference Include="ppy.SDL3_ttf-CS" Version="2026.722.0" />"""
                           """<PackageReference Include="ppy.SDL3_image-CS" Version="2026.722.0" />"""
                           """<PackageReference Include="ppy.SDL3_mixer-CS" Version="2026.722.0" />"""
-                          """<PackageReference Include="Vortice.ShaderCompiler" Version="1.8.0" />"""
+                          """<PackageReference Include="Vortice.ShaderCompiler" Version="1.9.0" />"""
                           """<PackageReference Include="Vortice.Vulkan" Version="3.2.3" />"""
                           """<PackageReference Include="Vortice.VulkanMemoryAllocator" Version="1.7.0" />"""|]
                         |> Array.append (File.ReadAllLines fsprojFilePath)
@@ -2044,7 +2044,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             | Some _ | None -> ()
             (*ImGui.EndDragDropTarget ()*)
 
-    let private updateHotkeys entityHierarchyFocused simulantPropertiesFocused world =
+    let private updateHotkeys entityHierarchyFocused world =
         if not (modal ()) then
             let io = ImGui.GetIO ()
             if ImGui.IsKeyPressed ImGuiKey.F2 && (match Seq.tryExactlyOne SelectedEntities with Some entity -> entity.GetProtection world = Unprotected | None -> false) then ShowRenameEntityDialog <- true
@@ -2097,7 +2097,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     elif not (String.IsNullOrWhiteSpace PropertyValueSearchStr) then
                         PropertyValueSearchStr <- ""
                         PropertyValueSearchIndex <- -1
-                    elif entityHierarchyFocused || simulantPropertiesFocused then
+                    elif entityHierarchyFocused then
                         ViewportFocusRequested <- true
                     else
                         ImGuiInternal.tryCancelDragDrop ()
@@ -2907,7 +2907,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
                 // screen menu
                 if ImGui.BeginMenu "Screen" then
-                    if ImGui.MenuItem ("Thaw Entities", "Ctrl+Shift+T") then freezeEntities world
+                    if ImGui.MenuItem ("Thaw Entities", "Ctrl+Shift+T") then thawEntities world
                     if ImGui.MenuItem ("Freeze Entities", "Ctrl+Shift+F") then freezeEntities world
                     if ImGui.MenuItem ("Rebuild Navigation", "Ctrl+Shift+N") then synchronizeNav world
                     if ImGui.MenuItem ("Rerender Light Maps", "Ctrl+Shift+L") then rerenderLightMaps world
@@ -4717,7 +4717,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if not entityHierarchyFocused then updateEyeTravel world
                 updateEntityDrag world
                 updateAssetDrag world
-                updateHotkeys entityHierarchyFocused simulantPropertiesFocused world
+                updateHotkeys entityHierarchyFocused world
 
                 // deferred imgui input
                 updateResetEye ()
