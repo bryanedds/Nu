@@ -195,8 +195,8 @@ module Behavior =
 
     (* Product Combinators *)
 
-    /// The identity behavior.
-    let id bhvr = returnB bhvr
+    /// The identity combinator, which returns the given behavior unchanged.
+    let id (bhvr : 'a Behavior) = bhvr
 
     /// Map over two behaviors.
     let map2 mapper (bhvr : 'a Behavior) (bhvr2 : 'b Behavior) : 'c Behavior = bhvr.Map2 mapper bhvr2
