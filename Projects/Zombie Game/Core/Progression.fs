@@ -52,7 +52,7 @@ type Intent =
           QuickTurn =
             World.isKeyboardShiftDown world && World.isKeyboardKeyPressed KeyboardKey.S world ||
             World.isKeyboardKeyDown KeyboardKey.S world && World.isKeyboardKeyPressed KeyboardKey.RShift world
-          AutoAim = World.isKeyboardKeyDown KeyboardKey.RightBracket world
+          AutoAim = World.isKeyboardKeyPressed KeyboardKey.RightBracket world
           ToggleInventory = World.isKeyboardKeyPressed KeyboardKey.Tab world
           Back = World.isKeyboardKeyPressed KeyboardKey.Escape world
           Move =

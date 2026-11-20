@@ -7,7 +7,7 @@ open System.Numerics
 open Prime
 open Nu
 
-/// What acting would do to what the player faces, as "Space - Examine" - declared while there's something before it,
+/// What acting would do to what the player faces, as "Enter - Examine" - declared while there's something before it,
 /// told how it's acted on.
 type ActionPromptDispatcher () =
     inherit GuiDispatcherImSim ()

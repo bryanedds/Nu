@@ -32,7 +32,7 @@ module Bot =
         let world = bot.World
         Assert.Fail
             (message + "\nIn " + scstring (Simulants.Gameplay.GetAreaType world) + " at " + string (Simulants.GameplayPlayer.GetPosition world) + ", " +
-             string (Simulants.GameplayPlayer.GetHealth world) + " hp, " + scstring (Simulants.Gameplay.GetMode world) + ".\nLog:\n" + String.Join ("\n", List.rev bot.Log |> List.truncate 500))
+             string (Simulants.GameplayPlayer.GetHealth world) + " hp, " + scstring (Simulants.Gameplay.GetMode world) + ".\nLog:\n" + String.Join ("\n", bot.Log |> List.truncate 500 |> List.rev))
 
     let private getArea (bot : Bot) = Simulants.Gameplay.GetAreaType bot.World
     let private getMode (bot : Bot) = Simulants.Gameplay.GetMode bot.World
