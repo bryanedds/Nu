@@ -26,8 +26,8 @@ type HeadBurstDispatcher () =
     inherit Entity3dDispatcher (false, false, false)
 
     /// A bit's value between zero and one, set apart by what it's for.
-    static let roll (key : RandomKey) (name : string) =
-        key |> RandomKey.withName name |> RandomKey.toSingle
+    static let roll (key : RandKeyed) (name : string) =
+        key |> RandKeyed.withName name |> RandKeyed.toSingle
 
     /// A value between two others, as far along as a share of the way.
     static let lerp (a : single) (b : single) (share : single) =
@@ -52,9 +52,9 @@ type HeadBurstDispatcher () =
                 Draw.shape renderPass Blood PartBall origin quatIdentity (v3Dup size) Constants.Gameplay.HeadBurstBloodColor 0.0f false world
 
             // the bits flung out of it, tumbling as they fall and lying where they land
-            let key = RandomKey.make 0UL |> RandomKey.withName "burst" |> RandomKey.withName (string entity.EntityAddress)
+            let key = RandKeyed.make 0UL |> RandKeyed.withName "burst" |> RandKeyed.withName (string entity.EntityAddress)
             for index in 0 .. dec Constants.Gameplay.HeadBurstBits do
-                let bit = key |> RandomKey.withIndex index
+                let bit = key |> RandKeyed.withIndex index
                 let (surface, color, size) =
                     if index < Constants.Gameplay.HeadBurstBloodBits then (Blood, Constants.Gameplay.HeadBurstBloodColor, lerp 0.03f 0.065f (roll bit "size"))
                     elif index < Constants.Gameplay.HeadBurstBits - Constants.Gameplay.HeadBurstBoneBits then (Rot, Constants.Gameplay.HeadBurstFleshColor, lerp 0.035f 0.06f (roll bit "size"))

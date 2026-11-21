@@ -10,7 +10,7 @@ open Prime
 /// key gives the same value on every run, machine and .NET version, and no value depends on any other, so randomness
 /// keyed this way is pure without any state to thread, and adding or reordering what's random changes nothing else.
 [<Struct>]
-type RandomKey =
+type RandKeyed =
     private { Hash : uint64 }
 
     /// Fold a byte into a hash.
@@ -34,24 +34,24 @@ type RandomKey =
         { Hash = foldUInt64 14695981039346656037UL seed } // FNV-1a, folding in each part of the key a byte at a time
 
     /// The key set apart by an index, as which creature or which of several.
-    static member withIndex (index : int) (key : RandomKey) =
+    static member withIndex (index : int) (key : RandKeyed) =
         { Hash = foldUInt64 key.Hash (uint64 (int64 index)) }
 
     /// The key set apart by a name, as what the value is for.
-    static member withName (name : string) (key : RandomKey) =
+    static member withName (name : string) (key : RandKeyed) =
         let mutable hash = key.Hash
         for b in Encoding.UTF8.GetBytes name do hash <- foldByte hash b
         { Hash = foldByte hash 0xFFuy } // ends the name, so names run together never collide with one another
 
     /// The key's value between zero (included) and one (excluded).
-    static member toSingle (key : RandomKey) =
+    static member toSingle (key : RandKeyed) =
         single (finish key.Hash >>> 40) / 16777216.0f
 
     /// The key's value as a whole number from zero up to, but not including, a count.
-    static member toIndex (count : int) (key : RandomKey) =
+    static member toIndex (count : int) (key : RandKeyed) =
         if count <= 0 then failwith "A random index needs a count of at least one."
         int (finish key.Hash % uint64 count)
 
     /// Whether something with the given chance happens.
-    static member roll (chance : single) (key : RandomKey) =
-        RandomKey.toSingle key < chance
+    static member roll (chance : single) (key : RandKeyed) =
+        RandKeyed.toSingle key < chance

@@ -77,9 +77,9 @@ module GameplayDispatcherEarlyExtensions =
         /// the moment, so a run plays the same sounds every time.
         member this.PlaySoundAtOneOf volume (position : Vector3) (sounds : Sound AssetTag array) world =
             let index =
-                RandomKey.make (this.GetGameSeed world) |> RandomKey.withName "sound" |>
-                RandomKey.withIndex (int world.ScaledTime.Updates) |> RandomKey.withIndex (int (position.X * 10.0f) + 1000 * int (position.Z * 10.0f)) |>
-                RandomKey.toIndex sounds.Length
+                RandKeyed.make (this.GetGameSeed world) |> RandKeyed.withName "sound" |>
+                RandKeyed.withIndex (int world.ScaledTime.Updates) |> RandKeyed.withIndex (int (position.X * 10.0f) + 1000 * int (position.Z * 10.0f)) |>
+                RandKeyed.toIndex sounds.Length
             this.PlaySoundAt volume position sounds[index] world
 
         (* Collision *)
@@ -348,7 +348,7 @@ type CreatureDispatcher () =
                         if distance > reach * 0.85f then walk delta (data.ChaseSpeed * pace) entity world
                         let period = match data.Behavior with Shambler -> 5.0f | Hound -> 4.0f | Brute -> 9.0f
                         if (world.LocalTime (entity.GetLastCry world)).SecondsF > period then
-                            let jitter = RandomKey.make (entity.Screen.GetGameSeed world) |> RandomKey.withName "cry" |> RandomKey.withName entity.Name |> RandomKey.withIndex (int now.SecondsF) |> RandomKey.toSingle
+                            let jitter = RandKeyed.make (entity.Screen.GetGameSeed world) |> RandKeyed.withName "cry" |> RandKeyed.withName entity.Name |> RandKeyed.withIndex (int now.SecondsF) |> RandKeyed.toSingle
                             entity.SetLastCry (now + GameTime.ofSeconds (double (jitter * 2.0f))) world
                             cry entity world
 
@@ -362,7 +362,7 @@ type CreatureDispatcher () =
              Entity.Yaw @= entity.GetYaw world
              Entity.CharacterAnimation @= animation
              Entity.PuppetTime @= localTime
-             Entity.IdleTime @= world.ScaledTime.SecondsF + (RandomKey.make 0UL |> RandomKey.withName "idle" |> RandomKey.withName entity.Name |> RandomKey.toSingle) * 7.0f
+             Entity.IdleTime @= world.ScaledTime.SecondsF + (RandKeyed.make 0UL |> RandKeyed.withName "idle" |> RandKeyed.withName entity.Name |> RandKeyed.toSingle) * 7.0f
              Entity.Enemy .= true
              Entity.Headless @= (entity.GetHeadBurstOpt world).IsSome
              Entity.MountOpt .= None

@@ -18,7 +18,7 @@ type Builder (sceneName : string, propName : string, framing : Framing, palette 
     let colliders = ResizeArray<Collider> ()
     let lights = ResizeArray<Light> ()
     let rotation = Quaternion.CreateFromYawPitchRoll (framing.Yaw, 0.0f, 0.0f)
-    let key = RandomKey.make seed |> RandomKey.withName sceneName |> RandomKey.withName propName
+    let key = RandKeyed.make seed |> RandKeyed.withName sceneName |> RandKeyed.withName propName
     let mutable draws = 0
 
     /// Where the prop stands and which way it faces.
@@ -90,7 +90,7 @@ type Builder (sceneName : string, propName : string, framing : Framing, palette 
 
     /// The prop's next random value, between zero (included) and one (excluded).
     member this.Random () =
-        let value = key |> RandomKey.withIndex draws |> RandomKey.toSingle
+        let value = key |> RandKeyed.withIndex draws |> RandKeyed.toSingle
         draws <- inc draws
         value
 
@@ -100,7 +100,7 @@ type Builder (sceneName : string, propName : string, framing : Framing, palette 
 
     /// The prop's next random whole number, from zero up to, but not including, a count.
     member this.RandomIndex count =
-        let value = key |> RandomKey.withIndex draws |> RandomKey.toIndex count
+        let value = key |> RandKeyed.withIndex draws |> RandKeyed.toIndex count
         draws <- inc draws
         value
 
