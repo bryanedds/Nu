@@ -95,8 +95,8 @@
         <Compile Include="Cursor\CursorClient.fs" />
         <Compile Include="Symbolics\Symbolics.fs" />
         <Compile Include="Particles\Particles.fs" />
-        <Compile Include="Effects\EffectDescriptor.fs" />
         <Compile Include="Effects\DataToken.fs" />
+        <Compile Include="Effects\EffectDescriptor.fs" />
         <Compile Include="Effects\EffectSystem.fs" />
         <Compile Include="BlockMap\BlockMap.fs" />
         <Compile Include="World\WorldPrelude.fs" />
