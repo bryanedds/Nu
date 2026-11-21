@@ -11,7 +11,7 @@ open Prime
 
 /// Deterministic hashing - the same value hashes the same on every run, machine and .NET version, unlike hash and
 /// GetHashCode, which .NET randomizes per process for strings and anything containing them. A hash is built by folding
-/// values into a running FNV-1a state, starting from HashdBasis, then finished with hashdFinish to spread its bits.
+/// values into a running FNV-1a state, starting from Hashd.Basis, then finished with Hashd.hashdFinish to spread its bits.
 [<RequireQualifiedAccess>]
 module Hashd =
 
@@ -71,16 +71,16 @@ module Hashd =
     let inline hashdEnum (value : 'e) (hash : uint64) =
         hashdInt64 (int64 (LanguagePrimitives.EnumToValue value)) hash
 
-    /// Spread a deterministic hash's bits evenly over the whole value, by SplitMix64's finalizer.
-    let hashdFinish (hash : uint64) =
-        let z = (hash ^^^ (hash >>> 30)) * 0xbf58476d1ce4e5b9UL
-        let z = (z ^^^ (z >>> 27)) * 0x94d049bb133111ebUL
-        z ^^^ (z >>> 31)
-
     /// Fold a value into a deterministic hash by the Hashd overload for its type, found on a witness type or on the
     /// value's own type.
     let inline hashdBy (witness : ^w) (value : ^a) (hash : uint64) : uint64 =
         ((^w or ^a) : (static member Hashd : ^w * ^a * uint64 -> uint64) (witness, value, hash))
+
+    /// Spread a deterministic hash's bits evenly over the whole value, by SplitMix64's finalizer.
+    let finalize (hash : uint64) =
+        let z = (hash ^^^ (hash >>> 30)) * 0xbf58476d1ce4e5b9UL
+        let z = (z ^^^ (z >>> 27)) * 0x94d049bb133111ebUL
+        z ^^^ (z >>> 31)
 
 /// The types hashdFold folds, an overload for each, chosen at compile time. A record or union of your own folds by
 /// giving its type a Hashd of the same shape, folding its fields in turn, as -
@@ -182,7 +182,7 @@ module HashdOperators =
 
     /// Hash a value deterministically under a seed, so the same value hashes differently under different seeds.
     let inline hashdSeeded (value : ^a) (seed : uint64) : uint64 =
-        Hashd.hashdFinish (hashdFold value (Hashd.hashdUInt64 seed Hashd.Basis))
+        Hashd.finalize (hashdFold value (Hashd.hashdUInt64 seed Hashd.Basis))
 
     /// Hash a value deterministically.
     let inline hashd (value : ^a) : uint64 =
