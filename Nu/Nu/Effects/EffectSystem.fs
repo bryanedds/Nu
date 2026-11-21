@@ -700,9 +700,22 @@ module EffectSystem =
         // build implicitly mounted content
         evalContent content slice history effectSystem
 
-    and private evalEmit shift rate emitterAspects aspects content history effectSystem =
+    and private evalEmissionHistory emitterSlice aspects (history : Slice seq) effectSystem =
+
+        // the slices an emission born from emitterSlice has passed through, one per later slice of the emitter's
+        // history, each timed by the emission's age so that an emitter in its content emits along its path
+        history
+        |> Seq.filter (fun slice -> slice.SliceTime >= emitterSlice.SliceTime)
+        |> Seq.map (fun slice ->
+            let age = slice.SliceTime - emitterSlice.SliceTime
+            let emission = { Slice.copy emitterSlice with SliceTime = age; SliceDelta = slice.SliceDelta }
+            evalAspects aspects emission { effectSystem with EffectTime = age })
+        |> Seq.toArray
+
+    and private evalEmit shift rate emitterAspects aspects content (history : Slice seq) effectSystem =
         Seq.fold (fun effectSystem slice ->
             let effectTimeOld = effectSystem.EffectTime
+            let effectTimeOriginalOld = effectSystem.EffectTimeOriginal
             let effectTime = effectSystem.EffectTimeOriginal - slice.SliceTime
             let slice = { slice with Elevation = slice.Elevation + shift }
             let slice = evalAspects emitterAspects slice { effectSystem with EffectTime = effectSystem.EffectTime - effectTime }
@@ -710,15 +723,22 @@ module EffectSystem =
             let emitCountThisFrame = double (effectSystem.EffectTime - effectTime) * double rate
             let emitCount = int emitCountThisFrame - int emitCountLastFrame
             let effectSystem =
-                Array.fold (fun effectSystem _ ->
-                    let emission = Slice.copy slice // protect original slice from mutation
-                    let emission = evalAspects aspects emission effectSystem
-                    if emission.Enabled
-                    then evalContent content emission history effectSystem
-                    else effectSystem)
-                    { effectSystem with EffectTime = effectTime }
-                    [|0 .. emitCount - 1|]
-            { effectSystem with EffectTime = effectTimeOld })
+                if emitCount > 0 then
+
+                    // the emissions' own history, timed from their birth, so that an emitter in their content emits
+                    // from them rather than from this emitter
+                    let emissionHistory = lazy (evalEmissionHistory slice aspects history effectSystem)
+                    Array.fold (fun effectSystem _ ->
+                        let emission = Slice.copy slice // protect original slice from mutation
+                        let emission = evalAspects aspects emission effectSystem
+                        if emission.Enabled
+                        then evalContent content emission (Seq.delay (fun () -> emissionHistory.Value)) effectSystem
+                        else effectSystem)
+                        { effectSystem with EffectTime = effectTime; EffectTimeOriginal = effectTime }
+                        [|0 .. emitCount - 1|]
+
+                else effectSystem
+            { effectSystem with EffectTime = effectTimeOld; EffectTimeOriginal = effectTimeOriginalOld })
             effectSystem
             history
 
