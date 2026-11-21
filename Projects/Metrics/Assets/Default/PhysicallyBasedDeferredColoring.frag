@@ -312,7 +312,8 @@ void main()
     float roughness = material.r;
     float metallic = material.g;
     float ambientOcclusion = material.b * ssao;
-    vec3 emission = vec3(material.a);
+    float emissionEncoded = min(material.a, 254.0 / 255.0); // NOTE: decodes what geometry passes encode as e / (1 + e).
+    vec3 emission = vec3(emissionEncoded / (1.0 - emissionEncoded));
 
     // mix clear coat roughness with roughness value
     roughness = mix(roughness, clearCoatRoughness, clearCoat);
