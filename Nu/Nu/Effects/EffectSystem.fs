@@ -82,9 +82,8 @@ module EffectSystem =
         | Linear ->
             value + scale (value2 - value, progress)
         | Random ->
-            let rand = Rand.makeFromInt (int ((Math.Max (double progress, 0.000000001)) * double Int32.MaxValue))
-            let randValue = fst (Rand.nextDouble rand)
-            value + scale (value2 - value, randValue)
+            let randomValue = Gen.randomkd progress 0UL
+            value + scale (value2 - value, randomValue)
         | Chaos ->
             let chaosValue = Gen.random
             value + scale (value2 - value, chaosValue)
@@ -253,7 +252,7 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween Vector3.Multiply Vector3.Divide Vector3.Pow Vector3.Modulo slice.Size tweened applicator
+                let applied = applyTween Vector3.Multiply Vector3.Divide Vector3.Pow Vector3.Modulo slice.Scale tweened applicator
                 slice.Scale <- applied
             slice
         | Offsets (applicator, algorithm, playback, keyFrames) ->
@@ -261,7 +260,7 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween Vector3.Multiply Vector3.Divide Vector3.Pow Vector3.Modulo slice.Position tweened applicator
+                let applied = applyTween Vector3.Multiply Vector3.Divide Vector3.Pow Vector3.Modulo slice.Offset tweened applicator
                 slice.Offset <- applied
             slice
         | Sizes (applicator, algorithm, playback, keyFrames) ->
@@ -316,13 +315,13 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween Color.Multiply Color.Divide Color.Pow Color.Modulo slice.Color tweened applicator
+                let applied = applyTween Color.Multiply Color.Divide Color.Pow Color.Modulo slice.Emission tweened applicator
                 slice.Emission <- applied
             slice
         | IgnoreLightMapses (applicator, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (_, keyFrame, _) = selectKeyFrames effectSystem.EffectTime playback keyFrames
-                let applied = applyLogic slice.Enabled keyFrame.LogicValue applicator
+                let applied = applyLogic slice.IgnoreLightMaps keyFrame.LogicValue applicator
                 slice.IgnoreLightMaps <- applied
             slice
         | Anisotropies (applicator, algorithm, playback, keyFrames) ->
