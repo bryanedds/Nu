@@ -11,7 +11,7 @@ open Prime
 
 /// Deterministic hashing - the same value hashes the same on every run, machine and .NET version, unlike hash and
 /// GetHashCode, which .NET randomizes per process for strings and anything containing them. A hash is built by folding
-/// values into a running FNV-1a state, starting from Hashd.Basis, then finalized with Hashd.finalize to spread its
+/// values into a running FNV-1a state, starting from Hashd.Basis, then finalized with hashdFinalize to spread its
 /// bits.
 [<RequireQualifiedAccess>]
 module Hashd =
@@ -72,102 +72,102 @@ module Hashd =
     let inline foldEnum (value : 'e) (hash : uint64) =
         foldInt64 (int64 (LanguagePrimitives.EnumToValue value)) hash
 
-    /// Fold a value into a deterministic hash by the Fold overload for its type, found on a witness type or on the
+    /// Fold a value into a deterministic hash by the HashdFold overload for its type, found on a witness type or on the
     /// value's own type.
     let inline foldBy (witness : ^w) (value : ^a) (hash : uint64) : uint64 =
-        ((^w or ^a) : (static member Fold : ^w * ^a * uint64 -> uint64) (witness, value, hash))
+        ((^w or ^a) : (static member HashdFold : ^w * ^a * uint64 -> uint64) (witness, value, hash))
 
 /// The types hashdFold folds, an overload for each, chosen at compile time. A record or union of your own folds by
-/// giving its type a Fold of the same shape, folding its fields in turn, as -
-///     static member Fold (_ : HashdFolder, value : MyType, hash) =
+/// giving its type a HashdFold of the same shape, folding its fields in turn, as -
+///     static member HashdFold (_ : HashdFolder, value : MyType, hash) =
 ///         hash |> hashdFold value.Name |> hashdFold value.Count
 [<AbstractClass; Sealed>]
 type HashdFolder =
 
-    static member Fold (_ : HashdFolder, value : int, hash) = Hashd.foldInt value hash
-    static member Fold (_ : HashdFolder, value : int64, hash) = Hashd.foldInt64 value hash
-    static member Fold (_ : HashdFolder, value : uint64, hash) = Hashd.foldUInt64 value hash
-    static member Fold (_ : HashdFolder, value : int16, hash) = Hashd.foldInt64 (int64 value) hash
-    static member Fold (_ : HashdFolder, value : uint16, hash) = Hashd.foldInt64 (int64 value) hash
-    static member Fold (_ : HashdFolder, value : uint32, hash) = Hashd.foldInt64 (int64 value) hash
-    static member Fold (_ : HashdFolder, value : byte, hash) = Hashd.foldInt64 (int64 value) hash
-    static member Fold (_ : HashdFolder, value : sbyte, hash) = Hashd.foldInt64 (int64 value) hash
-    static member Fold (_ : HashdFolder, value : single, hash) = Hashd.foldSingle value hash
-    static member Fold (_ : HashdFolder, value : double, hash) = Hashd.foldDouble value hash
-    static member Fold (_ : HashdFolder, value : bool, hash) = Hashd.foldBool value hash
-    static member Fold (_ : HashdFolder, value : string, hash) = Hashd.foldString value hash
-    static member Fold (_ : HashdFolder, value : Guid, hash) = Hashd.foldGuid value hash
+    static member HashdFold (_ : HashdFolder, value : int, hash) = Hashd.foldInt value hash
+    static member HashdFold (_ : HashdFolder, value : int64, hash) = Hashd.foldInt64 value hash
+    static member HashdFold (_ : HashdFolder, value : uint64, hash) = Hashd.foldUInt64 value hash
+    static member HashdFold (_ : HashdFolder, value : int16, hash) = Hashd.foldInt64 (int64 value) hash
+    static member HashdFold (_ : HashdFolder, value : uint16, hash) = Hashd.foldInt64 (int64 value) hash
+    static member HashdFold (_ : HashdFolder, value : uint32, hash) = Hashd.foldInt64 (int64 value) hash
+    static member HashdFold (_ : HashdFolder, value : byte, hash) = Hashd.foldInt64 (int64 value) hash
+    static member HashdFold (_ : HashdFolder, value : sbyte, hash) = Hashd.foldInt64 (int64 value) hash
+    static member HashdFold (_ : HashdFolder, value : single, hash) = Hashd.foldSingle value hash
+    static member HashdFold (_ : HashdFolder, value : double, hash) = Hashd.foldDouble value hash
+    static member HashdFold (_ : HashdFolder, value : bool, hash) = Hashd.foldBool value hash
+    static member HashdFold (_ : HashdFolder, value : string, hash) = Hashd.foldString value hash
+    static member HashdFold (_ : HashdFolder, value : Guid, hash) = Hashd.foldGuid value hash
 
-    static member inline Fold (w : HashdFolder, (a, b) : ^a * ^b, hash) =
+    static member inline HashdFold (w : HashdFolder, (a, b) : ^a * ^b, hash) =
         hash |> Hashd.foldBy w a |> Hashd.foldBy w b
 
-    static member inline Fold (w : HashdFolder, (a, b, c) : ^a * ^b * ^c, hash) =
+    static member inline HashdFold (w : HashdFolder, (a, b, c) : ^a * ^b * ^c, hash) =
         hash |> Hashd.foldBy w a |> Hashd.foldBy w b |> Hashd.foldBy w c
 
-    static member inline Fold (w : HashdFolder, (a, b, c, d) : ^a * ^b * ^c * ^d, hash) =
+    static member inline HashdFold (w : HashdFolder, (a, b, c, d) : ^a * ^b * ^c * ^d, hash) =
         hash |> Hashd.foldBy w a |> Hashd.foldBy w b |> Hashd.foldBy w c |> Hashd.foldBy w d
 
-    static member inline Fold (w : HashdFolder, (a, b, c, d, e) : ^a * ^b * ^c * ^d * ^e, hash) =
+    static member inline HashdFold (w : HashdFolder, (a, b, c, d, e) : ^a * ^b * ^c * ^d * ^e, hash) =
         hash |> Hashd.foldBy w a |> Hashd.foldBy w b |> Hashd.foldBy w c |> Hashd.foldBy w d |> Hashd.foldBy w e
 
-    static member inline Fold (w : HashdFolder, (a, b, c, d, e, f) : ^a * ^b * ^c * ^d * ^e * ^f, hash) =
+    static member inline HashdFold (w : HashdFolder, (a, b, c, d, e, f) : ^a * ^b * ^c * ^d * ^e * ^f, hash) =
         hash |> Hashd.foldBy w a |> Hashd.foldBy w b |> Hashd.foldBy w c |> Hashd.foldBy w d |> Hashd.foldBy w e |> Hashd.foldBy w f
 
-    static member inline Fold (w : HashdFolder, (a, b, c, d, e, f, g) : ^a * ^b * ^c * ^d * ^e * ^f * ^g, hash) =
+    static member inline HashdFold (w : HashdFolder, (a, b, c, d, e, f, g) : ^a * ^b * ^c * ^d * ^e * ^f * ^g, hash) =
         hash |> Hashd.foldBy w a |> Hashd.foldBy w b |> Hashd.foldBy w c |> Hashd.foldBy w d |> Hashd.foldBy w e |> Hashd.foldBy w f |> Hashd.foldBy w g
 
-    static member inline Fold (w : HashdFolder, (a, b, c, d, e, f, g, h) : ^a * ^b * ^c * ^d * ^e * ^f * ^g * ^h, hash) =
+    static member inline HashdFold (w : HashdFolder, (a, b, c, d, e, f, g, h) : ^a * ^b * ^c * ^d * ^e * ^f * ^g * ^h, hash) =
         hash |> Hashd.foldBy w a |> Hashd.foldBy w b |> Hashd.foldBy w c |> Hashd.foldBy w d |> Hashd.foldBy w e |> Hashd.foldBy w f |> Hashd.foldBy w g |> Hashd.foldBy w h
 
-    static member inline Fold (w : HashdFolder, (a, b, c, d, e, f, g, h, i) : ^a * ^b * ^c * ^d * ^e * ^f * ^g * ^h * ^i, hash) =
+    static member inline HashdFold (w : HashdFolder, (a, b, c, d, e, f, g, h, i) : ^a * ^b * ^c * ^d * ^e * ^f * ^g * ^h * ^i, hash) =
         hash |> Hashd.foldBy w a |> Hashd.foldBy w b |> Hashd.foldBy w c |> Hashd.foldBy w d |> Hashd.foldBy w e |> Hashd.foldBy w f |> Hashd.foldBy w g |> Hashd.foldBy w h |> Hashd.foldBy w i
 
-    static member inline Fold (w : HashdFolder, struct (a, b) : struct (^a * ^b), hash) =
+    static member inline HashdFold (w : HashdFolder, struct (a, b) : struct (^a * ^b), hash) =
         hash |> Hashd.foldBy w a |> Hashd.foldBy w b
 
-    static member inline Fold (w : HashdFolder, struct (a, b, c) : struct (^a * ^b * ^c), hash) =
+    static member inline HashdFold (w : HashdFolder, struct (a, b, c) : struct (^a * ^b * ^c), hash) =
         hash |> Hashd.foldBy w a |> Hashd.foldBy w b |> Hashd.foldBy w c
 
-    static member inline Fold (w : HashdFolder, struct (a, b, c, d) : struct (^a * ^b * ^c * ^d), hash) =
+    static member inline HashdFold (w : HashdFolder, struct (a, b, c, d) : struct (^a * ^b * ^c * ^d), hash) =
         hash |> Hashd.foldBy w a |> Hashd.foldBy w b |> Hashd.foldBy w c |> Hashd.foldBy w d
 
-    static member inline Fold (w : HashdFolder, struct (a, b, c, d, e) : struct (^a * ^b * ^c * ^d * ^e), hash) =
+    static member inline HashdFold (w : HashdFolder, struct (a, b, c, d, e) : struct (^a * ^b * ^c * ^d * ^e), hash) =
         hash |> Hashd.foldBy w a |> Hashd.foldBy w b |> Hashd.foldBy w c |> Hashd.foldBy w d |> Hashd.foldBy w e
 
-    static member inline Fold (w : HashdFolder, struct (a, b, c, d, e, f) : struct (^a * ^b * ^c * ^d * ^e * ^f), hash) =
+    static member inline HashdFold (w : HashdFolder, struct (a, b, c, d, e, f) : struct (^a * ^b * ^c * ^d * ^e * ^f), hash) =
         hash |> Hashd.foldBy w a |> Hashd.foldBy w b |> Hashd.foldBy w c |> Hashd.foldBy w d |> Hashd.foldBy w e |> Hashd.foldBy w f
 
-    static member inline Fold (w : HashdFolder, struct (a, b, c, d, e, f, g) : struct (^a * ^b * ^c * ^d * ^e * ^f * ^g), hash) =
+    static member inline HashdFold (w : HashdFolder, struct (a, b, c, d, e, f, g) : struct (^a * ^b * ^c * ^d * ^e * ^f * ^g), hash) =
         hash |> Hashd.foldBy w a |> Hashd.foldBy w b |> Hashd.foldBy w c |> Hashd.foldBy w d |> Hashd.foldBy w e |> Hashd.foldBy w f |> Hashd.foldBy w g
 
-    static member inline Fold (w : HashdFolder, struct (a, b, c, d, e, f, g, h) : struct (^a * ^b * ^c * ^d * ^e * ^f * ^g * ^h), hash) =
+    static member inline HashdFold (w : HashdFolder, struct (a, b, c, d, e, f, g, h) : struct (^a * ^b * ^c * ^d * ^e * ^f * ^g * ^h), hash) =
         hash |> Hashd.foldBy w a |> Hashd.foldBy w b |> Hashd.foldBy w c |> Hashd.foldBy w d |> Hashd.foldBy w e |> Hashd.foldBy w f |> Hashd.foldBy w g |> Hashd.foldBy w h
 
-    static member inline Fold (w : HashdFolder, struct (a, b, c, d, e, f, g, h, i) : struct (^a * ^b * ^c * ^d * ^e * ^f * ^g * ^h * ^i), hash) =
+    static member inline HashdFold (w : HashdFolder, struct (a, b, c, d, e, f, g, h, i) : struct (^a * ^b * ^c * ^d * ^e * ^f * ^g * ^h * ^i), hash) =
         hash |> Hashd.foldBy w a |> Hashd.foldBy w b |> Hashd.foldBy w c |> Hashd.foldBy w d |> Hashd.foldBy w e |> Hashd.foldBy w f |> Hashd.foldBy w g |> Hashd.foldBy w h |> Hashd.foldBy w i
 
-    static member inline Fold (w : HashdFolder, value : ^a option, hash) =
+    static member inline HashdFold (w : HashdFolder, value : ^a option, hash) =
         match value with
         | Some a -> hash |> Hashd.foldBool true |> Hashd.foldBy w a
         | None -> Hashd.foldBool false hash
 
-    static member inline Fold (w : HashdFolder, value : ^a voption, hash) =
+    static member inline HashdFold (w : HashdFolder, value : ^a voption, hash) =
         match value with
         | ValueSome a -> hash |> Hashd.foldBool true |> Hashd.foldBy w a
         | ValueNone -> Hashd.foldBool false hash
 
-    static member inline Fold (w : HashdFolder, values : ^a array, hash) =
+    static member inline HashdFold (w : HashdFolder, values : ^a array, hash) =
         let mutable hash = Hashd.foldInt values.Length hash // length first, so arrays run together never collide
         for value in values do hash <- Hashd.foldBy w value hash
         hash
 
-    static member inline Fold (w : HashdFolder, values : ^a list, hash) =
+    static member inline HashdFold (w : HashdFolder, values : ^a list, hash) =
         let mutable hash = Hashd.foldInt (List.length values) hash
         for value in values do hash <- Hashd.foldBy w value hash
         hash
 
 /// Deterministic hashing of any value HashdFolder folds - an integer, float, boolean, string, guid, tuple, option,
-/// array or list of them, or a type with its own Fold - chosen by the value's type at compile time. Use
+/// array or list of them, or a type with its own HashdFold - chosen by the value's type at compile time. Use
 /// Hashd.foldEnum to fold an enum.
 [<AutoOpen>]
 module HashdOperators =

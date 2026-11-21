@@ -12,7 +12,7 @@ open Prime
 /// is for. The same seed and target give the same output on every run, machine and .NET version, and no output depends
 /// on any other, so randomness keyed this way is pure without any state to thread, and adding or reordering what's
 /// random changes nothing else. A target is any value HashdFolder folds - an integer, float, boolean, string, guid,
-/// tuple, option, array or list of them, or a type with its own Fold - as ("rise", creatureName).
+/// tuple, option, array or list of them, or a type with its own HashdFold - as ("rise", creatureName).
 [<Struct>]
 type Randomk =
     { Seed : uint64 }
