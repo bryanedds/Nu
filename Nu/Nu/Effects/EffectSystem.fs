@@ -38,38 +38,42 @@ module EffectSystem =
         effectSystem.EffectDataTokens.Add dataToken
         effectSystem
 
-    let rec private selectKeyFrames2<'kf when 'kf :> KeyFrame> localTime playback (keyFrames : 'kf array) =
+    let rec private selectKeyFramesOnce<'kf when 'kf :> KeyFrame> localTime index (keyFrames : 'kf array) =
+
+        // OPTIMIZATION: walk the key frames by index rather than by slicing so that selection doesn't allocate
+        let head = keyFrames[index]
+        if index + 1 >= keyFrames.Length then struct (localTime, head, head)
+        else
+            let next = keyFrames[index + 1]
+            if localTime > head.KeyFrameLength then
+                if index + 2 >= keyFrames.Length
+                then struct (head.KeyFrameLength, next, next)
+                else selectKeyFramesOnce (localTime - head.KeyFrameLength) (inc index) keyFrames
+            else struct (localTime, head, next)
+
+    let private selectKeyFrames2<'kf when 'kf :> KeyFrame> localTime playback (keyFrames : 'kf array) =
+        if Array.isEmpty keyFrames then failwithumf ()
         match playback with
-        | Once ->
-            match keyFrames with
-            | [||] -> failwithumf ()
-            | [|head|] -> (localTime, head, head)
-            | _ ->
-                let (head, next, tail) = (keyFrames[0], keyFrames[1], Array.skip 2 keyFrames)
-                if localTime > head.KeyFrameLength then
-                    match tail with
-                    | [||] -> (head.KeyFrameLength, next, next)
-                    | _ -> selectKeyFrames2 (localTime - head.KeyFrameLength) playback (Array.cons next tail)
-                else (localTime, head, next)
+        | Once -> selectKeyFramesOnce localTime 0 keyFrames
         | Loop ->
-            let totalTime = Array.fold (fun totalTime (keyFrame : 'kf) -> totalTime + keyFrame.KeyFrameLength) GameTime.zero keyFrames 
-            if totalTime <> GameTime.zero then
-                let moduloTime = localTime % totalTime
-                selectKeyFrames2 moduloTime Once keyFrames
-            else (GameTime.zero, Array.head keyFrames, Array.head keyFrames)
+            let mutable totalTime = GameTime.zero
+            for keyFrame in keyFrames do totalTime <- totalTime + keyFrame.KeyFrameLength
+            if totalTime <> GameTime.zero
+            then selectKeyFramesOnce (localTime % totalTime) 0 keyFrames
+            else struct (GameTime.zero, keyFrames[0], keyFrames[0])
         | Bounce ->
-            let totalTime = Array.fold (fun totalTime (keyFrame : 'kf) -> totalTime + keyFrame.KeyFrameLength) GameTime.zero keyFrames
+            let mutable totalTime = GameTime.zero
+            for keyFrame in keyFrames do totalTime <- totalTime + keyFrame.KeyFrameLength
             if totalTime <> GameTime.zero then
                 let moduloTime = localTime % totalTime
                 let bouncing = int64 (localTime / totalTime) % 2L = 1L
                 let bounceTime = if bouncing then totalTime - moduloTime else moduloTime
-                selectKeyFrames2 bounceTime Once keyFrames
-            else (GameTime.zero, Array.head keyFrames, Array.head keyFrames)
+                selectKeyFramesOnce bounceTime 0 keyFrames
+            else struct (GameTime.zero, keyFrames[0], keyFrames[0])
 
-    let private selectKeyFrames<'kf when 'kf :> KeyFrame> localTime playback (keyFrames : 'kf array) =
-        keyFrames
-        |> selectKeyFrames2 localTime playback
-        |> fun (fst, snd, thd) -> (fst, snd, thd)
+    let inline private selectKeyFrames<'kf when 'kf :> KeyFrame> localTime playback (keyFrames : 'kf array) =
+        let struct (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames2 localTime playback keyFrames
+        (keyFrameTime, keyFrame, keyFrame2)
 
     let inline private tween (scale : (^a * double) -> ^a) (value : ^a) (value2 : ^a) progress algorithm =
         match algorithm with
@@ -700,45 +704,57 @@ module EffectSystem =
         // build implicitly mounted content
         evalContent content slice history effectSystem
 
-    and private evalEmissionHistory emitterSlice aspects (history : Slice seq) effectSystem =
+    and private evalEmissionHistory (emitterSlice : Slice) aspects (history : Slice seq) effectSystem =
+
+        // OPTIMIZATION: count the number of emissions first so we can avoid reallocating the emissions array.
+        let mutable count = 0
+        for slice in history do
+            if slice.SliceTime >= emitterSlice.SliceTime then
+                count <- inc count
 
         // the slices an emission born from emitterSlice has passed through, one per later slice of the emitter's
         // history, each timed by the emission's age so that an emitter in its content emits along its path
-        history
-        |> Seq.filter (fun slice -> slice.SliceTime >= emitterSlice.SliceTime)
-        |> Seq.map (fun slice ->
-            let age = slice.SliceTime - emitterSlice.SliceTime
-            let emission = { Slice.copy emitterSlice with SliceTime = age; SliceDelta = slice.SliceDelta }
-            evalAspects aspects emission { effectSystem with EffectTime = age })
-        |> Seq.toArray
+        let emissions = Array.zeroCreate count
+        let mutable i = 0
+        for slice in history do
+            if slice.SliceTime >= emitterSlice.SliceTime then
+                let age = slice.SliceTime - emitterSlice.SliceTime
+                let emission = { emitterSlice with SliceTime = age; SliceDelta = slice.SliceDelta }
+                emissions[i] <- evalAspects aspects emission { effectSystem with EffectTime = age }
+                i <- inc i
+        emissions
 
     and private evalEmit shift rate emitterAspects aspects content (history : Slice seq) effectSystem =
-        Seq.fold (fun effectSystem slice ->
-            let effectTimeOld = effectSystem.EffectTime
-            let effectTimeOriginalOld = effectSystem.EffectTimeOriginal
+        Seq.fold (fun effectSystem (slice : Slice) ->
+
+            // OPTIMIZATION: count the slice's emissions first so that a slice that emits nothing costs nothing.
             let effectTime = effectSystem.EffectTimeOriginal - slice.SliceTime
-            let slice = { slice with Elevation = slice.Elevation + shift }
-            let slice = evalAspects emitterAspects slice { effectSystem with EffectTime = effectSystem.EffectTime - effectTime }
             let emitCountLastFrame = double (effectSystem.EffectTime - effectTime - slice.SliceDelta) * double rate
             let emitCountThisFrame = double (effectSystem.EffectTime - effectTime) * double rate
             let emitCount = int emitCountThisFrame - int emitCountLastFrame
-            let effectSystem =
-                if emitCount > 0 then
+            if emitCount > 0 then
 
-                    // the emissions' own history, timed from their birth, so that an emitter in their content emits
-                    // from them rather than from this emitter
-                    let emissionHistory = lazy (evalEmissionHistory slice aspects history effectSystem)
-                    Array.fold (fun effectSystem _ ->
-                        let emission = Slice.copy slice // protect original slice from mutation
-                        let emission = evalAspects aspects emission effectSystem
-                        if emission.Enabled
-                        then evalContent content emission (Seq.delay (fun () -> emissionHistory.Value)) effectSystem
-                        else effectSystem)
-                        { effectSystem with EffectTime = effectTime; EffectTimeOriginal = effectTime }
-                        [|0 .. emitCount - 1|]
+                // eval the emitter as it was at the slice's time
+                let slice = { slice with Elevation = slice.Elevation + shift }
+                let slice = evalAspects emitterAspects slice { effectSystem with EffectTime = effectSystem.EffectTime - effectTime }
 
-                else effectSystem
-            { effectSystem with EffectTime = effectTimeOld; EffectTimeOriginal = effectTimeOriginalOld })
+                // the emissions' own history, timed from their birth, so that an emitter in their content emits
+                // from them rather than from this emitter
+                let emissionHistory = lazy (evalEmissionHistory slice aspects history effectSystem)
+                Array.fold (fun emissionSystem _ ->
+                    let emission = Slice.copy slice // protect original slice from mutation
+                    let emission = evalAspects aspects emission emissionSystem
+                    if emission.Enabled
+                    then evalContent content emission (Seq.delay (fun () -> emissionHistory.Value)) emissionSystem
+                    else emissionSystem)
+                    { effectSystem with EffectTime = effectTime; EffectTimeOriginal = effectTime }
+                    [|0 .. emitCount - 1|]
+                |> ignore<EffectSystem>
+
+                // data tokens accumulate in place, so the emitter carries on with its own times
+                effectSystem
+
+            else effectSystem)
             effectSystem
             history
 
