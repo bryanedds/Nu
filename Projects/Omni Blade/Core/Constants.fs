@@ -54,13 +54,14 @@ module Constants =
         let CueMoseySpeed = 0.5f
         let CueCrawlSpeed = 0.25f
         let SongVolumeDefault = 0.6f
+        let SeedStateDefault = 0xa529cb6f5f0385edUL // NOTE: number generated via http://www.random.org/bytes/
 
     [<RequireQualifiedAccess>]
     module Field =
 
         let PropsGroupName = "Props"
         let TransitionTime = 60L
-        let RandMapSize = v2iDup 9
+        let RandomMapSize = v2iDup 9
         let RoomSize = v2iDup 32
         let AvatarCollisionShapeIndex = 0
         let AvatarSensorShapeIndex = 1

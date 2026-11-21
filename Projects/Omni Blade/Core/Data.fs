@@ -805,19 +805,19 @@ module OmniSeedState =
 
     type [<SymbolicExpansion>] OmniSeedState =
         private
-            { RandSeedState : uint64 }
+            { RandomkSeedState : uint64 }
 
     let rotate fieldType state =
         match fieldType with
         | EmptyField | DebugField | TombOuter | TombInner
-        | CastleConnector -> state.RandSeedState
-        | Castle n -> state.RandSeedState <<< n
+        | CastleConnector -> state.RandomkSeedState
+        | Castle n -> state.RandomkSeedState <<< n
 
     let makeFromSeedState randSeedState =
-        { RandSeedState = randSeedState }
+        { RandomkSeedState = randSeedState }
 
     let make () =
-        { RandSeedState = Rand.DefaultSeedState }
+        { RandomkSeedState = Constants.Gameplay.SeedStateDefault }
 
 type OmniSeedState = OmniSeedState.OmniSeedState
 
@@ -1013,7 +1013,7 @@ type FieldData =
       Definitions : CueSystem.CueDefinitions
       Treasures : ItemType list }
 
-    static member val private tileMapsMemoized = Map.empty<uint64 * FieldType, Choice<TmxMap, TmxMap * TmxMap, RandMap * TmxMap * Origin, TmxMap>> with get, set
+    static member val private tileMapsMemoized = Map.empty<uint64 * FieldType, Choice<TmxMap, TmxMap * TmxMap, RandomMap * TmxMap * Origin, TmxMap>> with get, set
     static member val private propObjectsMemoized = Map.empty<uint64 * FieldType, TmxMap * (TmxObjectGroup * TmxObject) list * Origin option> with get, set
     static member val private propDescriptorsMemoized = Map.empty<uint64 * FieldType, PropDescriptor list> with get, set
 
@@ -1054,11 +1054,10 @@ type FieldData =
                     | (ValueSome tileMapMetadata, ValueSome tileMapFadeMetadata) -> Some (Choice2Of4 (tileMapMetadata.TileMap, tileMapFadeMetadata.TileMap))
                     | (_, _) -> None
                 | FieldRandom (walkCount, walkLength, bias, origin, floor, fieldPath) ->
-                    let rand = Rand.makeFromSeedState rotatedSeedState
-                    let (cursor, randMap, _) = RandMap.makeFromRand walkCount walkLength bias Constants.Field.RandMapSize origin floor rand
+                    let (cursor, randomMap) = RandomMap.makeFromSeed walkCount walkLength bias Constants.Field.RandomMapSize origin floor rotatedSeedState
                     let fieldName = FieldType.toFieldName fieldData.FieldType
-                    let tileMap = RandMap.toTmx fieldName fieldPath origin cursor floor fieldData.UseWindPortal fieldData.UseAlternativeNormalSegments fieldData.UseAlternativeSpecialSegments randMap
-                    Some (Choice3Of4 (randMap, tileMap, origin))
+                    let tileMap = RandomMap.toTmx fieldName fieldPath origin cursor floor fieldData.UseWindPortal fieldData.UseAlternativeNormalSegments fieldData.UseAlternativeSpecialSegments randomMap
+                    Some (Choice3Of4 (randomMap, tileMap, origin))
                 | FieldRoom fieldAsset ->
                     match Metadata.tryGetTileMapMetadata fieldAsset with
                     | ValueSome tileMapMetadata -> Some (Choice4Of4 tileMapMetadata.TileMap)
@@ -1112,7 +1111,7 @@ type FieldData =
         let memoKey = (rotatedSeedState, fieldData.FieldType)
         match Map.tryFind memoKey FieldData.propDescriptorsMemoized with
         | None ->
-            let rand = Rand.makeFromSeedState rotatedSeedState
+            let seed = rotatedSeedState
             let (tileMap, propObjects, originOpt) = FieldData.getPropObjects omniSeedState fieldData
             let props = List.choose (fun (group, object) -> FieldData.objectToPropOpt object group tileMap) propObjects
             let (chestSpawnsUnsorted, nonChestSpawns) = List.split (fun prop -> match prop.PropData with ChestSpawn -> true | _ -> false) props
@@ -1140,16 +1139,17 @@ type FieldData =
                 Seq.sortBy fst |>
                 Seq.map snd |>
                 Seq.toList
-            let (treasures, rand) =
-                let (front, rand) = treasuresOrdered |> List.take (treasuresOrdered.Length / 3) |> flip Rand.nextPermutation rand
-                let (back, rand) = List.skip front.Length treasuresOrdered |> flip Rand.nextPermutation rand
-                (front @ back, rand)
+            let treasures =
+                let front = List.take (treasuresOrdered.Length / 3) treasuresOrdered
+                let back = List.skip front.Length treasuresOrdered
+                List.ofSeq (Gen.randomkShuffle "front" front seed) @ List.ofSeq (Gen.randomkShuffle "back" back seed)
             let chestSpawns = List.take treasures.Length chestSpawns
-            let (chestSpawneds, _) =
-                List.foldBack2 (fun chestSpawn treasure (chestSpawneds, rand) ->
-                    let (probability, rand) = Rand.nextSingleUnder 1.0f rand
-                    if probability < Constants.Field.TreasureProbability then
-                        let (id, rand) = let (i, rand) = Rand.nextInt rand in let (j, rand) = Rand.nextInt rand in (Gen.idFromInts i j, rand)
+            let chestSpawneds =
+                List.zip chestSpawns treasures |>
+                List.indexed |>
+                List.choose (fun (index, (chestSpawn, treasure)) ->
+                    if Gen.randomkf ("treasure", index) seed < Constants.Field.TreasureProbability then
+                        let id = Gen.idFromInts (Gen.randomk ("chest", index, 0) seed) (Gen.randomk ("chest", index, 1) seed)
                         let chestType = WoodenChest
                         let chestSpawned = { chestSpawn with PropData = Chest (chestType, treasure, id, None, CueSystem.Fin, Set.empty) }
 #if DEV
@@ -1165,11 +1165,8 @@ type FieldData =
                             printfn "%A:%A" distance (scstring chestSpawned.PropData)
                         | None -> ()
 #endif
-                        (chestSpawned :: chestSpawneds, rand)
-                    else (chestSpawneds, rand))
-                    chestSpawns
-                    treasures
-                    ([], rand)
+                        Some chestSpawned
+                    else None)
             let portalSpawneds = [] // NOTE: no level uses this feature in the demo.
             let propDescriptors = chestSpawneds @ portalSpawneds @ nonChestSpawns
             FieldData.propDescriptorsMemoized <- Map.add memoKey propDescriptors FieldData.propDescriptorsMemoized

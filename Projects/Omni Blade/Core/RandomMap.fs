@@ -126,8 +126,8 @@ type Segments =
           SegmentBN = TmxMap (filePath + "+BN+" + string floor + (if useAlternativeSpecialSegments then "+B" else "") + ".tmx")
           SegmentBS = TmxMap (filePath + "+BS+" + string floor + (if useAlternativeSpecialSegments then "+B" else "") + ".tmx") }
 
-type RandMap =
-    { RandMapSize : Vector2i
+type RandomMap =
+    { RandomMapSize : Vector2i
       Segments : Segment array array
       OriginOpt : Vector2i option }
 
@@ -135,27 +135,27 @@ type RandMap =
         match map.OriginOpt with
         | Some start ->
             printfn "Start: %s" (scstring start)
-            for i in 0 .. map.RandMapSize.Y - 1 do
-                for j in 0 .. map.RandMapSize.X - 1 do
+            for i in 0 .. map.RandomMapSize.Y - 1 do
+                for j in 0 .. map.RandomMapSize.X - 1 do
                     printf "%s\t" (scstring map.Segments[i].[j])
                 printfn ""
         | None -> ()
 
     static member clone map =
-        { RandMapSize = map.RandMapSize
+        { RandomMapSize = map.RandomMapSize
           Segments = Seq.toArray (Array.map Seq.toArray map.Segments)
           OriginOpt = map.OriginOpt }
 
     static member concat left right =
         if left.OriginOpt = right.OriginOpt then
-            if left.RandMapSize = right.RandMapSize then
-                let map = RandMap.clone left
-                for i in 0 .. map.RandMapSize.X - 1 do
-                    for j in 0 .. map.RandMapSize.Y - 1 do
+            if left.RandomMapSize = right.RandomMapSize then
+                let map = RandomMap.clone left
+                for i in 0 .. map.RandomMapSize.X - 1 do
+                    for j in 0 .. map.RandomMapSize.Y - 1 do
                         map.Segments[i][j] <- left.Segments[i][j] ||| right.Segments[i][j]
                 map
-            else failwith "Cannot concat two RandMaps of differing sizes."
-        else failwith "Cannot concat two RandMaps of differing origins."
+            else failwith "Cannot concat two RandomMaps of differing sizes."
+        else failwith "Cannot concat two RandomMaps of differing origins."
 
     static member getSegmentOpt segment segments =
         match segment with
@@ -181,12 +181,12 @@ type RandMap =
         | Segment.SegmentBS -> Some segments.SegmentBS
         | _ -> failwithumf ()
 
-    static member private walk biasChance bias (cursor : Vector2i) map rand =
-        let bounds = box2i v2iZero map.RandMapSize
+    static member private walk biasChance bias (cursor : Vector2i) map attempt walk step (seed : uint64) =
+        let bounds = box2i v2iZero map.RandomMapSize
         let mutable cursor = cursor
-        let (i, rand) = Rand.nextIntUnder 4 rand
-        let (chance, rand) = Rand.nextSingleUnder 1.0f rand
-        let direction = if chance < biasChance then bias else i
+        let direction =
+            if Gen.randomkf (attempt, walk, step, "bias") seed < biasChance then bias
+            else Gen.randomk3 4 (attempt, walk, step, "direction") seed
         match direction with
         | 0 ->
             // try go north (negative y)
@@ -213,13 +213,13 @@ type RandMap =
                 cursor.X <- dec cursor.X
                 map.Segments[cursor.Y][cursor.X] <- map.Segments[cursor.Y][cursor.X] ||| Segment.Segment1E
         | _ -> failwithumf ()
-        (cursor, rand)
+        cursor
 
     static member tryAddSpecialRoomSouthFromNorthWest specialSegment map =
         let mutable bossRoomAdded = false
-        for i in 0 .. dec Constants.Field.RandMapSize.X do // starting from the north row
+        for i in 0 .. dec Constants.Field.RandomMapSize.X do // starting from the north row
             if not bossRoomAdded then
-                for j in 0 .. dec Constants.Field.RandMapSize.Y do // travel east
+                for j in 0 .. dec Constants.Field.RandomMapSize.Y do // travel east
                     if not bossRoomAdded then
                         if  i > 0 &&
                             map.Segments[i][j] |> Segment.notEmpty &&
@@ -235,9 +235,9 @@ type RandMap =
 
     static member tryAddSpecialRoomSouthFromNorthEast specialSegment map =
         let mutable bossRoomAdded = false
-        for i in 0 .. dec Constants.Field.RandMapSize.X do // starting from the north row
+        for i in 0 .. dec Constants.Field.RandomMapSize.X do // starting from the north row
             if not bossRoomAdded then
-                for j in dec Constants.Field.RandMapSize.Y .. - 1 .. 0 do // travel west
+                for j in dec Constants.Field.RandomMapSize.Y .. - 1 .. 0 do // travel west
                     if not bossRoomAdded then
                         if  i > 0 &&
                             map.Segments[i][j] |> Segment.notEmpty &&
@@ -253,11 +253,11 @@ type RandMap =
 
     static member tryAddSpecialRoomNorthFromSouthWest specialSegment map =
         let mutable bossRoomAdded = false
-        for i in dec Constants.Field.RandMapSize.X .. - 1 .. 0 do // starting from the south row
+        for i in dec Constants.Field.RandomMapSize.X .. - 1 .. 0 do // starting from the south row
             if not bossRoomAdded then
-                for j in 0 .. dec Constants.Field.RandMapSize.Y do // travel east
+                for j in 0 .. dec Constants.Field.RandomMapSize.Y do // travel east
                     if not bossRoomAdded then
-                        if  i < dec Constants.Field.RandMapSize.X &&
+                        if  i < dec Constants.Field.RandomMapSize.X &&
                             map.Segments[i][j] |> Segment.notEmpty &&
                             map.Segments[i][j] |> Segment.notSpecial &&
                             map.Segments[inc i][j] |> Segment.isEmpty then
@@ -271,11 +271,11 @@ type RandMap =
 
     static member tryAddSpecialRoomNorthFromSouthEast specialSegment map =
         let mutable bossRoomAdded = false
-        for i in dec Constants.Field.RandMapSize.X .. - 1 .. 0 do // starting from the south row
+        for i in dec Constants.Field.RandomMapSize.X .. - 1 .. 0 do // starting from the south row
             if not bossRoomAdded then
-                for j in dec Constants.Field.RandMapSize.Y .. - 1 .. 0 do // travel west
+                for j in dec Constants.Field.RandomMapSize.Y .. - 1 .. 0 do // travel west
                     if not bossRoomAdded then
-                        if  i < dec Constants.Field.RandMapSize.X &&
+                        if  i < dec Constants.Field.RandomMapSize.X &&
                             map.Segments[i][j] |> Segment.notEmpty &&
                             map.Segments[i][j] |> Segment.notSpecial &&
                             map.Segments[inc i][j] |> Segment.isEmpty then
@@ -287,8 +287,8 @@ type RandMap =
                             bossRoomAdded <- true
         bossRoomAdded
 
-    static member makeFromRand walkCount walkLength biasChance (size : Vector2i) origin floor rand =
-        if size.X < 4 || size.Y < 4 then failwith "Invalid RandMap size."
+    static member private makeAttempt walkCount walkLength biasChance (size : Vector2i) origin floor seed attempt =
+        if size.X < 4 || size.Y < 4 then failwith "Invalid RandomMap size."
         let bounds = box2i v2iZero size
         let (cursor, biases) =
             match origin with
@@ -301,17 +301,15 @@ type RandMap =
             | OriginNW ->       (v2i bounds.Min.X bounds.Min.Y,                 [2; 1])
             | OriginSE ->       (v2i (dec bounds.Size.X) (dec bounds.Size.Y),   [0; 3])
             | OriginSW ->       (v2i bounds.Min.X (dec bounds.Size.Y),          [0; 1])
-        let biases = Seq.initInfinite (constant biases) |> Seq.concat |> Seq.take walkCount
-        let (maps, rand) =
-            Seq.fold (fun (maps, rand) bias ->
-                let map = { RandMap.make size with OriginOpt = Some cursor }
-                let (_, rand) = List.fold (fun (cursor, rand) _ -> RandMap.walk biasChance bias cursor map rand) (cursor, rand) [0 .. dec walkLength]
-                (map :: maps, rand))
-                ([], rand)
+        let biases = Seq.initInfinite (constant biases) |> Seq.concat |> Seq.take walkCount |> List.ofSeq
+        let maps =
+            List.mapi (fun walk bias ->
+                let map = { RandomMap.make size with OriginOpt = Some cursor }
+                List.fold (fun cursor step -> RandomMap.walk biasChance bias cursor map attempt walk step seed) cursor [0 .. dec walkLength] |> ignore
+                map)
                 biases
-        let (maps, rand) = Rand.nextPermutation maps rand
-        let maps = List.take 3 maps
-        let map = List.reduce RandMap.concat maps
+        let maps = Gen.randomkShuffle (attempt, "maps") maps seed |> Seq.take 3 |> List.ofSeq
+        let map = List.reduce RandomMap.concat maps
         let opening =
             if floor = 0 then
                 match origin with
@@ -326,14 +324,14 @@ type RandMap =
                 | OriginSW ->   Segment.Segment1S
             else Segment.Segment0
         map.Segments[cursor.Y][cursor.X] <- map.Segments[cursor.Y][cursor.X] ||| opening
-        let (tryAddBoss, rand) =
-            Rand.nextItem
-                [RandMap.tryAddSpecialRoomNorthFromSouthEast BossSegment
-                 RandMap.tryAddSpecialRoomNorthFromSouthWest BossSegment
-                 RandMap.tryAddSpecialRoomSouthFromNorthEast BossSegment
-                 RandMap.tryAddSpecialRoomSouthFromNorthWest BossSegment]
-                rand
-        let enoughRooms walkLength (map : RandMap) =
+        let tryAddBoss =
+            Gen.randomkChoice (attempt, "boss")
+                [RandomMap.tryAddSpecialRoomNorthFromSouthEast BossSegment
+                 RandomMap.tryAddSpecialRoomNorthFromSouthWest BossSegment
+                 RandomMap.tryAddSpecialRoomSouthFromNorthEast BossSegment
+                 RandomMap.tryAddSpecialRoomSouthFromNorthWest BossSegment]
+                seed
+        let enoughRooms walkLength (map : RandomMap) =
             let mutable roomCount = 0
             for i in 0 .. map.Segments.Length - 1 do
                 for j in 0 .. map.Segments[i].Length - 1 do
@@ -342,7 +340,7 @@ type RandMap =
             let roomMin = walkLength + int (Operators.floor (single walkLength * 0.667f))
             let roomMax = walkLength + int (Operators.ceil (single walkLength * 1.0f))
             roomCount >= roomMin && roomCount <= roomMax
-        let noContiguousSameRooms (map : RandMap) =
+        let noContiguousSameRooms (map : RandomMap) =
             let mutable found = false
             for i in 0 .. map.Segments.Length - 2 do
                 for j in 0 .. map.Segments[i].Length - 1 do
@@ -356,22 +354,26 @@ type RandMap =
                         found <- true
             not found
         let isMapValid =
-            RandMap.tryAddSpecialRoomSouthFromNorthWest NarrativeSegment map &&
-            RandMap.tryAddSpecialRoomNorthFromSouthEast NarrativeSegment map &&
+            RandomMap.tryAddSpecialRoomSouthFromNorthWest NarrativeSegment map &&
+            RandomMap.tryAddSpecialRoomNorthFromSouthEast NarrativeSegment map &&
             tryAddBoss map &&
             enoughRooms walkLength map &&
             noContiguousSameRooms map
 #if DEV
         printfn "Floor: %i" floor
-        RandMap.printn map
+        RandomMap.printn map
 #endif
         if not isMapValid // make another if no valid map could be created
-        then RandMap.makeFromRand walkCount walkLength biasChance size origin floor rand
-        else (cursor, map, rand)
+        then RandomMap.makeAttempt walkCount walkLength biasChance size origin floor seed (inc attempt)
+        else (cursor, map)
+
+    /// Make a random map from a seed, the same map for the same seed every time.
+    static member makeFromSeed walkCount walkLength biasChance (size : Vector2i) origin floor (seed : uint64) =
+        RandomMap.makeAttempt walkCount walkLength biasChance size origin floor seed 0
 
     static member make (size : Vector2i) =
-        if size.X < 4 || size.Y < 4 then failwith "Invalid RandMap size."
-        { RandMapSize = size
+        if size.X < 4 || size.Y < 4 then failwith "Invalid RandomMap size."
+        { RandomMapSize = size
           Segments = Array.init size.X (fun _ -> Array.init size.Y (constant Segment.Segment0))
           OriginOpt = None }
 
@@ -410,9 +412,9 @@ type RandMap =
         let mutable propId = inc entryId
         let mutable stairsCreated = false
         let stairsInfo = "[Portal [StairsPortal True " + string useWindPortal + "] [IX 1] Upward [" + fieldName + " " + string (dec floor) + "] [IX 2]]"
-        for i in 0 .. dec Constants.Field.RandMapSize.X do
-            for j in 0 .. dec Constants.Field.RandMapSize.Y do
-                match RandMap.getSegmentOpt map.Segments[j].[i] segments with
+        for i in 0 .. dec Constants.Field.RandomMapSize.X do
+            for j in 0 .. dec Constants.Field.RandomMapSize.Y do
+                match RandomMap.getSegmentOpt map.Segments[j].[i] segments with
                 | Some segment ->
                     if segment.ObjectGroups.Count <> 0 then
                         for objectRef in segment.ObjectGroups[0].Objects do
@@ -462,21 +464,21 @@ type RandMap =
         // add tiles from segments
         for l in 0 .. mapTmx.TileLayers.Count - 1 do
             let layer = mapTmx.TileLayers[l]
-            for j in 0 .. dec Constants.Field.RandMapSize.Y do
+            for j in 0 .. dec Constants.Field.RandomMapSize.Y do
                 for jj in 0 .. dec Constants.Field.RoomSize.Y do
-                    for i in 0 .. dec Constants.Field.RandMapSize.X do
+                    for i in 0 .. dec Constants.Field.RandomMapSize.X do
                         for ii in 0 .. dec Constants.Field.RoomSize.X do
                             let x = i * Constants.Field.RoomSize.X + ii
                             let y = j * Constants.Field.RoomSize.Y + jj
                             let tileFromSegment =
-                                match RandMap.getSegmentOpt map.Segments[j].[i] segments with
+                                match RandomMap.getSegmentOpt map.Segments[j].[i] segments with
                                 | Some segment ->
                                     match Seq.tryFind (fun (segmentLayer : TmxLayer) -> segmentLayer.Name = layer.Name) segment.TileLayers with
                                     | Some segmentLayer -> segmentLayer.Tiles[ii + jj * Constants.Field.RoomSize.X]
                                     | None -> TmxLayerTile 0u
                                 | Some _ | None -> TmxLayerTile 0u
                             let tile = TmxMap.makeLayerTile tileFromSegment.Gid tileFromSegment.HorizontalFlip tileFromSegment.VerticalFlip tileFromSegment.DiagonalFlip
-                            layer.Tiles[x + y * Constants.Field.RoomSize.X * Constants.Field.RandMapSize.X] <- tile
+                            layer.Tiles[x + y * Constants.Field.RoomSize.X * Constants.Field.RandomMapSize.X] <- tile
 
         // le map tmx
         mapTmx

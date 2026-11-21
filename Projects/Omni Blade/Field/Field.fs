@@ -1287,8 +1287,8 @@ module Field =
                     | Some (Choice3Of4 (_, _, _)) ->
                         let index = (field.Avatar_.Perimeter.BottomOffset5.V2 / Constants.Field.RoomSize.V2 / Constants.Gameplay.TileSize.V2).V2i
                         let autoMap = match field.AutoMaps_.TryGetValue fieldData.FieldType with (true, autoMap) -> autoMap | (false, _) -> Set.empty
-                        if  index.X >= 0 && index.X < Constants.Field.RandMapSize.X &&
-                            index.Y >= 0 && index.Y < Constants.Field.RandMapSize.Y then
+                        if  index.X >= 0 && index.X < Constants.Field.RandomMapSize.X &&
+                            index.Y >= 0 && index.Y < Constants.Field.RandomMapSize.Y then
                             let autoMap = Set.add index autoMap
                             { field with AutoMaps_ = Map.add fieldData.FieldType autoMap field.AutoMaps_ }
                         else field
@@ -1400,7 +1400,7 @@ module Field =
         make time TombOuter saveSlot (max 1UL Gen.randomul) Avatar.initial (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial
 
     let debug time =
-        make time DebugField Slot1 Rand.DefaultSeedState Avatar.empty (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial
+        make time DebugField Slot1 Constants.Gameplay.SeedStateDefault Avatar.empty (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial
 
     let tryLoad time saveSlot =
         try let saveFilePath =

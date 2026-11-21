@@ -1267,8 +1267,8 @@ type FieldDispatcher () =
                 match Data.Value.Fields.TryGetValue field.FieldType with
                 | (true, fieldData) ->
                     match FieldData.tryGetTileMap field.OmniSeedState fieldData with
-                    | Some (Choice3Of4 (randMap, _, _)) ->
-                        let mapSize = Constants.Field.RandMapSize.V3 * Constants.Field.AutoTileSize
+                    | Some (Choice3Of4 (randomMap, _, _)) ->
+                        let mapSize = Constants.Field.RandomMapSize.V3 * Constants.Field.AutoTileSize
                         let mapOffset = mapSize * -0.5f
                         let treasuresLeftPosition = v3 0.0f 126.0f 0.0f
                         let treasuresLeftSize = v3 0.0f 48.0f 0.0f
@@ -1295,8 +1295,8 @@ type FieldDispatcher () =
                              Entity.Absolute == true
                              Entity.StaticImage == Assets.Field.AutoMapImage]
                         let autoMap = match field.AutoMaps.TryGetValue field.FieldType with (true, autoMap) -> autoMap | (false, _) -> Set.empty
-                        for j in 0 .. dec Constants.Field.RandMapSize.Y do
-                            for i in 0 .. dec Constants.Field.RandMapSize.X do
+                        for j in 0 .. dec Constants.Field.RandomMapSize.Y do
+                            for i in 0 .. dec Constants.Field.RandomMapSize.X do
                                 let index = v2i i j
                                 if autoMap.Contains index then
                                     Content.staticSprite ("AutoTile+" + scstring index.X + "+" + scstring index.Y)
@@ -1304,11 +1304,11 @@ type FieldDispatcher () =
                                          Entity.Size == Constants.Field.AutoTileSize
                                          Entity.Elevation == Constants.Field.GuiElevation + 1.0f
                                          Entity.Absolute == true
-                                         Entity.StaticImage := asset Assets.Field.PackageName (scstringMemo randMap.Segments[dec Constants.Field.RandMapSize.Y - j].[i])]
-                                if Some index = randMap.OriginOpt then
+                                         Entity.StaticImage := asset Assets.Field.PackageName (scstringMemo randomMap.Segments[dec Constants.Field.RandomMapSize.Y - j].[i])]
+                                if Some index = randomMap.OriginOpt then
                                     Content.staticSprite "AutoOrigin"
                                         [Entity.Position :=
-                                            index.MapY(fun y -> dec Constants.Field.RandMapSize.Y - y).V3 *
+                                            index.MapY(fun y -> dec Constants.Field.RandomMapSize.Y - y).V3 *
                                             Constants.Field.AutoTileSize +
                                             v3 3.0f 3.0f 0.0f +
                                             mapOffset

@@ -14,7 +14,7 @@
 		<Compile Include="Core\Simulants.fs" />
 		<Compile Include="Core\Advents.fs" />
 		<Compile Include="Core\Inventory.fs" />
-		<Compile Include="Core\RandMap.fs" />
+		<Compile Include="Core\RandomMap.fs" />
 		<Compile Include="Core\Data.fs" />
 		<Compile Include="Core\Algorithms.fs" />
 		<Compile Include="Core\Events.fs" />
