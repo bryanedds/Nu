@@ -98,9 +98,6 @@ module WorldDataToken =
                       RenderPass = renderPass }
                 World.enqueueRenderMessage3d (RenderStaticModelSurface renderStaticModelSurface) world
 
-            | EffectToken (_, _, _) ->
-                () // nothing to do
-
             | EmitterToken (_, _) ->
                 () // nothing to do
 
