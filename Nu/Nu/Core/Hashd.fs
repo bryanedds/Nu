@@ -11,7 +11,8 @@ open Prime
 
 /// Deterministic hashing - the same value hashes the same on every run, machine and .NET version, unlike hash and
 /// GetHashCode, which .NET randomizes per process for strings and anything containing them. A hash is built by folding
-/// values into a running FNV-1a state, starting from Hashd.Basis, then finished with Hashd.hashdFinish to spread its bits.
+/// values into a running FNV-1a state, starting from Hashd.Basis, then finalized with Hashd.hashdFinalize to spread its
+/// bits.
 [<RequireQualifiedAccess>]
 module Hashd =
 
