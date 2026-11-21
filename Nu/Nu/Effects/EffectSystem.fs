@@ -735,8 +735,13 @@ module EffectSystem =
             if emitCount > 0 then
 
                 // eval the emitter as it was at the slice's time
-                let slice = { slice with Elevation = slice.Elevation + shift }
-                let slice = evalAspects emitterAspects slice { effectSystem with EffectTime = effectSystem.EffectTime - effectTime }
+                // OPTIMIZATION: an emitter with no shift or aspects is just the slice, so it's neither copied nor
+                // evaluated.
+                let slice =
+                    if shift <> 0.0f || Array.notEmpty emitterAspects then
+                        let slice = { slice with Elevation = slice.Elevation + shift }
+                        evalAspects emitterAspects slice { effectSystem with EffectTime = effectSystem.EffectTime - effectTime }
+                    else slice
 
                 // the emissions' own history, timed from their birth, so that an emitter in their content emits
                 // from them rather than from this emitter
