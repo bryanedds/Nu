@@ -215,6 +215,21 @@ and Content =
     | Expand of Name : string * Args : Argument array
     | Contents of Shift : Shift * Contents : Content array
 
+    /// Whether evaluating content mutates the slice it's given. Only content with aspects of its own does - Mount,
+    /// Repeat and Contents copy the slice before changing it, and the rest leave it alone.
+    member this.NeedsDefensiveCopy =
+        match this with
+        | UserDefinedStaticSprite (_, _, _, _, _, aspects, _)
+        | StaticSprite (_, _, aspects, _)
+        | UserDefinedAnimatedSprite (_, _, _, _, _, _, _, _, _, _, aspects, _)
+        | AnimatedSprite (_, _, _, _, _, _, _, aspects, _)
+        | TextSprite (_, _, _, _, _, aspects, _)
+        | Light3d (_, aspects, _)
+        | Billboard (_, _, aspects, _)
+        | StaticModel (_, _, _, aspects, _)
+        | Tag (_, aspects, _) -> Array.notEmpty aspects
+        | Nil | Mount _ | Repeat _ | Emit _ | Delay _ | Segment _ | Contents _ | Expand _ -> false
+
 /// Represents an argument used in content definitions.
 and Argument =
     SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>>

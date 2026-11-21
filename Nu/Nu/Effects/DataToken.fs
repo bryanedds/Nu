@@ -9,8 +9,6 @@ open System
 open Prime
 
 /// Data tokens for downstream processing.
-/// NOTE: EffectToken exists only as a way to make effect emitters on emitters work due to issue #141. If we can cut
-/// this dependency then we can place this type definition above all the effects types in its own code folder.
 type [<ReferenceEquality>] DataToken =
     | SpriteToken of Elevation : single * Horizon : single * Image : AssetTag * SpriteValue : SpriteValue
     | TextToken of Elevation : single * Horizon : single * Font : AssetTag * TextValue : TextValue
@@ -19,7 +17,6 @@ type [<ReferenceEquality>] DataToken =
     | StaticModelToken of StaticModelValue : StaticModelValue
     | StaticModelSurfaceToken of StaticModelSurfaceValue : StaticModelSurfaceValue
     | EmitterToken of Name : string * EmitterDescriptor : Particles.EmitterDescriptor
-    | EffectToken of Name : string * EffectDescriptor : Effects.EffectDescriptor * Slice : Effects.Slice
     | TagToken of Name : string * UserDefined : obj
     | DataTokens of DataTokens : DataToken SArray
 
