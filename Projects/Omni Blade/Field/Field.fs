@@ -1003,15 +1003,13 @@ module Field =
                 let (step, stepCount) = CueMovement.computeStepAndStepCount translation moveType
                 let totalTime = int64 (dec stepCount)
                 if localTime < totalTime then
-                    let avatar = field.Avatar_
-                    let avatar = { avatar with Perimeter = avatar.Perimeter.WithBottom (avatar.Perimeter.Bottom + step) }
-                    let field = { field with Avatar_ = avatar }
-                    (cue, definitions, just field)
+                    let bottom = field.Avatar_.Perimeter.Bottom + step
+                    let field = mapAvatar (fun avatar -> { avatar with Perimeter = avatar.Perimeter.WithBottom bottom }) field
+                    (cue, definitions, withSignal (WarpAvatar bottom) field)
                 else
-                    let avatar = field.Avatar_
-                    let avatar = { avatar with Perimeter = avatar.Perimeter.WithBottom (avatar.Perimeter.Bottom + origin + translation) }
-                    let field = { field with Avatar_ = avatar }
-                    (Fin, definitions, just field)
+                    let bottom = origin + translation
+                    let field = mapAvatar (fun avatar -> { avatar with Perimeter = avatar.Perimeter.WithBottom bottom }) field
+                    (Fin, definitions, withSignal (WarpAvatar bottom) field)
             | CharacterTarget characterType ->
                 let propIdOpt =
                     tryGetPropIdByData
