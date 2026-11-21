@@ -77,7 +77,7 @@ module Hashd =
         ((^w or ^a) : (static member Hashd : ^w * ^a * uint64 -> uint64) (witness, value, hash))
 
     /// Spread a deterministic hash's bits evenly over the whole value, by SplitMix64's finalizer.
-    let finalize (hash : uint64) =
+    let hashdFinalize (hash : uint64) =
         let z = (hash ^^^ (hash >>> 30)) * 0xbf58476d1ce4e5b9UL
         let z = (z ^^^ (z >>> 27)) * 0x94d049bb133111ebUL
         z ^^^ (z >>> 31)
@@ -182,7 +182,7 @@ module HashdOperators =
 
     /// Hash a value deterministically under a seed, so the same value hashes differently under different seeds.
     let inline hashdSeeded (value : ^a) (seed : uint64) : uint64 =
-        Hashd.finalize (hashdFold value (Hashd.hashdUInt64 seed Hashd.Basis))
+        Hashd.hashdFinalize (hashdFold value (Hashd.hashdUInt64 seed Hashd.Basis))
 
     /// Hash a value deterministically.
     let inline hashd (value : ^a) : uint64 =
