@@ -2,8 +2,14 @@
 ; rubber gloves and boots, his eyes gone milky.
 
 [[Body
-  [Biped [[Legs 0.84] [Torso 0.62] [Shoulders 0.23] [Hips 0.11] [Arms 0.68] [Limbs 0.12]
-          [Clothes [Some [[Arms [Smock Cloth]] [Hands [Glove Rubber]] [Legs [Trousers Cloth]] [Feet [Boot Rubber]]]]]]]]
+  [Biped
+   [[Legs 0.84]
+    [Torso 0.62]
+    [Shoulders 0.23]
+    [Hips 0.11]
+    [Arms 0.68]
+    [Limbs 0.12]
+    [Clothes [Some [[Arms [Smock Cloth]] [Hands [Glove Rubber]] [Legs [Trousers Cloth]] [Feet [Boot Rubber]]]]]]]]
  [Scale 1]
  [Palette
   [[Flesh [0.5 0.5 0.46 1]]
@@ -28,36 +34,42 @@
    [[Bone Head] [Shape PartBall] [At [0.055 0.16 0.12]] [Size [0.04 0.03 0.03]] [Color Eye] [Surface Light] [Emission 0.25] [Mirror True]]]] ; milky eyes
  [Poses
   [; standing hunched, head hung forward, its arms reaching out before it
-   [Pose Stance [[Turns [[Pelvis [[Lean 4.5837]]]
-                        [Torso [[Lean 14.3239] [Twist 4.5837]]]
-                        [Head [[Lean 11.4592] [Twist -8.5944]]]
-                        [ArmLeft [[Spread -4.5837] [Swing 74.4845]]]
-                        [ArmRight [[Spread 2.8648] [Swing 68.7549]]]
-                        [HandLeft [[Swing -14.3239]]]
-                        [HandRight [[Swing -20.0535]]]
-                        [LegLeft [[Spread 4.5837] [Swing 8.5944]]]
-                        [LegRight [[Spread -4.5837] [Swing -5.7296]]]]]]]
+   [Pose Stance
+    [[Turns
+      [[Pelvis [[Lean 4.5837]]]
+       [Torso [[Lean 14.3239] [Twist 4.5837]]]
+       [Head [[Lean 11.4592] [Twist -8.5944]]]
+       [ArmLeft [[Spread -4.5837] [Swing 74.4845]]]
+       [ArmRight [[Spread 2.8648] [Swing 68.7549]]]
+       [HandLeft [[Swing -14.3239]]]
+       [HandRight [[Swing -20.0535]]]
+       [LegLeft [[Spread 4.5837] [Swing 8.5944]]]
+       [LegRight [[Spread -4.5837] [Swing -5.7296]]]]]]]
 
    ; as standing ready, slack
-   [Pose Relaxed [[Turns [[Pelvis [[Lean 4.5837]]]
-                         [Torso [[Lean 14.3239] [Twist 4.5837]]]
-                         [Head [[Lean 11.4592] [Twist -8.5944]]]
-                         [ArmLeft [[Spread -4.5837] [Swing 74.4845]]]
-                         [ArmRight [[Spread 2.8648] [Swing 68.7549]]]
-                         [HandLeft [[Swing -14.3239]]]
-                         [HandRight [[Swing -20.0535]]]
-                         [LegLeft [[Spread 4.5837] [Swing 8.5944]]]
-                         [LegRight [[Spread -4.5837] [Swing -5.7296]]]]]]]
+   [Pose Relaxed
+    [[Turns
+      [[Pelvis [[Lean 4.5837]]]
+       [Torso [[Lean 14.3239] [Twist 4.5837]]]
+       [Head [[Lean 11.4592] [Twist -8.5944]]]
+       [ArmLeft [[Spread -4.5837] [Swing 74.4845]]]
+       [ArmRight [[Spread 2.8648] [Swing 68.7549]]]
+       [HandLeft [[Swing -14.3239]]]
+       [HandRight [[Swing -20.0535]]]
+       [LegLeft [[Spread 4.5837] [Swing 8.5944]]]
+       [LegRight [[Spread -4.5837] [Swing -5.7296]]]]]]]
 
    ; a lurching shamble - short, dragging steps, the body rolling side to side over them, the arms held out ahead and
    ; bobbing loosely
-   [Cycling Stride [[Bob [Some [[Base -0.04] [Amplitude 0.03] [Wave Rebound] [Offset 90]]]]
-                    [Turns [[Pelvis [[Twisting [[Amplitude 8.5944]]] [Leaning [[Base 4.5837]]]]]
-                            [Torso [[Twisting [[Amplitude -4.5837]]] [Leaning [[Base 16.0428] [Amplitude 2.2918]]]]]
-                            [Head [[Twisting [[Amplitude 5.7296]]] [Leaning [[Base 11.4592] [Amplitude -4.5837]]]]]
-                            [LegLeft [[Spreading [[Base 4.0107]]] [Swinging [[Amplitude 17.1887]]]]]
-                            [LegRight [[Spreading [[Base -4.0107]]] [Swinging [[Amplitude -14.3239]]]]]
-                            [ArmLeft [[Spreading [[Base -4.5837]]] [Swinging [[Base 72.1927] [Amplitude 6.8755]]]]]
-                            [ArmRight [[Spreading [[Base 2.8648]]] [Swinging [[Base 66.4632] [Amplitude -6.8755]]]]]
-                            [HandLeft [[Swinging [[Base -14.3239]]]]]
-                            [HandRight [[Swinging [[Base -20.0535]]]]]]]]]]]]
+   [Cycling Stride
+    [[Bob [Some [[Base -0.04] [Amplitude 0.03] [Wave Rebound] [Offset 90]]]]
+     [Turns
+      [[Pelvis [[Twisting [[Amplitude 8.5944]]] [Leaning [[Base 4.5837]]]]]
+       [Torso [[Twisting [[Amplitude -4.5837]]] [Leaning [[Base 16.0428] [Amplitude 2.2918]]]]]
+       [Head [[Twisting [[Amplitude 5.7296]]] [Leaning [[Base 11.4592] [Amplitude -4.5837]]]]]
+       [LegLeft [[Spreading [[Base 4.0107]]] [Swinging [[Amplitude 17.1887]]]]]
+       [LegRight [[Spreading [[Base -4.0107]]] [Swinging [[Amplitude -14.3239]]]]]
+       [ArmLeft [[Spreading [[Base -4.5837]]] [Swinging [[Base 72.1927] [Amplitude 6.8755]]]]]
+       [ArmRight [[Spreading [[Base 2.8648]]] [Swinging [[Base 66.4632] [Amplitude -6.8755]]]]]
+       [HandLeft [[Swinging [[Base -14.3239]]]]]
+       [HandRight [[Swinging [[Base -20.0535]]]]]]]]]]]]

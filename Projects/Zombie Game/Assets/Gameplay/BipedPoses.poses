@@ -6,170 +6,205 @@
 
  ; a fighting stance - feet apart with the lead foot forward, weight centered between them, torso upright, the weapon
  ; side drawn back, weapon held up and ready, eyes forward
- [Pose Stance [[Turns [[Pelvis [[Twist -10.3132]]]
-                      [Torso [[Twist -2.8648] [Lean 1.1459]]]
-                      [Head [[Twist 13.178]]]
-                      [ArmRight [[Spread -11.4592] [Swing 31.5127]]]
-                      [HandRight [[Swing 5.7296]]]
-                      [ArmLeft [[Spread 12.6051] [Swing 22.9183]]]
-                      [LegLeft [[Spread 5.7296] [Swing 12.6051]]]
-                      [LegRight [[Spread -5.7296] [Swing -10.3132]]]]]]]
+ [Pose Stance
+  [[Turns
+    [[Pelvis [[Twist -10.3132]]]
+     [Torso [[Twist -2.8648] [Lean 1.1459]]]
+     [Head [[Twist 13.178]]]
+     [ArmRight [[Spread -11.4592] [Swing 31.5127]]]
+     [HandRight [[Swing 5.7296]]]
+     [ArmLeft [[Spread 12.6051] [Swing 22.9183]]]
+     [LegLeft [[Spread 5.7296] [Swing 12.6051]]]
+     [LegRight [[Spread -5.7296] [Swing -10.3132]]]]]]]
 
  ; a strike's anticipation - base widened and sunk, hips and shoulders wound back away from the foe, weapon cocked
  ; over the shoulder, off hand pointing at the foe, torso still upright
- [Pose Coil [[Turns [[Pelvis [[Twist -25.7831]]]
-                    [Torso [[Twist -20.0535] [Lean 2.2918]]]
-                    [Head [[Twist 45.8366]]]
-                    [ArmRight [[Spread -31.5127] [Swing 137.5099]]]
-                    [HandRight [[Swing 5.7296]]]
-                    [ArmLeft [[Spread 20.0535] [Swing 57.2958]]]
-                    [LegLeft [[Spread 10.3132] [Swing 21.7724]]]
-                    [LegRight [[Spread -10.3132] [Swing -19.4806]]]]]]]
+ [Pose Coil
+  [[Turns
+    [[Pelvis [[Twist -25.7831]]]
+     [Torso [[Twist -20.0535] [Lean 2.2918]]]
+     [Head [[Twist 45.8366]]]
+     [ArmRight [[Spread -31.5127] [Swing 137.5099]]]
+     [HandRight [[Swing 5.7296]]]
+     [ArmLeft [[Spread 20.0535] [Swing 57.2958]]]
+     [LegLeft [[Spread 10.3132] [Swing 21.7724]]]
+     [LegRight [[Spread -10.3132] [Swing -19.4806]]]]]]]
 
  ; in the air - a long stride, upright and wound, weapon cocked high
- [Pose Leap [[Turns [[Pelvis [[Twist -25.7831]]]
-                    [Torso [[Twist -22.9183] [Lean 2.2918]]]
-                    [Head [[Twist 48.7014]]]
-                    [ArmRight [[Spread -31.5127] [Swing 157.5634]]]
-                    [HandRight [[Swing 11.4592]]]
-                    [ArmLeft [[Spread 20.0535] [Swing 63.0254]]]
-                    [LegLeft [[Swing 40.107]]]
-                    [LegRight [[Swing -31.5127]]]]]]]
+ [Pose Leap
+  [[Turns
+    [[Pelvis [[Twist -25.7831]]]
+     [Torso [[Twist -22.9183] [Lean 2.2918]]]
+     [Head [[Twist 48.7014]]]
+     [ArmRight [[Spread -31.5127] [Swing 157.5634]]]
+     [HandRight [[Swing 11.4592]]]
+     [ArmLeft [[Spread 20.0535] [Swing 63.0254]]]
+     [LegLeft [[Swing 40.107]]]
+     [LegRight [[Swing -31.5127]]]]]]]
 
  ; aiming - feet apart with the lead foot forward, upright, the gun held out level before the eyes in both hands, the
  ; left cupped under the right
- [Pose Aim [[Turns [[Pelvis [[Twist -8.5944]]]
-                   [Torso [[Twist 5.7296] [Lean 2.2918]]]
-                   [Head [[Twist 2.8648]]]
-                   [ArmRight [[Swing 88.8085] [Spread 16]]]
-                   [HandRight [[Spread -13.1352]]]
-                   [ArmLeft [[Swing 86] [Spread -21]]]
-                   [LegLeft [[Spread 5.7296] [Swing 11.4592]]]
-                   [LegRight [[Spread -5.7296] [Swing -9.1673]]]]]]]
+ [Pose Aim
+  [[Turns
+    [[Pelvis [[Twist -8.5944]]]
+     [Torso [[Twist 5.7296] [Lean 2.2918]]]
+     [Head [[Twist 2.8648]]]
+     [ArmRight [[Swing 88.8085] [Spread 16]]]
+     [HandRight [[Spread -13.1352]]]
+     [ArmLeft [[Swing 86] [Spread -21]]]
+     [LegLeft [[Spread 5.7296] [Swing 11.4592]]]
+     [LegRight [[Spread -5.7296] [Swing -9.1673]]]]]]]
 
  ; aiming up - as aiming level, the arms raised high, the head tipped back after them
- [Pose AimUp [[Turns [[Pelvis [[Twist -8.5944]]]
-                     [Torso [[Twist 5.7296] [Lean -2.8648]]]
-                     [Head [[Twist 2.8648] [Lean -14.3239]]]
-                     [ArmRight [[Swing 123.1859] [Spread 16]]]
-                     [HandRight [[Spread -13.69]]]
-                     [ArmLeft [[Swing 120] [Spread -21]]]
-                     [LegLeft [[Spread 5.7296] [Swing 11.4592]]]
-                     [LegRight [[Spread -5.7296] [Swing -9.1673]]]]]]]
+ [Pose AimUp
+  [[Turns
+    [[Pelvis [[Twist -8.5944]]]
+     [Torso [[Twist 5.7296] [Lean -2.8648]]]
+     [Head [[Twist 2.8648] [Lean -14.3239]]]
+     [ArmRight [[Swing 123.1859] [Spread 16]]]
+     [HandRight [[Spread -13.69]]]
+     [ArmLeft [[Swing 120] [Spread -21]]]
+     [LegLeft [[Spread 5.7296] [Swing 11.4592]]]
+     [LegRight [[Spread -5.7296] [Swing -9.1673]]]]]]]
 
  ; aiming down - as aiming level, the arms lowered, the head bowed after them, the body bent a little over them
- [Pose AimDown [[Turns [[Pelvis [[Twist -8.5944]]]
-                       [Torso [[Twist 5.7296] [Lean 8.5944]]]
-                       [Head [[Twist 2.8648] [Lean 17.1887]]]
-                       [ArmRight [[Swing 51.5662] [Spread 16]]]
-                       [HandRight [[Spread -13.95]]]
-                       [ArmLeft [[Swing 49] [Spread -21]]]
-                       [LegLeft [[Spread 5.7296] [Swing 11.4592]]]
-                       [LegRight [[Spread -5.7296] [Swing -9.1673]]]]]]]
+ [Pose AimDown
+  [[Turns
+    [[Pelvis [[Twist -8.5944]]]
+     [Torso [[Twist 5.7296] [Lean 8.5944]]]
+     [Head [[Twist 2.8648] [Lean 17.1887]]]
+     [ArmRight [[Swing 51.5662] [Spread 16]]]
+     [HandRight [[Spread -13.95]]]
+     [ArmLeft [[Swing 49] [Spread -21]]]
+     [LegLeft [[Spread 5.7296] [Swing 11.4592]]]
+     [LegRight [[Spread -5.7296] [Swing -9.1673]]]]]]]
 
  ; at the ready with a knife - feet apart with the lead foot forward, upright, the knife held out level before the
  ; eyes in the right hand, the left hand come across to guard
- [Pose Ready [[Turns [[Pelvis [[Twist -8.5944]]]
-                     [Torso [[Twist 5.7296] [Lean 2.2918]]]
-                     [Head [[Twist 2.8648]]]
-                     [ArmRight [[Spread 4.5837] [Swing 88.8085]]]
-                     [ArmLeft [[Spread -22.9183] [Swing 80.2141]]]
-                     [LegLeft [[Spread 5.7296] [Swing 11.4592]]]
-                     [LegRight [[Spread -5.7296] [Swing -9.1673]]]]]]]
+ [Pose Ready
+  [[Turns
+    [[Pelvis [[Twist -8.5944]]]
+     [Torso [[Twist 5.7296] [Lean 2.2918]]]
+     [Head [[Twist 2.8648]]]
+     [ArmRight [[Spread 4.5837] [Swing 88.8085]]]
+     [ArmLeft [[Spread -22.9183] [Swing 80.2141]]]
+     [LegLeft [[Spread 5.7296] [Swing 11.4592]]]
+     [LegRight [[Spread -5.7296] [Swing -9.1673]]]]]]]
 
  ; at the ready high - as at the ready level, the arms raised high, the head tipped back after them
- [Pose ReadyUp [[Turns [[Pelvis [[Twist -8.5944]]]
-                       [Torso [[Twist 5.7296] [Lean -2.8648]]]
-                       [Head [[Twist 2.8648] [Lean -14.3239]]]
-                       [ArmRight [[Spread 4.5837] [Swing 123.1859]]]
-                       [ArmLeft [[Spread -22.9183] [Swing 114.5916]]]
-                       [LegLeft [[Spread 5.7296] [Swing 11.4592]]]
-                       [LegRight [[Spread -5.7296] [Swing -9.1673]]]]]]]
+ [Pose ReadyUp
+  [[Turns
+    [[Pelvis [[Twist -8.5944]]]
+     [Torso [[Twist 5.7296] [Lean -2.8648]]]
+     [Head [[Twist 2.8648] [Lean -14.3239]]]
+     [ArmRight [[Spread 4.5837] [Swing 123.1859]]]
+     [ArmLeft [[Spread -22.9183] [Swing 114.5916]]]
+     [LegLeft [[Spread 5.7296] [Swing 11.4592]]]
+     [LegRight [[Spread -5.7296] [Swing -9.1673]]]]]]]
 
  ; at the ready low - as at the ready level, the arms lowered, the head bowed after them, the body bent a little over
  ; them
- [Pose ReadyDown [[Turns [[Pelvis [[Twist -8.5944]]]
-                         [Torso [[Twist 5.7296] [Lean 8.5944]]]
-                         [Head [[Twist 2.8648] [Lean 17.1887]]]
-                         [ArmRight [[Spread 4.5837] [Swing 51.5662]]]
-                         [ArmLeft [[Spread -20.0535] [Swing 45.8366]]]
-                         [LegLeft [[Spread 5.7296] [Swing 11.4592]]]
-                         [LegRight [[Spread -5.7296] [Swing -9.1673]]]]]]]
+ [Pose ReadyDown
+  [[Turns
+    [[Pelvis [[Twist -8.5944]]]
+     [Torso [[Twist 5.7296] [Lean 8.5944]]]
+     [Head [[Twist 2.8648] [Lean 17.1887]]]
+     [ArmRight [[Spread 4.5837] [Swing 51.5662]]]
+     [ArmLeft [[Spread -20.0535] [Swing 45.8366]]]
+     [LegLeft [[Spread 5.7296] [Swing 11.4592]]]
+     [LegRight [[Spread -5.7296] [Swing -9.1673]]]]]]]
 
  ; the cut - landed in a long, low stride, hips snapped round toward the foe and the shoulders following, the arm
  ; thrown across the body with the blade down through the target, the off hand pulled back to whip the turn - the torso
  ; over the hips, inclined only a little into this most extreme move
- [Pose Cut [[Turns [[Pelvis [[Twist 17.1887]]]
-                   [Torso [[Twist 22.9183] [Lean 5.7296]]]
-                   [Head [[Twist -40.107]]]
-                   [ArmRight [[Spread 22.9183] [Swing 34.3775]]]
-                   [HandRight [[Swing -20.0535]]]
-                   [ArmLeft [[Spread 17.1887] [Swing -31.5127]]]
-                   [LegLeft [[Spread 5.7296] [Swing 34.3775]]]
-                   [LegRight [[Spread -5.7296] [Swing -34.3775]]]]]]]
+ [Pose Cut
+  [[Turns
+    [[Pelvis [[Twist 17.1887]]]
+     [Torso [[Twist 22.9183] [Lean 5.7296]]]
+     [Head [[Twist -40.107]]]
+     [ArmRight [[Spread 22.9183] [Swing 34.3775]]]
+     [HandRight [[Swing -20.0535]]]
+     [ArmLeft [[Spread 17.1887] [Swing -31.5127]]]
+     [LegLeft [[Spread 5.7296] [Swing 34.3775]]]
+     [LegRight [[Spread -5.7296] [Swing -34.3775]]]]]]]
 
  ; struck - knocked back off center, hips shoved back, chest and head thrown back, arms flung
- [Pose Struck [[Root [0 0 -0.4]]
-               [Turns [[Pelvis [[Twist 5.7296] [Lean -5.7296]]]
-                      [Torso [[Twist 11.4592] [Lean -22.9183]]]
-                      [Head [[Lean -17.1887]]]
-                      [ArmRight [[Spread -57.2958] [Swing -14.3239]]]
-                      [HandRight [[Swing -17.1887]]]
-                      [ArmLeft [[Spread 57.2958] [Swing -17.1887]]]
-                      [LegLeft [[Spread 5.7296] [Swing -8.5944]]]
-                      [LegRight [[Spread -5.7296] [Swing 17.1887]]]]]]]
+ [Pose Struck
+  [[Root [0 0 -0.4]]
+   [Turns
+    [[Pelvis [[Twist 5.7296] [Lean -5.7296]]]
+     [Torso [[Twist 11.4592] [Lean -22.9183]]]
+     [Head [[Lean -17.1887]]]
+     [ArmRight [[Spread -57.2958] [Swing -14.3239]]]
+     [HandRight [[Swing -17.1887]]]
+     [ArmLeft [[Spread 57.2958] [Swing -17.1887]]]
+     [LegLeft [[Spread 5.7296] [Swing -8.5944]]]
+     [LegRight [[Spread -5.7296] [Swing 17.1887]]]]]]]
 
  ; the grab - lunged in low, both arms thrown forward and in around the foe
- [Pose Grab [[Turns [[Pelvis [[Lean 8.5944]]]
-                    [Torso [[Lean 17.1887]]]
-                    [Head [[Lean -11.4592]]]
-                    [ArmRight [[Spread 14.3239] [Swing 83.0789]]]
-                    [HandRight [[Swing 17.1887]]]
-                    [ArmLeft [[Spread -14.3239] [Swing 83.0789]]]
-                    [LegLeft [[Spread 6.8755] [Swing 25.7831]]]
-                    [LegRight [[Spread -6.8755] [Swing -20.0535]]]]]]]
+ [Pose Grab
+  [[Turns
+    [[Pelvis [[Lean 8.5944]]]
+     [Torso [[Lean 17.1887]]]
+     [Head [[Lean -11.4592]]]
+     [ArmRight [[Spread 14.3239] [Swing 83.0789]]]
+     [HandRight [[Swing 17.1887]]]
+     [ArmLeft [[Spread -14.3239] [Swing 83.0789]]]
+     [LegLeft [[Spread 6.8755] [Swing 25.7831]]]
+     [LegRight [[Spread -6.8755] [Swing -20.0535]]]]]]]
 
  ; felled - fallen back and sunk a little, limbs gone slack, the weapon fallen along the arm
- [Pose Felled [[Root [0 -0.05 0]] [Fall -83.0789]
-               [Turns [[Torso [[Lean -5.7296]]]
-                      [Head [[Lean 14.3239]]]
-                      [ArmRight [[Spread -63.0254] [Swing 11.4592]]]
-                      [HandRight [[Swing -85.9437]]]
-                      [ArmLeft [[Spread 63.0254] [Swing 11.4592]]]
-                      [LegLeft [[Spread 5.7296] [Swing 17.1887]]]
-                      [LegRight [[Spread -5.7296] [Swing 5.7296]]]]]]]
+ [Pose Felled
+  [[Root [0 -0.05 0]]
+   [Fall -83.0789]
+   [Turns
+    [[Torso [[Lean -5.7296]]]
+     [Head [[Lean 14.3239]]]
+     [ArmRight [[Spread -63.0254] [Swing 11.4592]]]
+     [HandRight [[Swing -85.9437]]]
+     [ArmLeft [[Spread 63.0254] [Swing 11.4592]]]
+     [LegLeft [[Spread 5.7296] [Swing 17.1887]]]
+     [LegRight [[Spread -5.7296] [Swing 5.7296]]]]]]]
 
  ; prone - face down on the ground, arms flung out ahead, legs splayed behind
- [Pose Prone [[Fall 85.9437]
-              [Turns [[Torso [[Lean 2.8648]]]
-                     [Head [[Lean -20.0535]]]
-                     [ArmLeft [[Spread 28.6479] [Swing 154.6986]]]
-                     [ArmRight [[Spread -28.6479] [Swing 154.6986]]]
-                     [LegLeft [[Spread 14.3239] [Swing -5.7296]]]
-                     [LegRight [[Spread -14.3239] [Swing 2.8648]]]]]]]
+ [Pose Prone
+  [[Fall 85.9437]
+   [Turns
+    [[Torso [[Lean 2.8648]]]
+     [Head [[Lean -20.0535]]]
+     [ArmLeft [[Spread 28.6479] [Swing 154.6986]]]
+     [ArmRight [[Spread -28.6479] [Swing 154.6986]]]
+     [LegLeft [[Spread 14.3239] [Swing -5.7296]]]
+     [LegRight [[Spread -14.3239] [Swing 2.8648]]]]]]]
 
  ; a whirl's spin - the arm held straight out to the side, the blade extended outward along it sweeping the circle,
  ; upright over a wide base
- [Pose Whirling [[Turns [[Torso [[Lean 1.7189]]]
-                        [ArmRight [[Spread -85.9437] [Swing 5.7296]]]
-                        [HandRight [[Swing -85.9437]]]
-                        [ArmLeft [[Spread 68.7549] [Swing 17.1887]]]
-                        [LegLeft [[Spread 11.4592] [Swing 14.3239]]]
-                        [LegRight [[Spread -11.4592] [Swing -14.3239]]]]]]]
+ [Pose Whirling
+  [[Turns
+    [[Torso [[Lean 1.7189]]]
+     [ArmRight [[Spread -85.9437] [Swing 5.7296]]]
+     [HandRight [[Swing -85.9437]]]
+     [ArmLeft [[Spread 68.7549] [Swing 17.1887]]]
+     [LegLeft [[Spread 11.4592] [Swing 14.3239]]]
+     [LegRight [[Spread -11.4592] [Swing -14.3239]]]]]]]
 
  ; at ease - feet together under the hips, arms hanging loose at the sides, head up
- [Pose Relaxed [[Turns [[ArmLeft [[Spread 4.0107] [Swing 2.2918]]]
-                       [ArmRight [[Spread -4.0107] [Swing 2.2918]]]
-                       [LegLeft [[Spread 1.7189]]]
-                       [LegRight [[Spread -1.7189]]]]]]]
+ [Pose Relaxed
+  [[Turns
+    [[ArmLeft [[Spread 4.0107] [Swing 2.2918]]]
+     [ArmRight [[Spread -4.0107] [Swing 2.2918]]]
+     [LegLeft [[Spread 1.7189]]]
+     [LegRight [[Spread -1.7189]]]]]]]
 
  ; a stride of a stroll - legs swinging opposite each other with the arms swinging against them, the hips turning with
  ; the leading leg and the shoulders against it, the body bobbing up as it passes over each planted foot
- [Cycling Stride [[Bob [Some [[Base -0.03] [Amplitude 0.045] [Wave Rebound] [Offset 90]]]]
-                  [Turns [[Pelvis [[Twisting [[Amplitude 5.1566]]]]]
-                          [Torso [[Twisting [[Amplitude -7.4485]]] [Leaning [[Base 2.2918]]]]]
-                          [Head [[Twisting [[Amplitude 2.2918]]]]]
-                          [LegLeft [[Spreading [[Base 1.7189]]] [Swinging [[Amplitude 26.3561]]]]]
-                          [LegRight [[Spreading [[Base -1.7189]]] [Swinging [[Amplitude -26.3561]]]]]
-                          [ArmLeft [[Spreading [[Base 4.5837]]] [Swinging [[Amplitude -21.7724]]]]]
-                          [ArmRight [[Spreading [[Base -4.5837]]] [Swinging [[Amplitude 21.7724]]]]]]]]]]
+ [Cycling Stride
+  [[Bob [Some [[Base -0.03] [Amplitude 0.045] [Wave Rebound] [Offset 90]]]]
+   [Turns
+    [[Pelvis [[Twisting [[Amplitude 5.1566]]]]]
+     [Torso [[Twisting [[Amplitude -7.4485]]] [Leaning [[Base 2.2918]]]]]
+     [Head [[Twisting [[Amplitude 2.2918]]]]]
+     [LegLeft [[Spreading [[Base 1.7189]]] [Swinging [[Amplitude 26.3561]]]]]
+     [LegRight [[Spreading [[Base -1.7189]]] [Swinging [[Amplitude -26.3561]]]]]
+     [ArmLeft [[Spreading [[Base 4.5837]]] [Swinging [[Amplitude -21.7724]]]]]
+     [ArmRight [[Spreading [[Base -4.5837]]] [Swinging [[Amplitude 21.7724]]]]]]]]]]

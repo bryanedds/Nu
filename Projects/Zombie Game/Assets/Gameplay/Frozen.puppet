@@ -2,60 +2,93 @@
 ; his outstretched arms, his skin gone blue, his eyes frosted over. He comes on slowly, and he's hard to put down.
 
 [[Body
-  [Biped [[Legs 0.84] [Torso 0.62] [Shoulders 0.23] [Hips 0.11] [Arms 0.68] [Limbs 0.13]
-          [Clothes [Some [[Arms [Rime Cloth]] [Hands [Blue Skin]] [Legs [Rime Cloth]] [Feet [Boot Rubber]]]]]]]]
+  [Biped
+   [[Legs 0.84]
+    [Torso 0.62]
+    [Shoulders 0.23]
+    [Hips 0.11]
+    [Arms 0.68]
+    [Limbs 0.13]
+    [Clothes [Some [[Arms [Rime Cloth]] [Hands [Blue Skin]] [Legs [Rime Cloth]] [Feet [Boot Rubber]]]]]]]]
  [Scale 1.04]
  [Palette
-  [[Blue [0.5 0.6 0.7 1]]
-   [Rime [0.78 0.84 0.88 1]]
-   [Ice [0.8 0.9 1 1]]
-   [Boot [0.6 0.66 0.7 1]]
-   [Blood [0.3 0.12 0.16 1]]
-   [Eye [0.85 0.95 1 1]]]]
+  [[Blue [0.5 0.6 0.7 1]] [Rime [0.78 0.84 0.88 1]] [Ice [0.8 0.9 1 1]] [Boot [0.6 0.66 0.7 1]] [Blood [0.3 0.12 0.16 1]] [Eye [0.85 0.95 1 1]]]]
  [Parts
   [[[Bone Pelvis] [Shape PartBox] [At [0 -0.02 0]] [Size [0.38 0.22 0.25]] [Color Rime]]
    [[Bone Torso] [Shape PartBox] [At [0 0.3 0]] [Size [0.45 0.62 0.28]] [Color Rime] [Surface Cloth]] ; the smock, rimed white
    [[Bone Torso] [Shape PartBox] [At [0.08 0.36 0.145]] [Size [0.14 0.2 0.01]] [Color Blood] [Surface Blood]]
-   [[Bone Torso] [Shape PartCone] [At [0.18 0.58 0.05]] [Size [0.06 0.16 0.06]] [Turn [[Lean 180]]] [Color Ice] [Surface Glass] [Mirror True]] ; frost spiking off his shoulders
+   [[Bone Torso]
+    [Shape PartCone]
+    [At [0.18 0.58 0.05]]
+    [Size [0.06 0.16 0.06]]
+    [Turn [[Lean 180]]]
+    [Color Ice]
+    [Surface Glass]
+    [Mirror True]] ; frost spiking off his shoulders
    [[Bone Torso] [Shape PartBox] [At [0 0.64 0]] [Size [0.12 0.06 0.12]] [Color Blue] [Surface Skin]] ; neck
    [[Bone Head] [Shape PartBall] [At [0 0.14 0.01]] [Size [0.25 0.29 0.27]] [Color Blue] [Surface Skin]]
    [[Bone Head] [Shape PartBall] [At [0 0.21 -0.02]] [Size [0.28 0.18 0.28]] [Color Rime] [Surface Cloth]] ; his hairnet, frozen
-   [[Bone Head] [Shape PartCone] [At [0.03 -0.02 0.1]] [Size [0.03 0.12 0.03]] [Turn [[Lean 180]]] [Color Ice] [Surface Glass] [Mirror True]] ; icicles from his chin
+   [[Bone Head]
+    [Shape PartCone]
+    [At [0.03 -0.02 0.1]]
+    [Size [0.03 0.12 0.03]]
+    [Turn [[Lean 180]]]
+    [Color Ice]
+    [Surface Glass]
+    [Mirror True]] ; icicles from his chin
    [[Bone Head] [Shape PartBall] [At [0.055 0.16 0.12]] [Size [0.04 0.03 0.03]] [Color Eye] [Surface Light] [Emission 0.6] [Mirror True]] ; frosted eyes
-   [[Bone HandLeft] [Shape PartCone] [At [0 -0.12 0]] [Size [0.03 0.14 0.03]] [Turn [[Lean 180]]] [Color Ice] [Surface Glass]] ; icicles from his fingers
-   [[Bone HandRight] [Shape PartCone] [At [0 -0.12 0]] [Size [0.03 0.14 0.03]] [Turn [[Lean 180]]] [Color Ice] [Surface Glass]]]]
+   [[Bone HandLeft]
+    [Shape PartCone]
+    [At [0 -0.12 0]]
+    [Size [0.03 0.14 0.03]]
+    [Turn [[Lean 180]]]
+    [Color Ice]
+    [Surface Glass]] ; icicles from his fingers
+   [[Bone HandRight]
+    [Shape PartCone]
+    [At [0 -0.12 0]]
+    [Size [0.03 0.14 0.03]]
+    [Turn [[Lean 180]]]
+    [Color Ice]
+    [Surface Glass]]]]
  [Poses
   [; standing hunched, head hung forward, its arms reaching out before it
-   [Pose Stance [[Turns [[Pelvis [[Lean 4.5837]]]
-                        [Torso [[Lean 14.3239] [Twist 4.5837]]]
-                        [Head [[Lean 11.4592] [Twist -8.5944]]]
-                        [ArmLeft [[Spread -4.5837] [Swing 74.4845]]]
-                        [ArmRight [[Spread 2.8648] [Swing 68.7549]]]
-                        [HandLeft [[Swing -14.3239]]]
-                        [HandRight [[Swing -20.0535]]]
-                        [LegLeft [[Spread 4.5837] [Swing 8.5944]]]
-                        [LegRight [[Spread -4.5837] [Swing -5.7296]]]]]]]
+   [Pose Stance
+    [[Turns
+      [[Pelvis [[Lean 4.5837]]]
+       [Torso [[Lean 14.3239] [Twist 4.5837]]]
+       [Head [[Lean 11.4592] [Twist -8.5944]]]
+       [ArmLeft [[Spread -4.5837] [Swing 74.4845]]]
+       [ArmRight [[Spread 2.8648] [Swing 68.7549]]]
+       [HandLeft [[Swing -14.3239]]]
+       [HandRight [[Swing -20.0535]]]
+       [LegLeft [[Spread 4.5837] [Swing 8.5944]]]
+       [LegRight [[Spread -4.5837] [Swing -5.7296]]]]]]]
 
    ; as standing ready, slack
-   [Pose Relaxed [[Turns [[Pelvis [[Lean 4.5837]]]
-                         [Torso [[Lean 14.3239] [Twist 4.5837]]]
-                         [Head [[Lean 11.4592] [Twist -8.5944]]]
-                         [ArmLeft [[Spread -4.5837] [Swing 74.4845]]]
-                         [ArmRight [[Spread 2.8648] [Swing 68.7549]]]
-                         [HandLeft [[Swing -14.3239]]]
-                         [HandRight [[Swing -20.0535]]]
-                         [LegLeft [[Spread 4.5837] [Swing 8.5944]]]
-                         [LegRight [[Spread -4.5837] [Swing -5.7296]]]]]]]
+   [Pose Relaxed
+    [[Turns
+      [[Pelvis [[Lean 4.5837]]]
+       [Torso [[Lean 14.3239] [Twist 4.5837]]]
+       [Head [[Lean 11.4592] [Twist -8.5944]]]
+       [ArmLeft [[Spread -4.5837] [Swing 74.4845]]]
+       [ArmRight [[Spread 2.8648] [Swing 68.7549]]]
+       [HandLeft [[Swing -14.3239]]]
+       [HandRight [[Swing -20.0535]]]
+       [LegLeft [[Spread 4.5837] [Swing 8.5944]]]
+       [LegRight [[Spread -4.5837] [Swing -5.7296]]]]]]]
 
    ; a lurching shamble - short, dragging steps, the body rolling side to side over them, the arms held out ahead and
    ; bobbing loosely
-   [Cycling Stride [[Bob [Some [[Base -0.04] [Amplitude 0.03] [Wave Rebound] [Offset 90]]]]
-                    [Turns [[Pelvis [[Twisting [[Amplitude 8.5944]]] [Leaning [[Base 4.5837]]]]]
-                            [Torso [[Twisting [[Amplitude -4.5837]]] [Leaning [[Base 16.0428] [Amplitude 2.2918]]]]]
-                            [Head [[Twisting [[Amplitude 5.7296]]] [Leaning [[Base 11.4592] [Amplitude -4.5837]]]]]
-                            [LegLeft [[Spreading [[Base 4.0107]]] [Swinging [[Amplitude 17.1887]]]]]
-                            [LegRight [[Spreading [[Base -4.0107]]] [Swinging [[Amplitude -14.3239]]]]]
-                            [ArmLeft [[Spreading [[Base -4.5837]]] [Swinging [[Base 72.1927] [Amplitude 6.8755]]]]]
-                            [ArmRight [[Spreading [[Base 2.8648]]] [Swinging [[Base 66.4632] [Amplitude -6.8755]]]]]
-                            [HandLeft [[Swinging [[Base -14.3239]]]]]
-                            [HandRight [[Swinging [[Base -20.0535]]]]]]]]]]]]
+   [Cycling Stride
+    [[Bob [Some [[Base -0.04] [Amplitude 0.03] [Wave Rebound] [Offset 90]]]]
+     [Turns
+      [[Pelvis [[Twisting [[Amplitude 8.5944]]] [Leaning [[Base 4.5837]]]]]
+       [Torso [[Twisting [[Amplitude -4.5837]]] [Leaning [[Base 16.0428] [Amplitude 2.2918]]]]]
+       [Head [[Twisting [[Amplitude 5.7296]]] [Leaning [[Base 11.4592] [Amplitude -4.5837]]]]]
+       [LegLeft [[Spreading [[Base 4.0107]]] [Swinging [[Amplitude 17.1887]]]]]
+       [LegRight [[Spreading [[Base -4.0107]]] [Swinging [[Amplitude -14.3239]]]]]
+       [ArmLeft [[Spreading [[Base -4.5837]]] [Swinging [[Base 72.1927] [Amplitude 6.8755]]]]]
+       [ArmRight [[Spreading [[Base 2.8648]]] [Swinging [[Base 66.4632] [Amplitude -6.8755]]]]]
+       [HandLeft [[Swinging [[Base -14.3239]]]]]
+       [HandRight [[Swinging [[Base -20.0535]]]]]]]]]]]]

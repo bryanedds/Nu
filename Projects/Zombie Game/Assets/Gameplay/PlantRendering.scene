@@ -1,36 +1,101 @@
 ; The rendering room - its kettles cooking down what the line couldn't use, the sow's pen, the sow grown monstrous on
 ; it, and at the back the freight elevator down to the pit, the elevator's key somewhere in the pen.
 
-[[Palette [[Concrete [0.26 0.22 0.2 1]] [Grime [0.36 0.3 0.26 1]] [Dado [0.22 0.12 0.1 1]] [Kettle [0.32 0.3 0.28 1]] [Tallow [0.55 0.48 0.3 1]] [Red [1 0.15 0.1 1]] [Green [0.2 1 0.3 1]]]]
+[[Palette
+  [[Concrete [0.26 0.22 0.2 1]]
+   [Grime [0.36 0.3 0.26 1]]
+   [Dado [0.22 0.12 0.1 1]]
+   [Kettle [0.32 0.3 0.28 1]]
+   [Tallow [0.55 0.48 0.3 1]]
+   [Red [1 0.15 0.1 1]]
+   [Green [0.2 1 0.3 1]]]]
 
- [Area [[Type [Plant Rendering]] [Name "Rendering Room"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-5.5 -0.5 -4.5] [11 4 9]]] [Songs [[[Song PlantBossSong] [When [Some [Not [Flagged [Killed Sow]]]]]] [[Song PlantSong]]]]]]
- [Layout [Chamber [[Size [10 8]] [Floor Concrete] [Walls Grime] [Dado Dado] [FloorSurface [Some Concrete]] [WallSurface [Some Concrete]]]]]
+ [Area
+  [[Type [Plant Rendering]]
+   [Name "Rendering Room"]
+   [Ambient 0.75]
+   [Probe [0 1.6 0]]
+   [Bounds [[-5.5 -0.5 -4.5] [11 4 9]]]
+   [Songs [[[Song PlantBossSong] [When [Some [Not [Flagged [Killed Sow]]]]]] [[Song PlantSong]]]]]]
+
+ [Layout
+  [Chamber
+   [[Size [10 8]] [Floor Concrete] [Walls Grime] [Dado Dado] [FloorSurface [Some Concrete]] [WallSurface [Some Concrete]]]]]
 
  ; the doors
- [Prop [[Name RenderingDoor] [Appearance [Some [Composed SteelWallDoor []]]] [Place [[Against [Some South]] [Along 0]]]
+ [Prop
+  [[Name RenderingDoor]
+   [Appearance [Some [Composed SteelWallDoor []]]]
+   [Place [[Against [Some South]] [Along 0]]]
    [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant KillFloor]] [Style SteelDoor]]]]]]]]]
- [Prop [[Name ElevatorDoor] [Appearance [Some [Composed ShutterWallDoor []]]] [Place [[Against [Some North]] [Along 2]]]
-   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant Pit]] [Style Shutter] [Key [Some ElevatorKey]] [Opens [Some [Flagged [Examined LineSwitch]]]] [Locked [Some "The freight elevator to the pit. It takes a key - and its lamp's red. It'll need the line's power from the control room too."]]]]]]]]]]
- ; the elevator's lamp - red until the line's switched on, green once it is
- [While [Not [Flagged [Examined LineSwitch]]]
-  [[Prop [[Name ElevatorLampRed] [Appearance [Some [Composed PanelLamp [[Colors [Some [[Lamp Red]]]]]]]] [Place [[At [Some [3.95 -3.97]]] [Height [Some 1.5]]]]]]]]
- [While [Flagged [Examined LineSwitch]]
-  [[Prop [[Name ElevatorLampGreen] [Appearance [Some [Composed PanelLamp [[Colors [Some [[Lamp Green]]]]]]]] [Place [[At [Some [3.95 -3.97]]] [Height [Some 1.5]]]]]]]]
 
+ [Prop
+  [[Name ElevatorDoor]
+   [Appearance [Some [Composed ShutterWallDoor []]]]
+   [Place [[Against [Some North]] [Along 2]]]
+   [Interact
+    [Some
+     [[InteractionType Open]
+      [Cue
+       [Enter
+        [[To [Plant Pit]]
+         [Style Shutter]
+         [Key [Some ElevatorKey]]
+         [Opens [Some [Flagged [Examined LineSwitch]]]]
+         [Locked [Some "The freight elevator to the pit. It takes a key - and its lamp's red. It'll need the line's power from the control room too."]]]]]]]]]]
+
+ ; the elevator's lamp - red until the line's switched on, green once it is
+ [While
+  [Not [Flagged [Examined LineSwitch]]]
+  [[Prop
+    [[Name ElevatorLampRed]
+     [Appearance [Some [Composed PanelLamp [[Colors [Some [[Lamp Red]]]]]]]]
+     [Place [[At [Some [3.95 -3.97]]] [Height [Some 1.5]]]]]]]]
+
+ [While
+  [Flagged [Examined LineSwitch]]
+  [[Prop
+    [[Name ElevatorLampGreen]
+     [Appearance [Some [Composed PanelLamp [[Colors [Some [[Lamp Green]]]]]]]]
+     [Place [[At [Some [3.95 -3.97]]] [Height [Some 1.5]]]]]]]]
+
+ ; the lights
  [Prop [[Name LampWest] [Appearance [Some [Composed CageLamp []]]] [Place [[Against [Some West]] [Along 0]]]]]
- [Prop [[Name LampEast] [Appearance [Some [Composed CageLamp [[Brightness [Some 1.4]]]]]] [Place [[Against [Some East]] [Along 1]]]]]
+
+ [Prop
+  [[Name LampEast]
+   [Appearance [Some [Composed CageLamp [[Brightness [Some 1.4]]]]]]
+   [Place [[Against [Some East]] [Along 1]]]]]
+
+ ; the cameras
  [Camera [[Zone [[-5 -4] [10 8]]] [At [-4 2.75 3.4]] [LookAt [1.5 0.3 -1.5]] [FieldOfView 76]]]
 
  ; the kettles, and what's spilled from them
- [Prop [[Name KettleNorth] [Appearance [Some [Composed Vat [[Colors [Some [[Steel Kettle] [Brew Tallow]]]]]]]] [Place [[At [Some [-3.4 -2.2]]]]]]]
- [Prop [[Name KettleSouth] [Appearance [Some [Composed Vat [[Colors [Some [[Steel Kettle] [Brew Tallow]]]]]]]] [Place [[At [Some [-3.4 1.8]]]]]]]
+ [Prop
+  [[Name KettleNorth]
+   [Appearance [Some [Composed Vat [[Colors [Some [[Steel Kettle] [Brew Tallow]]]]]]]]
+   [Place [[At [Some [-3.4 -2.2]]]]]]]
+
+ [Prop
+  [[Name KettleSouth]
+   [Appearance [Some [Composed Vat [[Colors [Some [[Steel Kettle] [Brew Tallow]]]]]]]]
+   [Place [[At [Some [-3.4 1.8]]]]]]]
+
  [Prop [[Name OffalPen] [Appearance [Some [Composed Offal []]]] [Place [[At [Some [2.8 1.6]]]]]]]
  [Prop [[Name OffalKettle] [Appearance [Some [Composed Offal []]]] [Place [[At [Some [-1.6 -0.2]]]]]]]
- [Prop [[Name RenderingGrenades] [Place [[At [Some [4.3 3.3]]] [Height [Some 0.01]]]]
+
+ ; the pickups
+ [Prop
+  [[Name RenderingGrenades]
+   [Place [[At [Some [4.3 3.3]]] [Height [Some 0.01]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item Grenades] [Count 3]]]]]]]]]
+
  ; the elevator's key, on the floor of the sow's pen once it's dead
- [While [Flagged [Killed Sow]]
-  [[Prop [[Name RenderingElevatorKey] [Place [[At [Some [1.4 -0.6]]] [Height [Some 0.01]]]]
+ [While
+  [Flagged [Killed Sow]]
+  [[Prop
+    [[Name RenderingElevatorKey]
+     [Place [[At [Some [1.4 -0.6]]] [Height [Some 0.01]]]]
      [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item ElevatorKey] [Count 1]]]]]]]]]]]
 
  ; the creatures

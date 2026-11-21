@@ -1,31 +1,75 @@
 ; The rail yard out front of Brandt Packing - where the van pulls in at dawn, a refrigerated trailer left where it was
 ; unhitched, the loading dock's shutter, and a chained gate onto the rail platform behind the plant.
 
-[[Palette [[Gravel [0.22 0.21 0.2 1]] [Brick [0.38 0.24 0.2 1]] [Dado [0.26 0.17 0.14 1]] [Fence [0.45 0.46 0.48 1]] [Sign [0.6 0.12 0.1 1]]]]
+[[Palette
+  [[Gravel [0.22 0.21 0.2 1]] [Brick [0.38 0.24 0.2 1]] [Dado [0.26 0.17 0.14 1]] [Fence [0.45 0.46 0.48 1]] [Sign [0.6 0.12 0.1 1]]]]
 
- [Area [[Type [Plant Yard]] [Name "Rail Yard"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-6.5 -0.5 -5.5] [13 4 11]]] [Songs [[[Song PlantSong]]]]]]
- [Layout [Chamber [[Size [12 10]] [Floor Gravel] [Walls Brick] [Dado Dado] [FloorSurface [Some Concrete]] [WallSurface [Some Concrete]] [Outdoors True]]]]
+ [Area
+  [[Type [Plant Yard]]
+   [Name "Rail Yard"]
+   [Ambient 0.75]
+   [Probe [0 1.6 0]]
+   [Bounds [[-6.5 -0.5 -5.5] [13 4 11]]]
+   [Songs [[[Song PlantSong]]]]]]
+
+ [Layout
+  [Chamber
+   [[Size [12 10]] [Floor Gravel] [Walls Brick] [Dado Dado] [FloorSurface [Some Concrete]] [WallSurface [Some Concrete]] [Outdoors True]]]]
 
  ; the doors
- [Prop [[Name YardDock] [Appearance [Some [Composed ShutterWallDoor []]]] [Place [[Against [Some North]] [Along 2]]]
+ [Prop
+  [[Name YardDock]
+   [Appearance [Some [Composed ShutterWallDoor []]]]
+   [Place [[Against [Some North]] [Along 2]]]
    [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant Dock]] [Style Shutter]]]]]]]]]
 
+ ; the lights
  [Prop [[Name LampWest] [Appearance [Some [Composed LampPost []]]] [Place [[At [Some [-5 -4]]]]]]]
  [Prop [[Name LampEast] [Appearance [Some [Composed LampPost []]]] [Place [[At [Some [5.2 -1]]]]]]]
+
+ ; the cameras
  [Camera [[Zone [[-6 -5] [12 10]]] [At [0 3.2 4.6]] [LookAt [0 0.3 -2]] [FieldOfView 78]]]
+
+ ; where play starts
  [Arrival [[Name FromDorm] [At [-2.6 3.8]] [Facing 180]]]
 
  ; the van, ticking as it cools by the east wall, and the trailer left unhitched along the west one, out of the way of the
  ; eye's view of the dock
- [Prop [[Name Van] [Appearance [Some [Composed Van []]]] [Place [[At [Some [4.8 2]]]]]
-   [Interact [Some [[InteractionType Examine] [Cue [Say ["The facilities van, ticking as it cools. The needle's on empty again - it's done its part."]]]]]]]]
+ [Prop
+  [[Name Van]
+   [Appearance [Some [Composed Van []]]]
+   [Place [[At [Some [4.8 2]]]]]
+   [Interact
+    [Some
+     [[InteractionType Examine]
+      [Cue [Say ["The facilities van, ticking as it cools. The needle's on empty again - it's done its part."]]]]]]]]
+
  [Prop [[Name Trailer] [Appearance [Some [Composed Trailer []]]] [Place [[At [Some [-4.6 1.4]]] [Facing 90]]]]]
- [Prop [[Name CompanySign] [Appearance [Some [Slab [[Size [3 0.6 0.04]] [Surface Paint] [Tint Sign]]]]] [Place [[Against [Some North]] [Along -3] [Height [Some 2.2]]]]
-   [Interact [Some [[InteractionType Examine] [Cue [Say ["BRANDT PACKING CO. - QUALITY MEATS SINCE 1931. Someone's sprayed under it: THE TRAIN STOPS OUT BACK."]]]]]]]]
+
+ [Prop
+  [[Name CompanySign]
+   [Appearance [Some [Slab [[Size [3 0.6 0.04]] [Surface Paint] [Tint Sign]]]]]
+   [Place [[Against [Some North]] [Along -3] [Height [Some 2.2]]]]
+   [Interact
+    [Some
+     [[InteractionType Examine]
+      [Cue [Say ["BRANDT PACKING CO. - QUALITY MEATS SINCE 1931. Someone's sprayed under it: THE TRAIN STOPS OUT BACK."]]]]]]]]
+
  ; the gate onto the platform, chained from the far side
- [Prop [[Name PlatformGate] [Appearance [Some [Slab [[Size [0.06 2.2 2.4]] [Surface Steel] [Tint Fence]]]]] [Place [[At [Some [5.97 -2.5]]] [Height [Some 0]]]]
-   [Interact [Some [[InteractionType Examine] [Cue [Say ["A chain-link gate onto the rail platform behind the plant, chained and padlocked from the other side." "Through it, the tracks run off into the dark. The way round's through the plant."]]]]]]]]
- [Prop [[Name YardShells] [Place [[At [Some [5.2 -4.2]]] [Height [Some 0.01]]]]
+ [Prop
+  [[Name PlatformGate]
+   [Appearance [Some [Slab [[Size [0.06 2.2 2.4]] [Surface Steel] [Tint Fence]]]]]
+   [Place [[At [Some [5.97 -2.5]]] [Height [Some 0]]]]
+   [Interact
+    [Some
+     [[InteractionType Examine]
+      [Cue
+       [Say ["A chain-link gate onto the rail platform behind the plant, chained and padlocked from the other side." "Through it, the tracks run off into the dark. The way round's through the plant."]]]]]]]]
+
+ ; the pickups
+ [Prop
+  [[Name YardShells]
+   [Place [[At [Some [5.2 -4.2]]] [Height [Some 0.01]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item ShotgunShells] [Count 4]]]]]]]]]
 
  ; the creatures

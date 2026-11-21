@@ -1,37 +1,112 @@
 ; The east hall - the corridor to the generator, security, the morgue and the ambulance bay, an orderly in it, and
 ; the security kennel's dogs loose once the power's back.
 
-[[Palette [[Lino [0.3 0.33 0.31 1]] [Paint [0.5 0.58 0.53 1]] [Dado [0.22 0.34 0.33 1]] [Vending [0.5 0.12 0.1 1]] [Sheet [0.5 0.55 0.55 1]] [Screen [0.7 0.8 1 1]]]]
+[[Palette
+  [[Lino [0.3 0.33 0.31 1]] [Paint [0.5 0.58 0.53 1]] [Dado [0.22 0.34 0.33 1]] [Vending [0.5 0.12 0.1 1]] [Sheet [0.5 0.55 0.55 1]] [Screen [0.7 0.8 1 1]]]]
 
- [Area [[Type [Hospital EastHall]] [Name "East Hall"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-2.1 -0.5 -8.5] [4.2 4 17]]] [Songs [[[Song HospitalPoweredSong] [When [Some [Flagged PowerRestored]]]] [[Song HospitalSong]]]]]]
+ [Area
+  [[Type [Hospital EastHall]]
+   [Name "East Hall"]
+   [Ambient 0.75]
+   [Probe [0 1.6 0]]
+   [Bounds [[-2.1 -0.5 -8.5] [4.2 4 17]]]
+   [Songs [[[Song HospitalPoweredSong] [When [Some [Flagged PowerRestored]]]] [[Song HospitalSong]]]]]]
+
  [Layout [Chamber [[Size [3.2 16]] [Floor Lino] [Walls Paint] [Dado Dado]]]]
 
  ; the doors
- [Prop [[Name EastHallDoors] [Appearance [Some [Composed DoubleWallDoor []]]] [Place [[Against [Some West]] [Along 6]]]
+ [Prop
+  [[Name EastHallDoors]
+   [Appearance [Some [Composed DoubleWallDoor []]]]
+   [Place [[Against [Some West]] [Along 6]]]
    [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Hospital Reception]] [Style DoubleDoor]]]]]]]]]
- [Prop [[Name GeneratorDoor] [Appearance [Some [Composed SteelWallDoor []]]] [Place [[Against [Some East]] [Along 2]]]
-   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Hospital Generator]] [Style SteelDoor]]]]]]]]]
- [Prop [[Name SecurityDoor] [Appearance [Some [Composed SteelWallDoor []]]] [Place [[Against [Some East]] [Along -4.6]]]
-   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Hospital Security]] [Style SteelDoor] [Opens [Some [Flagged PowerRestored]]] [Locked [Some "A maglock holds it. With the power out, it won't let go."]]]]]]]]]]
- [Prop [[Name MorgueDoors] [Appearance [Some [Composed SteelWallDoor []]]] [Place [[Against [Some North]] [Along 0]]]
-   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Hospital Morgue]] [Style SteelDoor] [Key [Some MorgueKey]] [Locked [Some "Locked. A heavy lock - B-MORGUE."]]]]]]]]]]
- [Prop [[Name BayShutter] [Appearance [Some [Composed ShutterWallDoor []]]] [Place [[Against [Some South]] [Along 0]]]
-   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Hospital AmbulanceBay]] [Style Shutter] [Opens [Some [Flagged PowerRestored]]] [Locked [Some "A roller shutter. Its control box is dead - there's no power."]]]]]]]]]]
 
- [Prop [[Name LampNorth] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.6]]]]]] [Place [[At [Some [0 -4.5]]] [Height [Some 2.7]]]]]]
- [Prop [[Name LampSouth] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 2]]]]]] [Place [[At [Some [0 4.5]]] [Height [Some 2.7]]]]]]
+ [Prop
+  [[Name GeneratorDoor]
+   [Appearance [Some [Composed SteelWallDoor []]]]
+   [Place [[Against [Some East]] [Along 2]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Hospital Generator]] [Style SteelDoor]]]]]]]]]
+
+ [Prop
+  [[Name SecurityDoor]
+   [Appearance [Some [Composed SteelWallDoor []]]]
+   [Place [[Against [Some East]] [Along -4.6]]]
+   [Interact
+    [Some
+     [[InteractionType Open]
+      [Cue
+       [Enter
+        [[To [Hospital Security]]
+         [Style SteelDoor]
+         [Opens [Some [Flagged PowerRestored]]]
+         [Locked [Some "A maglock holds it. With the power out, it won't let go."]]]]]]]]]]
+
+ [Prop
+  [[Name MorgueDoors]
+   [Appearance [Some [Composed SteelWallDoor []]]]
+   [Place [[Against [Some North]] [Along 0]]]
+   [Interact
+    [Some
+     [[InteractionType Open]
+      [Cue
+       [Enter
+        [[To [Hospital Morgue]] [Style SteelDoor] [Key [Some MorgueKey]] [Locked [Some "Locked. A heavy lock - B-MORGUE."]]]]]]]]]]
+
+ [Prop
+  [[Name BayShutter]
+   [Appearance [Some [Composed ShutterWallDoor []]]]
+   [Place [[Against [Some South]] [Along 0]]]
+   [Interact
+    [Some
+     [[InteractionType Open]
+      [Cue
+       [Enter
+        [[To [Hospital AmbulanceBay]]
+         [Style Shutter]
+         [Opens [Some [Flagged PowerRestored]]]
+         [Locked [Some "A roller shutter. Its control box is dead - there's no power."]]]]]]]]]]
+
+ ; the lights
+ [Prop
+  [[Name LampNorth]
+   [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.6]]]]]]
+   [Place [[At [Some [0 -4.5]]] [Height [Some 2.7]]]]]]
+
+ [Prop
+  [[Name LampSouth]
+   [Appearance [Some [Composed CeilingLamp [[Brightness [Some 2]]]]]]
+   [Place [[At [Some [0 4.5]]] [Height [Some 2.7]]]]]]
+
+ ; the cameras
  [Camera [[Zone [[-1.6 -8] [3.2 8]]] [At [1.2 2.75 4]] [LookAt [0 0.4 -6]] [FieldOfView 52]]]
  [Camera [[Zone [[-1.6 0] [3.2 8]]] [At [-1.2 2.75 -3.5]] [LookAt [0 0.4 6]] [FieldOfView 52]]]
 
- [Prop [[Name Vending] [Appearance [Some [Slab [[Size [0.6 1.8 0.8]] [Surface Plastic] [Tint Vending] [Solid True]]]]] [Place [[At [Some [-1.25 -2.5]]]]]]]
- ; the vending machine's front, lit once the power's back
- [While [Flagged PowerRestored]
-  [[Prop [[Name VendingFront] [Appearance [Some [Composed VendingFront []]]] [Place [[At [Some [-0.94 -2.5]]] [Height [Some 0.65]]]]]]]]
- [Prop [[Name Gurney] [Appearance [Some [Composed Gurney [[Colors [Some [[Sheet Sheet]]]]]]]] [Place [[At [Some [1 6.2]]]]]]]
- [Prop [[Name EastBullets] [Place [[At [Some [1 6]]] [Height [Some 0.79]]]]
+ ; the vending machine, its front lit once the power's back
+ [Prop
+  [[Name Vending]
+   [Appearance [Some [Slab [[Size [0.6 1.8 0.8]] [Surface Plastic] [Tint Vending] [Solid True]]]]]
+   [Place [[At [Some [-1.25 -2.5]]]]]]]
+
+ [While
+  [Flagged PowerRestored]
+  [[Prop
+    [[Name VendingFront]
+     [Appearance [Some [Composed VendingFront []]]]
+     [Place [[At [Some [-0.94 -2.5]]] [Height [Some 0.65]]]]]]]]
+
+ ; a gurney left in the hall
+ [Prop
+  [[Name Gurney] [Appearance [Some [Composed Gurney [[Colors [Some [[Sheet Sheet]]]]]]]] [Place [[At [Some [1 6.2]]]]]]]
+
+ ; the pickups
+ [Prop
+  [[Name EastBullets]
+   [Place [[At [Some [1 6]]] [Height [Some 0.79]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item HandgunBullets] [Count 15]]]]]]]]]
 
  ; the creatures - and once the power's back, a dog loose at the south end, set to spring on whoever comes through
- [While [Flagged PowerRestored]
+ [While
+  [Flagged PowerRestored]
   [[Enemy [[Name EastHallDog] [Creature Dog] [Place [[At [Some [-0.9 4.2]]] [Facing 180]]]]]]]
+
  [Enemy [[Name EastOrderly] [Creature Orderly] [Place [[At [Some [-1.1 -1.4]]]]]]]]

@@ -1,32 +1,76 @@
 ; The control room over the line - its console and monitors, the line's master switch, and a National Guardsman slumped
 ; dead against the console, his radio still hissing, his grenade launcher beside him.
 
-[[Palette [[Lino [0.3 0.3 0.3 1]] [Paint [0.45 0.48 0.46 1]] [Dado [0.28 0.3 0.3 1]] [Fatigues [0.3 0.33 0.22 1]] [Skin [0.5 0.42 0.36 1]] [Boots [0.1 0.09 0.08 1]]]]
+[[Palette
+  [[Lino [0.3 0.3 0.3 1]] [Paint [0.45 0.48 0.46 1]] [Dado [0.28 0.3 0.3 1]] [Fatigues [0.3 0.33 0.22 1]] [Skin [0.5 0.42 0.36 1]] [Boots [0.1 0.09 0.08 1]]]]
 
- [Area [[Type [Plant ControlRoom]] [Name "Control Room"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-3.5 -0.5 -3] [7 4 6]]] [Songs [[[Song PlantSong]]]]]]
+ [Area
+  [[Type [Plant ControlRoom]]
+   [Name "Control Room"]
+   [Ambient 0.75]
+   [Probe [0 1.6 0]]
+   [Bounds [[-3.5 -0.5 -3] [7 4 6]]]
+   [Songs [[[Song PlantSong]]]]]]
+
  [Layout [Chamber [[Size [6 5]] [Floor Lino] [Walls Paint] [Dado Dado]]]]
 
  ; the doors
- [Prop [[Name BoilerControlDoor] [Appearance [Some [Composed SteelWallDoor []]]] [Place [[Against [Some West]] [Along 0.5]]]
+ [Prop
+  [[Name BoilerControlDoor]
+   [Appearance [Some [Composed SteelWallDoor []]]]
+   [Place [[Against [Some West]] [Along 0.5]]]
    [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant Boiler]] [Style SteelDoor]]]]]]]]]
 
- [Prop [[Name Lamp] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.8]]]]]] [Place [[At [Some [0 0]]] [Height [Some 2.7]]]]]]
+ ; the lights
+ [Prop
+  [[Name Lamp]
+   [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.8]]]]]]
+   [Place [[At [Some [0 0]]] [Height [Some 2.7]]]]]]
+
+ ; the cameras
  [Camera [[Zone [[-3 -2.5] [6 5]]] [At [-2.5 2.75 2]] [LookAt [1 0.4 -1]] [FieldOfView 70]]]
 
  ; the console, its monitors and the line's master switch
  [Prop [[Name Console] [Appearance [Some [Composed Console []]]] [Place [[At [Some [0.8 -2]]]]]]]
- [Prop [[Name Monitors] [Appearance [Some [Composed Monitors []]]] [Place [[At [Some [0.8 -2.4]]] [Height [Some 1.12]]]]]]
- [Prop [[Name LineSwitch] [Place [[At [Some [1.6 -1.9]]]]]
-   [Interact [Some [[InteractionType Use] [Cue [If [Flagged [Examined LineSwitch]]
-                                         [Say ["The line's master switch is thrown. On the monitor, the freight elevator's lamp is green."]]
-                                         [Sequence [[SetFlag [Examined LineSwitch]] [Sound PowerOnSound]
-                                                    [Say ["You throw the line's master switch. All through the plant, machinery groans awake." "On a monitor, the freight elevator's lamp turns green - and in the pit below it, something huge lifts its head."]]]]]]]]]]]
+
+ [Prop
+  [[Name Monitors] [Appearance [Some [Composed Monitors []]]] [Place [[At [Some [0.8 -2.4]]] [Height [Some 1.12]]]]]]
+
+ [Prop
+  [[Name LineSwitch]
+   [Place [[At [Some [1.6 -1.9]]]]]
+   [Interact
+    [Some
+     [[InteractionType Use]
+      [Cue
+       [If
+        [Flagged [Examined LineSwitch]]
+        [Say ["The line's master switch is thrown. On the monitor, the freight elevator's lamp is green."]]
+        [Sequence
+         [[SetFlag [Examined LineSwitch]]
+          [Sound PowerOnSound]
+          [Say ["You throw the line's master switch. All through the plant, machinery groans awake." "On a monitor, the freight elevator's lamp turns green - and in the pit below it, something huge lifts its head."]]]]]]]]]]]
+
  ; the Guardsman, dead against the console
- [Prop [[Name Guardsman] [Appearance [Some [Composed Body [[Colors [Some [[Clothes Fatigues] [Skin Skin] [Boots Boots]]]]]]]] [Place [[At [Some [-1 0.9]]]]]
-   [Interact [Some [[InteractionType Examine] [Cue [Say ["A National Guardsman, dead, a bite torn out of his neck. His radio's still hissing on his shoulder." "'...all units, last train leaves Brandt siding at six-fifteen. Platform's via the pit under the plant. Avoid the big one...'"]]]]]]]]
- [Prop [[Name ControlLauncher] [Place [[At [Some [-0.6 1.8]]] [Height [Some 0.01]]]]
+ [Prop
+  [[Name Guardsman]
+   [Appearance [Some [Composed Body [[Colors [Some [[Clothes Fatigues] [Skin Skin] [Boots Boots]]]]]]]]
+   [Place [[At [Some [-1 0.9]]]]]
+   [Interact
+    [Some
+     [[InteractionType Examine]
+      [Cue
+       [Say ["A National Guardsman, dead, a bite torn out of his neck. His radio's still hissing on his shoulder." "'...all units, last train leaves Brandt siding at six-fifteen. Platform's via the pit under the plant. Avoid the big one...'"]]]]]]]]
+
+ ; the pickups
+ [Prop
+  [[Name ControlLauncher]
+   [Place [[At [Some [-0.6 1.8]]] [Height [Some 0.01]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item GrenadeLauncher] [Count 1]]]]]]]]]
- [Prop [[Name ControlGrenades] [Place [[At [Some [-2.2 1.8]]] [Height [Some 0.01]]]]
+
+ [Prop
+  [[Name ControlGrenades]
+   [Place [[At [Some [-2.2 1.8]]] [Height [Some 0.01]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item Grenades] [Count 5]]]]]]]]]
 
  ; the creatures

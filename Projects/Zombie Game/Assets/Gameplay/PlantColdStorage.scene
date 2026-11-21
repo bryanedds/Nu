@@ -1,35 +1,108 @@
 ; Cold storage - rimed with frost, carcasses frozen stiff on their hooks, the workers who hid in here frozen with them,
 ; and the foreman, Gus Brandt, frozen where he fell with his keycard on his coat.
 
-[[Palette [[Frost [0.62 0.68 0.72 1]] [Ice [0.72 0.8 0.86 1]] [Dado [0.45 0.52 0.58 1]] [Rime [0.62 0.42 0.42 1]] [Coat [0.85 0.88 0.9 1]] [Trousers [0.3 0.32 0.36 1]] [Pale [0.6 0.64 0.7 1]]]]
+[[Palette
+  [[Frost [0.62 0.68 0.72 1]]
+   [Ice [0.72 0.8 0.86 1]]
+   [Dado [0.45 0.52 0.58 1]]
+   [Rime [0.62 0.42 0.42 1]]
+   [Coat [0.85 0.88 0.9 1]]
+   [Trousers [0.3 0.32 0.36 1]]
+   [Pale [0.6 0.64 0.7 1]]]]
 
- [Area [[Type [Plant ColdStorage]] [Name "Cold Storage"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-4.5 -0.5 -4.5] [9 4 9]]] [Songs [[[Song PlantSong]]]]]]
- [Layout [Chamber [[Size [8 8]] [Floor Frost] [Walls Ice] [Dado Dado] [FloorSurface [Some Tile]] [WallSurface [Some Steel]]]]]
+ [Area
+  [[Type [Plant ColdStorage]]
+   [Name "Cold Storage"]
+   [Ambient 0.75]
+   [Probe [0 1.6 0]]
+   [Bounds [[-4.5 -0.5 -4.5] [9 4 9]]]
+   [Songs [[[Song PlantSong]]]]]]
+
+ [Layout
+  [Chamber [[Size [8 8]] [Floor Frost] [Walls Ice] [Dado Dado] [FloorSurface [Some Tile]] [WallSurface [Some Steel]]]]]
 
  ; the doors
- [Prop [[Name KillColdDoor] [Appearance [Some [Composed SteelWallDoor []]]] [Place [[Against [Some East]] [Along 2]]]
+ [Prop
+  [[Name KillColdDoor]
+   [Appearance [Some [Composed SteelWallDoor []]]]
+   [Place [[Against [Some East]] [Along 2]]]
    [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant KillFloor]] [Style SteelDoor]]]]]]]]]
 
- [Prop [[Name LampNorth] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.4]]]]]] [Place [[At [Some [0 -2]]] [Height [Some 2.7]]]]]]
- [Prop [[Name LampSouth] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.2]]]]]] [Place [[At [Some [0 2.2]]] [Height [Some 2.7]]]]]]
+ ; the lights
+ [Prop
+  [[Name LampNorth]
+   [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.4]]]]]]
+   [Place [[At [Some [0 -2]]] [Height [Some 2.7]]]]]]
+
+ [Prop
+  [[Name LampSouth]
+   [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.2]]]]]]
+   [Place [[At [Some [0 2.2]]] [Height [Some 2.7]]]]]]
+
+ ; the cameras
  [Camera [[Zone [[-4 -4] [8 8]]] [At [3.4 2.75 3.4]] [LookAt [-1.5 0.3 -1.5]] [FieldOfView 76]]]
 
  ; the frozen carcasses
- [Prop [[Name RailWest] [Appearance [Some [Composed Rail [[Stretch [Some [6 1 1]]]]]]] [Place [[At [Some [-1.6 0]]] [Facing 90]]]]]
- [Prop [[Name RailEast] [Appearance [Some [Composed Rail [[Stretch [Some [6 1 1]]]]]]] [Place [[At [Some [1.2 -0.5]]] [Facing 90]]]]]
- [Prop [[Name CarcassWest0] [Appearance [Some [Composed Carcass [[Colors [Some [[Meat Rime] [Fat Ice]]]]]]]] [Place [[At [Some [-1.6 -2.4]]] [Facing 20]]]]]
- [Prop [[Name CarcassWest1] [Appearance [Some [Composed Carcass [[Colors [Some [[Meat Rime] [Fat Ice]]]]]]]] [Place [[At [Some [-1.6 0.2]]] [Facing 70]]]]]
- [Prop [[Name CarcassWest2] [Appearance [Some [Composed Carcass [[Colors [Some [[Meat Rime] [Fat Ice]]]]]]]] [Place [[At [Some [-1.6 2.6]]] [Facing 150]]]]]
- [Prop [[Name CarcassEast0] [Appearance [Some [Composed Carcass [[Colors [Some [[Meat Rime] [Fat Ice]]]]]]]] [Place [[At [Some [1.2 -2.8]]] [Facing 100]]]]]
- [Prop [[Name CarcassEast1] [Appearance [Some [Composed Carcass [[Colors [Some [[Meat Rime] [Fat Ice]]]]]]]] [Place [[At [Some [1.2 0.8]]] [Facing 10]]]]]
+ [Prop
+  [[Name RailWest]
+   [Appearance [Some [Composed Rail [[Stretch [Some [6 1 1]]]]]]]
+   [Place [[At [Some [-1.6 0]]] [Facing 90]]]]]
+
+ [Prop
+  [[Name RailEast]
+   [Appearance [Some [Composed Rail [[Stretch [Some [6 1 1]]]]]]]
+   [Place [[At [Some [1.2 -0.5]]] [Facing 90]]]]]
+
+ [Prop
+  [[Name CarcassWest0]
+   [Appearance [Some [Composed Carcass [[Colors [Some [[Meat Rime] [Fat Ice]]]]]]]]
+   [Place [[At [Some [-1.6 -2.4]]] [Facing 20]]]]]
+
+ [Prop
+  [[Name CarcassWest1]
+   [Appearance [Some [Composed Carcass [[Colors [Some [[Meat Rime] [Fat Ice]]]]]]]]
+   [Place [[At [Some [-1.6 0.2]]] [Facing 70]]]]]
+
+ [Prop
+  [[Name CarcassWest2]
+   [Appearance [Some [Composed Carcass [[Colors [Some [[Meat Rime] [Fat Ice]]]]]]]]
+   [Place [[At [Some [-1.6 2.6]]] [Facing 150]]]]]
+
+ [Prop
+  [[Name CarcassEast0]
+   [Appearance [Some [Composed Carcass [[Colors [Some [[Meat Rime] [Fat Ice]]]]]]]]
+   [Place [[At [Some [1.2 -2.8]]] [Facing 100]]]]]
+
+ [Prop
+  [[Name CarcassEast1]
+   [Appearance [Some [Composed Carcass [[Colors [Some [[Meat Rime] [Fat Ice]]]]]]]]
+   [Place [[At [Some [1.2 0.8]]] [Facing 10]]]]]
+
  ; the foreman, frozen where he fell
- [Prop [[Name FrozenForeman] [Appearance [Some [Composed Body [[Colors [Some [[Clothes Coat] [Skin Pale] [Boots Trousers]]]]]]]] [Place [[At [Some [-3 -3.2]]]]]
-   [Interact [Some [[InteractionType Examine] [Cue [If [Flagged [Taken ForemanKeycard]]
-                                             [Say ["Gus Brandt, frozen where he fell. The frost's already closing over his face again."]]
-                                             [Sequence [[Say ["A man in a supervisor's white coat, curled up frozen against the wall. G. BRANDT, says his badge." "His keycard's clipped to his coat. You work it free of the ice."]] [GiveAs ForemanKeycard Keycard 1]]]]]]]]]]
- [Prop [[Name ColdRounds] [Place [[At [Some [3.2 -3.2]]] [Height [Some 0.01]]]]
+ [Prop
+  [[Name FrozenForeman]
+   [Appearance [Some [Composed Body [[Colors [Some [[Clothes Coat] [Skin Pale] [Boots Trousers]]]]]]]]
+   [Place [[At [Some [-3 -3.2]]]]]
+   [Interact
+    [Some
+     [[InteractionType Examine]
+      [Cue
+       [If
+        [Flagged [Taken ForemanKeycard]]
+        [Say ["Gus Brandt, frozen where he fell. The frost's already closing over his face again."]]
+        [Sequence
+         [[Say ["A man in a supervisor's white coat, curled up frozen against the wall. G. BRANDT, says his badge." "His keycard's clipped to his coat. You work it free of the ice."]]
+          [GiveAs ForemanKeycard Keycard 1]]]]]]]]]]
+
+ ; the pickups
+ [Prop
+  [[Name ColdRounds]
+   [Place [[At [Some [3.2 -3.2]]] [Height [Some 0.01]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item MagnumRounds] [Count 4]]]]]]]]]
- [Prop [[Name ColdSpray] [Place [[At [Some [-3.3 3.3]]] [Height [Some 0.01]]]]
+
+ [Prop
+  [[Name ColdSpray]
+   [Place [[At [Some [-3.3 3.3]]] [Height [Some 0.01]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item FirstAidSpray] [Count 1]]]]]]]]]
 
  ; the creatures

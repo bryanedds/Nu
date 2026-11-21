@@ -3,20 +3,57 @@
 
 [[Palette [[Platform [0.36 0.36 0.35 1]] [Brick [0.4 0.3 0.26 1]] [Dado [0.3 0.22 0.18 1]] [Ballast [0.3 0.29 0.28 1]]]]
 
- [Area [[Type [Plant Platform]] [Name "Rail Platform"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-6.5 -0.5 -3.5] [13 4 7]]] [Songs [[[Song PlantSong]]]]]]
- [Layout [Chamber [[Size [12 6]] [Floor Platform] [Walls Brick] [Dado Dado] [FloorSurface [Some Concrete]] [WallSurface [Some Concrete]] [Outdoors True]]]]
+ [Area
+  [[Type [Plant Platform]]
+   [Name "Rail Platform"]
+   [Ambient 0.75]
+   [Probe [0 1.6 0]]
+   [Bounds [[-6.5 -0.5 -3.5] [13 4 7]]]
+   [Songs [[[Song PlantSong]]]]]]
+
+ [Layout
+  [Chamber
+   [[Size [12 6]] [Floor Platform] [Walls Brick] [Dado Dado] [FloorSurface [Some Concrete]] [WallSurface [Some Concrete]] [Outdoors True]]]]
 
  ; the doors
- [Prop [[Name PlatformDoor] [Appearance [Some [Composed SteelWallDoor []]]] [Place [[Against [Some North]] [Along 3]]]
+ [Prop
+  [[Name PlatformDoor]
+   [Appearance [Some [Composed SteelWallDoor []]]]
+   [Place [[Against [Some North]] [Along 3]]]
    [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant Pit]] [Style SteelDoor]]]]]]]]]
 
- [Prop [[Name LampWest] [Appearance [Some [Composed LampPost [[Brightness [Some 1.4]]]]]] [Place [[At [Some [-5 -2]]]]]]]
+ ; the lights
+ [Prop
+  [[Name LampWest] [Appearance [Some [Composed LampPost [[Brightness [Some 1.4]]]]]] [Place [[At [Some [-5 -2]]]]]]]
+
  [Prop [[Name LampEast] [Appearance [Some [Composed LampPost [[Brightness [Some 1.4]]]]]] [Place [[At [Some [5 -2]]]]]]]
+
+ ; the cameras
  [Camera [[Zone [[-6 -3] [12 6]]] [At [0 2.9 2.6]] [LookAt [0 0.3 -1]] [FieldOfView 80]]]
 
  ; the track, and the handcar on it
- [Prop [[Name Track] [Appearance [Some [Composed Track [[Colors [Some [[Tie Ballast]]]] [Stretch [Some [12 1 1]]]]]]] [Place [[At [Some [0 1.6]]]]]]]
- [Prop [[Name Timetable] [Appearance [Some [Slab [[Size [0.8 0.6 0.03]] [Surface Plastic] [Tint Platform]]]]] [Place [[Against [Some North]] [Along -2] [Height [Some 1.4]]]]
-   [Interact [Some [[InteractionType Examine] [Cue [Say ["A timetable board. Someone's chalked over it: 'GUARD TRAIN 6:15 - GONE. WAITED TILL 6:40. WALKING EAST ALONG THE LINE. - M.'"]]]]]]]]
- [Prop [[Name Handcar] [Appearance [Some [Composed Handcar []]]] [Place [[At [Some [-1.6 1.6]]]]]
-   [Interact [Some [[InteractionType Drive] [Cue [Sequence [[Say ["A railway handcar left on the siding, its pump handle up." "You throw your weight on the handle. The car groans, then rolls - out from under the plant, down the line, toward the dawn."]] Escape]]]]]]]]]
+ [Prop
+  [[Name Track]
+   [Appearance [Some [Composed Track [[Colors [Some [[Tie Ballast]]]] [Stretch [Some [12 1 1]]]]]]]
+   [Place [[At [Some [0 1.6]]]]]]]
+
+ [Prop
+  [[Name Timetable]
+   [Appearance [Some [Slab [[Size [0.8 0.6 0.03]] [Surface Plastic] [Tint Platform]]]]]
+   [Place [[Against [Some North]] [Along -2] [Height [Some 1.4]]]]
+   [Interact
+    [Some
+     [[InteractionType Examine]
+      [Cue [Say ["A timetable board. Someone's chalked over it: 'GUARD TRAIN 6:15 - GONE. WAITED TILL 6:40. WALKING EAST ALONG THE LINE. - M.'"]]]]]]]]
+
+ [Prop
+  [[Name Handcar]
+   [Appearance [Some [Composed Handcar []]]]
+   [Place [[At [Some [-1.6 1.6]]]]]
+   [Interact
+    [Some
+     [[InteractionType Drive]
+      [Cue
+       [Sequence
+        [[Say ["A railway handcar left on the siding, its pump handle up." "You throw your weight on the handle. The car groans, then rolls - out from under the plant, down the line, toward the dawn."]]
+         Escape]]]]]]]]]

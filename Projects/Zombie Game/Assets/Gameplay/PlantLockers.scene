@@ -1,33 +1,96 @@
 ; The line workers' locker room - banks of steel lockers, a bench, and Ray's locker, its combination lock a little
 ; keypad, his bolt cutters inside.
 
-[[Palette [[Tile [0.42 0.44 0.42 1]] [Paint [0.5 0.55 0.52 1]] [Dado [0.3 0.36 0.34 1]] [Steel [0.36 0.42 0.38 1]] [Bench [0.45 0.34 0.22 1]] [Paper [0.86 0.84 0.78 1]]]]
+[[Palette
+  [[Tile [0.42 0.44 0.42 1]]
+   [Paint [0.5 0.55 0.52 1]]
+   [Dado [0.3 0.36 0.34 1]]
+   [Steel [0.36 0.42 0.38 1]]
+   [Bench [0.45 0.34 0.22 1]]
+   [Paper [0.86 0.84 0.78 1]]]]
 
- [Area [[Type [Plant Lockers]] [Name "Locker Room"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-3.5 -0.5 -3] [7 4 6]]] [Songs [[[Song PlantSong]]]]]]
+ [Area
+  [[Type [Plant Lockers]]
+   [Name "Locker Room"]
+   [Ambient 0.75]
+   [Probe [0 1.6 0]]
+   [Bounds [[-3.5 -0.5 -3] [7 4 6]]]
+   [Songs [[[Song PlantSong]]]]]]
+
  [Layout [Chamber [[Size [6 5]] [Floor Tile] [Walls Paint] [Dado Dado] [FloorSurface [Some Tile]]]]]
 
  ; the doors
- [Prop [[Name KillLockersDoor] [Appearance [Some [Composed WoodenWallDoor []]]] [Place [[Against [Some East]] [Along 0]]]
+ [Prop
+  [[Name KillLockersDoor]
+   [Appearance [Some [Composed WoodenWallDoor []]]]
+   [Place [[Against [Some East]] [Along 0]]]
    [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant KillFloor]] [Style WoodenDoor]]]]]]]]]
 
- [Prop [[Name Lamp] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.8]]]]]] [Place [[At [Some [0 0]]] [Height [Some 2.7]]]]]]
+ ; the lights
+ [Prop
+  [[Name Lamp]
+   [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.8]]]]]]
+   [Place [[At [Some [0 0]]] [Height [Some 2.7]]]]]]
+
+ ; the cameras
  [Camera [[Zone [[-3 -2.5] [6 5]]] [At [2.5 2.75 2]] [LookAt [-1 0.4 -1]] [FieldOfView 70]]]
 
  ; the lockers and the bench
- [Prop [[Name LockersNorth] [Appearance [Some [Composed Lockers [[Colors [Some [[Steel Steel]]]] [Count [Some 6]]]]]] [Place [[At [Some [-0.5 -2.22]]]]]]]
- [Prop [[Name LockersWest] [Appearance [Some [Composed Lockers [[Colors [Some [[Steel Steel]]]] [Count [Some 5]]]]]] [Place [[At [Some [-2.72 0.6]]] [Facing 90]]]]]
- [Prop [[Name Bench] [Appearance [Some [Composed Desk [[Colors [Some [[Wood Bench] [Top Bench]]]] [Stretch [Some [2 0.55 0.4]]]]]]] [Place [[At [Some [0.2 0.6]]]]]]]
+ [Prop
+  [[Name LockersNorth]
+   [Appearance [Some [Composed Lockers [[Colors [Some [[Steel Steel]]]] [Count [Some 6]]]]]]
+   [Place [[At [Some [-0.5 -2.22]]]]]]]
+
+ [Prop
+  [[Name LockersWest]
+   [Appearance [Some [Composed Lockers [[Colors [Some [[Steel Steel]]]] [Count [Some 5]]]]]]
+   [Place [[At [Some [-2.72 0.6]]] [Facing 90]]]]]
+
+ [Prop
+  [[Name Bench]
+   [Appearance [Some [Composed Desk [[Colors [Some [[Wood Bench] [Top Bench]]]] [Stretch [Some [2 0.55 0.4]]]]]]]
+   [Place [[At [Some [0.2 0.6]]]]]]]
+
  ; Ray's locker, its combination the scald tank's heat
- [Prop [[Name RayLocker] [Place [[At [Some [0.55 -2.2]]]]]
-   [Interact [Some [[InteractionType Use] [Cue [If [Flagged [Examined RayLocker]]
-                                         [If [Flagged [Taken LockerCutters]]
-                                          [Say ["Ray's locker. Just a hard hat and a lunch pail."]]
-                                          [Sequence [[Say ["Ray's locker, standing open. His bolt cutters are still inside."]] [GiveAs LockerCutters BoltCutters 1]]]]
-                                         [Sequence [[Say ["Locker 14 - R. KOWALCZYK. Its combination lock's a little keypad."]]
-                                                    [Keypad [[Code "140"] [Then [Sequence [[SetFlag [Examined RayLocker]] [Sound LockReleaseSound] [Say ["The lock clicks open. Inside, behind a hard hat and a lunch pail - a pair of long bolt cutters."]] [GiveAs LockerCutters BoltCutters 1]]]]]]]]]]]]]]]
- [Prop [[Name LockerNote] [Appearance [Some [Slab [[Size [0.22 0.01 0.28]] [Surface Cloth] [Tint Paper]]]]] [Place [[At [Some [0.9 0.6]]] [Height [Some 0.43]]]]
-   [Interact [Some [[InteractionType Examine] [Cue [Say ["A note left on the bench:" "'RAY - stop asking me your combination. It's the scald temperature, same as always. It's on the smokehouse board. - G.B.'"]]]]]]]]
- [Prop [[Name LockersShells] [Place [[At [Some [2.4 -1.8]]] [Height [Some 0.01]]]]
+ [Prop
+  [[Name RayLocker]
+   [Place [[At [Some [0.55 -2.2]]]]]
+   [Interact
+    [Some
+     [[InteractionType Use]
+      [Cue
+       [If
+        [Flagged [Examined RayLocker]]
+        [If
+         [Flagged [Taken LockerCutters]]
+         [Say ["Ray's locker. Just a hard hat and a lunch pail."]]
+         [Sequence
+          [[Say ["Ray's locker, standing open. His bolt cutters are still inside."]] [GiveAs LockerCutters BoltCutters 1]]]]
+        [Sequence
+         [[Say ["Locker 14 - R. KOWALCZYK. Its combination lock's a little keypad."]]
+          [Keypad
+           [[Code "140"]
+            [Then
+             [Sequence
+              [[SetFlag [Examined RayLocker]]
+               [Sound LockReleaseSound]
+               [Say ["The lock clicks open. Inside, behind a hard hat and a lunch pail - a pair of long bolt cutters."]]
+               [GiveAs LockerCutters BoltCutters 1]]]]]]]]]]]]]]]
+
+ [Prop
+  [[Name LockerNote]
+   [Appearance [Some [Slab [[Size [0.22 0.01 0.28]] [Surface Cloth] [Tint Paper]]]]]
+   [Place [[At [Some [0.9 0.6]]] [Height [Some 0.43]]]]
+   [Interact
+    [Some
+     [[InteractionType Examine]
+      [Cue
+       [Say ["A note left on the bench:" "'RAY - stop asking me your combination. It's the scald temperature, same as always. It's on the smokehouse board. - G.B.'"]]]]]]]]
+
+ ; the pickups
+ [Prop
+  [[Name LockersShells]
+   [Place [[At [Some [2.4 -1.8]]] [Height [Some 0.01]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item ShotgunShells] [Count 4]]]]]]]]]
 
  ; the creatures

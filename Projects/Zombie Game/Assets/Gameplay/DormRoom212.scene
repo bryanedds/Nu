@@ -1,23 +1,55 @@
 ; Room 212 - a bunk, a desk with a sticky note about the RA's keypad, and a sprinter crouched among the mess.
 
-[[Palette [[Carpet [0.32 0.26 0.3 1]] [Paint [0.62 0.62 0.66 1]] [Dado [0.4 0.4 0.44 1]] [Wood [0.45 0.36 0.26 1]] [Paper [0.95 0.9 0.4 1]]]]
+[[Palette
+  [[Carpet [0.32 0.26 0.3 1]] [Paint [0.62 0.62 0.66 1]] [Dado [0.4 0.4 0.44 1]] [Wood [0.45 0.36 0.26 1]] [Paper [0.95 0.9 0.4 1]]]]
 
- [Area [[Type [Dorm Room212]] [Name "Room 212"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-3 -0.5 -2.8] [6 4 5.6]]] [Songs [[[Song DormSong]]]]]]
+ [Area
+  [[Type [Dorm Room212]]
+   [Name "Room 212"]
+   [Ambient 0.75]
+   [Probe [0 1.6 0]]
+   [Bounds [[-3 -0.5 -2.8] [6 4 5.6]]]
+   [Songs [[[Song DormSong]]]]]]
+
  [Layout [Chamber [[Size [5 4.6]] [Floor Carpet] [Walls Paint] [Dado Dado] [FloorSurface [Some Cloth]]]]]
 
  ; the doors
- [Prop [[Name Room212Door] [Appearance [Some [Composed WoodenWallDoor []]]] [Place [[Against [Some West]] [Along 0]]]
+ [Prop
+  [[Name Room212Door]
+   [Appearance [Some [Composed WoodenWallDoor []]]]
+   [Place [[Against [Some West]] [Along 0]]]
    [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Dorm UpperCorridor]] [Style WoodenDoor]]]]]]]]]
 
- [Prop [[Name Lamp] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.5]]]]]] [Place [[At [Some [0 0]]] [Height [Some 2.7]]]]]]
+ ; the lights
+ [Prop
+  [[Name Lamp]
+   [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.5]]]]]]
+   [Place [[At [Some [0 0]]] [Height [Some 2.7]]]]]]
+
+ ; the cameras
  [Camera [[Zone [[-2.5 -2.3] [5 4.6]]] [At [-2 2.75 2]] [LookAt [1 0.4 -1]] [FieldOfView 68]]]
 
  ; the bunk, the desk and the sticky note
  [Prop [[Name Bunk] [Appearance [Some [Composed Bunk []]]] [Place [[At [Some [1.8 -1.05]]]]]]]
- [Prop [[Name Desk] [Appearance [Some [Composed Desk [[Colors [Some [[Wood Wood]]]] [Stretch [Some [1.2 1 0.6]]]]]]] [Place [[At [Some [-1.4 -1.95]]]]]]]
- [Prop [[Name StickyNote] [Appearance [Some [Slab [[Size [0.1 0.01 0.1]] [Surface Cloth] [Tint Paper]]]]] [Place [[At [Some [-1.7 -1.95]]] [Height [Some 0.79]]]]
-   [Interact [Some [[InteractionType Examine] [Cue [Say ["A sticky note on the desk:" "'RA keypad = the year Hollis opened. It's on the plaque in the lobby, freshman.'"]]]]]]]]
- [Prop [[Name Room212Rounds] [Place [[At [Some [-1 -1.95]]] [Height [Some 0.79]]]]
+
+ [Prop
+  [[Name Desk]
+   [Appearance [Some [Composed Desk [[Colors [Some [[Wood Wood]]]] [Stretch [Some [1.2 1 0.6]]]]]]]
+   [Place [[At [Some [-1.4 -1.95]]]]]]]
+
+ [Prop
+  [[Name StickyNote]
+   [Appearance [Some [Slab [[Size [0.1 0.01 0.1]] [Surface Cloth] [Tint Paper]]]]]
+   [Place [[At [Some [-1.7 -1.95]]] [Height [Some 0.79]]]]
+   [Interact
+    [Some
+     [[InteractionType Examine]
+      [Cue [Say ["A sticky note on the desk:" "'RA keypad = the year Hollis opened. It's on the plaque in the lobby, freshman.'"]]]]]]]]
+
+ ; the pickups
+ [Prop
+  [[Name Room212Rounds]
+   [Place [[At [Some [-1 -1.95]]] [Height [Some 0.79]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item MagnumRounds] [Count 4]]]]]]]]]
 
  ; the creatures

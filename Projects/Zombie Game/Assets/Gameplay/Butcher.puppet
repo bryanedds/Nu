@@ -1,8 +1,7 @@
 ; A butcher - heavyset in a butcher's cap and a leather apron gone black with blood, his sleeves rolled up over thick
 ; grey forearms, a meat cleaver in his fist. He swings it, and charges.
 
-[[Body
-  [Biped [[Legs 0.74] [Torso 0.66] [Shoulders 0.3] [Hips 0.15] [Arms 0.7]]]]
+[[Body [Biped [[Legs 0.74] [Torso 0.66] [Shoulders 0.3] [Hips 0.15] [Arms 0.7]]]]
  [Scale 1.2]
  [Palette
   [[Flesh [0.52 0.48 0.46 1]]
@@ -33,10 +32,16 @@
    [[Bone LegLeft] [Shape PartBox] [At [0 -0.34 0]] [Size [0.22 0.7 0.22]] [Color Trousers] [Surface Cloth] [Mirror True]]]]
  [Animations
   [; raise the cleaver high, then bring it chopping down through the foe, and settle
-   [Animation Swing [[[From [Some Idle]] [To [Still Coil]] [Over 0.4] [Ease Out]]
-                     [[To [Still Cut]] [Over 0.18] [Ease Snap] [Marks [[Sweep 0.6] [Follow 1]]]]
-                     [[To [Still Cut]] [Over 0.3]]
-                     [[To Idle] [Over 0.5] [Marks [[End 1]]]]]]
+   [Animation Swing
+    [[[From [Some Idle]] [To [Still Coil]] [Over 0.4] [Ease Out]]
+     [[To [Still Cut]] [Over 0.18] [Ease Snap] [Marks [[Sweep 0.6] [Follow 1]]]]
+     [[To [Still Cut]] [Over 0.3]]
+     [[To Idle] [Over 0.5] [Marks [[End 1]]]]]]
 
    ; charge headlong, cleaver up, to cut down whatever's in the way
-   [Animation Tackle [[[From [Some [Still Coil]]] [To [Still Grab]] [Over 0.3] [Ease Out] [Layers [[[Lay [Overlay [[Cycle Stride] [Rate 2.4]]]] [Onward True]]]]]]]]]]
+   [Animation Tackle
+    [[[From [Some [Still Coil]]]
+      [To [Still Grab]]
+      [Over 0.3]
+      [Ease Out]
+      [Layers [[[Lay [Overlay [[Cycle Stride] [Rate 2.4]]]] [Onward True]]]]]]]]]]

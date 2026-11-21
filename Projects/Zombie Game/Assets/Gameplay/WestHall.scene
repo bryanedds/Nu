@@ -1,30 +1,83 @@
 ; The west hall - a long corridor from the reception to the records room and the locked pharmacy, a patient
 ; wandering it and another lying still.
 
-[[Palette [[Lino [0.3 0.33 0.31 1]] [Paint [0.5 0.58 0.53 1]] [Dado [0.22 0.34 0.33 1]] [Blood [0.3 0.03 0.02 1]] [Sheet [0.5 0.55 0.55 1]] [Linen [0.45 0.47 0.5 1]]]]
+[[Palette
+  [[Lino [0.3 0.33 0.31 1]] [Paint [0.5 0.58 0.53 1]] [Dado [0.22 0.34 0.33 1]] [Blood [0.3 0.03 0.02 1]] [Sheet [0.5 0.55 0.55 1]] [Linen [0.45 0.47 0.5 1]]]]
 
- [Area [[Type [Hospital WestHall]] [Name "West Hall"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-2.1 -0.5 -8] [4.2 4 16]]] [Songs [[[Song HospitalPoweredSong] [When [Some [Flagged PowerRestored]]]] [[Song HospitalSong]]]]]]
+ [Area
+  [[Type [Hospital WestHall]]
+   [Name "West Hall"]
+   [Ambient 0.75]
+   [Probe [0 1.6 0]]
+   [Bounds [[-2.1 -0.5 -8] [4.2 4 16]]]
+   [Songs [[[Song HospitalPoweredSong] [When [Some [Flagged PowerRestored]]]] [[Song HospitalSong]]]]]]
+
  [Layout [Chamber [[Size [3.2 15]] [Floor Lino] [Walls Paint] [Dado Dado]]]]
 
  ; the doors
- [Prop [[Name WestHallDoors] [Appearance [Some [Composed DoubleWallDoor []]]] [Place [[Against [Some East]] [Along 5.5]]]
+ [Prop
+  [[Name WestHallDoors]
+   [Appearance [Some [Composed DoubleWallDoor []]]]
+   [Place [[Against [Some East]] [Along 5.5]]]
    [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Hospital Reception]] [Style DoubleDoor]]]]]]]]]
- [Prop [[Name RecordsDoor] [Appearance [Some [Composed WoodenWallDoor []]]] [Place [[Against [Some West]] [Along 0.5]]]
-   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Hospital Records]] [Style WoodenDoor]]]]]]]]]
- [Prop [[Name PharmacyDoor] [Appearance [Some [Composed WoodenWallDoor []]]] [Place [[Against [Some North]] [Along 0]]]
-   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Hospital Pharmacy]] [Style WoodenDoor] [Key [Some PharmacyKey]] [Locked [Some "Locked. A green-tagged lock - PHARMACY."]]]]]]]]]]
 
- [Prop [[Name LampSouth] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 2]]]]]] [Place [[At [Some [0 4.5]]] [Height [Some 2.7]]]]]]
- [Prop [[Name LampNorth] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.6]]]]]] [Place [[At [Some [0 -4.5]]] [Height [Some 2.7]]]]]]
+ [Prop
+  [[Name RecordsDoor]
+   [Appearance [Some [Composed WoodenWallDoor []]]]
+   [Place [[Against [Some West]] [Along 0.5]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Hospital Records]] [Style WoodenDoor]]]]]]]]]
+
+ [Prop
+  [[Name PharmacyDoor]
+   [Appearance [Some [Composed WoodenWallDoor []]]]
+   [Place [[Against [Some North]] [Along 0]]]
+   [Interact
+    [Some
+     [[InteractionType Open]
+      [Cue
+       [Enter
+        [[To [Hospital Pharmacy]] [Style WoodenDoor] [Key [Some PharmacyKey]] [Locked [Some "Locked. A green-tagged lock - PHARMACY."]]]]]]]]]]
+
+ ; the lights
+ [Prop
+  [[Name LampSouth]
+   [Appearance [Some [Composed CeilingLamp [[Brightness [Some 2]]]]]]
+   [Place [[At [Some [0 4.5]]] [Height [Some 2.7]]]]]]
+
+ [Prop
+  [[Name LampNorth]
+   [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.6]]]]]]
+   [Place [[At [Some [0 -4.5]]] [Height [Some 2.7]]]]]]
+
+ ; the cameras
  [Camera [[Zone [[-1.6 1] [3.2 6.5]]] [At [1.2 2.75 -1.5]] [LookAt [0 0.4 5]] [FieldOfView 58]]]
  [Camera [[Zone [[-1.6 -7.5] [3.2 8.5]]] [At [-1.2 2.75 6.5]] [LookAt [0 0.4 -4]] [FieldOfView 50]]]
 
- [Prop [[Name Gurney] [Appearance [Some [Composed Gurney [[Colors [Some [[Sheet Sheet]]]]]]]] [Place [[At [Some [-0.95 2.5]]]]]]]
- [Prop [[Name Smear] [Appearance [Some [Slab [[Size [0.4 0.01 3]] [Surface Blood] [Tint Blood]]]]] [Place [[At [Some [0.6 -1.5]]]]]]]
- [Prop [[Name Linen] [Appearance [Some [Slab [[Size [0.6 1.8 1.2]] [Surface Steel] [Tint Linen] [Solid True]]]]] [Place [[At [Some [1.25 -5.8]]]]]]]
- [Prop [[Name WestBullets] [Place [[At [Some [-1.1 2.4]]] [Height [Some 0.81]]]]
+ ; the gurney, the smear and the linen
+ [Prop
+  [[Name Gurney]
+   [Appearance [Some [Composed Gurney [[Colors [Some [[Sheet Sheet]]]]]]]]
+   [Place [[At [Some [-0.95 2.5]]]]]]]
+
+ [Prop
+  [[Name Smear]
+   [Appearance [Some [Slab [[Size [0.4 0.01 3]] [Surface Blood] [Tint Blood]]]]]
+   [Place [[At [Some [0.6 -1.5]]]]]]]
+
+ [Prop
+  [[Name Linen]
+   [Appearance [Some [Slab [[Size [0.6 1.8 1.2]] [Surface Steel] [Tint Linen] [Solid True]]]]]
+   [Place [[At [Some [1.25 -5.8]]]]]]]
+
+ ; the pickups
+ [Prop
+  [[Name WestBullets]
+   [Place [[At [Some [-1.1 2.4]]] [Height [Some 0.81]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item HandgunBullets] [Count 15]]]]]]]]]
- [Prop [[Name WestAntiseptic] [Place [[At [Some [1.1 6.8]]] [Height [Some 0.01]]]]
+
+ [Prop
+  [[Name WestAntiseptic]
+   [Place [[At [Some [1.1 6.8]]] [Height [Some 0.01]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item Antiseptic] [Count 1]]]]]]]]]
 
  ; the creatures

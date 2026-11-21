@@ -3,22 +3,51 @@
 
 [[Palette [[Tile [0.6 0.64 0.64 1]] [WallTile [0.72 0.76 0.76 1]] [Dado [0.5 0.56 0.58 1]] [Sink [0.82 0.82 0.8 1]]]]
 
- [Area [[Type [Dorm Showers]] [Name "Showers"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-3.5 -0.5 -3.5] [7 4 7]]] [Songs [[[Song DormSong]]]]]]
- [Layout [Chamber [[Size [6 6]] [Floor Tile] [Walls WallTile] [Dado Dado] [FloorSurface [Some Tile]] [WallSurface [Some Tile]]]]]
+ [Area
+  [[Type [Dorm Showers]]
+   [Name "Showers"]
+   [Ambient 0.75]
+   [Probe [0 1.6 0]]
+   [Bounds [[-3.5 -0.5 -3.5] [7 4 7]]]
+   [Songs [[[Song DormSong]]]]]]
+
+ [Layout
+  [Chamber
+   [[Size [6 6]] [Floor Tile] [Walls WallTile] [Dado Dado] [FloorSurface [Some Tile]] [WallSurface [Some Tile]]]]]
 
  ; the doors
- [Prop [[Name ShowersDoor] [Appearance [Some [Composed WoodenWallDoor []]]] [Place [[Against [Some South]] [Along 0]]]
+ [Prop
+  [[Name ShowersDoor]
+   [Appearance [Some [Composed WoodenWallDoor []]]]
+   [Place [[Against [Some South]] [Along 0]]]
    [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Dorm EastCorridor]] [Style WoodenDoor]]]]]]]]]
 
- [Prop [[Name Lamp] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.6]]]]]] [Place [[At [Some [0 0]]] [Height [Some 2.7]]]]]]
+ ; the lights
+ [Prop
+  [[Name Lamp]
+   [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.6]]]]]]
+   [Place [[At [Some [0 0]]] [Height [Some 2.7]]]]]]
+
+ ; the cameras
  [Camera [[Zone [[-3 -3] [6 6]]] [At [2.5 2.75 2.5]] [LookAt [-1 0.4 -1.2]] [FieldOfView 72]]]
 
  ; the stalls and the sinks
  [Prop [[Name Stalls] [Appearance [Some [Composed Stalls []]]] [Place [[At [Some [-1.1 -2.45]]]]]]]
- [Prop [[Name Sinks] [Appearance [Some [Composed Desk [[Colors [Some [[Wood Sink] [Top Sink]]]] [Stretch [Some [2 1 0.6]]]]]]] [Place [[At [Some [2.65 0.4]]] [Facing 90]]]]]
- [Prop [[Name ShowersCoagulant] [Place [[At [Some [2.65 -0.1]]] [Height [Some 0.79]]]]
+
+ [Prop
+  [[Name Sinks]
+   [Appearance [Some [Composed Desk [[Colors [Some [[Wood Sink] [Top Sink]]]] [Stretch [Some [2 1 0.6]]]]]]]
+   [Place [[At [Some [2.65 0.4]]] [Facing 90]]]]]
+
+ ; the pickups
+ [Prop
+  [[Name ShowersCoagulant]
+   [Place [[At [Some [2.65 -0.1]]] [Height [Some 0.79]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item Coagulant] [Count 1]]]]]]]]]
- [Prop [[Name ShowersBullets] [Place [[At [Some [-2.4 2.3]]] [Height [Some 0.01]]]]
+
+ [Prop
+  [[Name ShowersBullets]
+   [Place [[At [Some [-2.4 2.3]]] [Height [Some 0.01]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item HandgunBullets] [Count 12]]]]]]]]]
 
  ; the creatures

@@ -2,8 +2,14 @@
 ; short dark hair, gloved hands and heavy boots.
 
 [[Body
-  [Biped [[Legs 0.84] [Torso 0.6] [Shoulders 0.21] [Hips 0.1] [Arms 0.62] [Limbs 0.1]
-          [Clothes [Some [[Arms [Uniform Cloth]] [Hands [Glove Rubber]] [Legs [Uniform Cloth]] [Feet [Boot Leather]]]]]]]]
+  [Biped
+   [[Legs 0.84]
+    [Torso 0.6]
+    [Shoulders 0.21]
+    [Hips 0.1]
+    [Arms 0.62]
+    [Limbs 0.1]
+    [Clothes [Some [[Arms [Uniform Cloth]] [Hands [Glove Rubber]] [Legs [Uniform Cloth]] [Feet [Boot Leather]]]]]]]]
  [Scale 1]
  [Palette
   [[Uniform [0.1 0.13 0.22 1]]

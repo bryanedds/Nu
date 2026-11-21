@@ -44,7 +44,7 @@
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
 		<PackageReference Include="NUnit" Version="3.14.0" />
 		<PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
-		<PackageReference Include="FSharp.Compiler.Service" Version="43.12.204" />
+		<PackageReference Include="FSharp.Compiler.Service" Version="43.13.101" />
 	</ItemGroup>
 
 </Project>

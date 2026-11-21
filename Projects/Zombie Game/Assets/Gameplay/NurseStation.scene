@@ -1,33 +1,92 @@
 ; The nurses' station off the reception - the safe room, where nothing comes, with the typewriter to save at, the
 ; item box, and the drawer's code on the whiteboard.
 
-[[Palette [[Lino [0.34 0.32 0.3 1]] [Paint [0.6 0.58 0.5 1]] [Dado [0.35 0.28 0.22 1]] [Wood [0.4 0.32 0.22 1]] [Typewriter [0.18 0.2 0.18 1]] [Box [0.3 0.34 0.4 1]] [Board [0.85 0.86 0.84 1]] [Sheet [0.55 0.6 0.62 1]]]]
+[[Palette
+  [[Lino [0.34 0.32 0.3 1]]
+   [Paint [0.6 0.58 0.5 1]]
+   [Dado [0.35 0.28 0.22 1]]
+   [Wood [0.4 0.32 0.22 1]]
+   [Typewriter [0.18 0.2 0.18 1]]
+   [Box [0.3 0.34 0.4 1]]
+   [Board [0.85 0.86 0.84 1]]
+   [Sheet [0.55 0.6 0.62 1]]]]
 
- [Area [[Type [Hospital NurseStation]] [Name "Nurses' Station"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-3 -0.5 -2.8] [6 4 5.6]]] [Songs [[[Song SafeRoomSong]]]]]]
+ [Area
+  [[Type [Hospital NurseStation]]
+   [Name "Nurses' Station"]
+   [Ambient 0.75]
+   [Probe [0 1.6 0]]
+   [Bounds [[-3 -0.5 -2.8] [6 4 5.6]]]
+   [Songs [[[Song SafeRoomSong]]]]]]
+
  [Layout [Chamber [[Size [5 4.6]] [Floor Lino] [Walls Paint] [Dado Dado]]]]
 
  ; the doors
- [Prop [[Name StationDoor] [Appearance [Some [Composed WoodenWallDoor []]]] [Place [[Against [Some South]] [Along -0.5]]]
+ [Prop
+  [[Name StationDoor]
+   [Appearance [Some [Composed WoodenWallDoor []]]]
+   [Place [[Against [Some South]] [Along -0.5]]]
    [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Hospital Reception]] [Style WoodenDoor]]]]]]]]]
 
- [Prop [[Name Lamp] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 2.2]]]]]] [Place [[At [Some [0 0]]] [Height [Some 2.7]]]]]]
+ ; the lights
+ [Prop
+  [[Name Lamp]
+   [Appearance [Some [Composed CeilingLamp [[Brightness [Some 2.2]]]]]]
+   [Place [[At [Some [0 0]]] [Height [Some 2.7]]]]]]
+
+ ; the cameras
  [Camera [[Zone [[-2.5 -2.3] [5 4.6]]] [At [2 2.75 2]] [LookAt [-0.8 0.6 -0.9]] [FieldOfView 66]]]
 
  ; the typewriter, where one saves for an ink ribbon
- [Prop [[Name TypewriterDesk] [Appearance [Some [Composed Desk [[Colors [Some [[Wood Wood]]]] [Stretch [Some [1.4 1 0.6]]]]]]] [Place [[At [Some [-0.9 -1.9]]]]]]]
- [Prop [[Name Typewriter] [Appearance [Some [Composed Typewriter [[Colors [Some [[Body Typewriter]]]]]]]] [Place [[At [Some [-0.9 -1.95]]] [Height [Some 0.78]]]]
-   [Interact [Some [[InteractionType Use] [Cue [If [Carries InkRibbon]
-                                         [Sequence [[Say ["A typewriter. There's an ink ribbon in your pocket."]] Save]]
-                                         [Say ["A typewriter. If only you had an ink ribbon."]]]]]]]]]
- ; the item box, shared by every item box in the hospital
- [Prop [[Name ItemBox] [Appearance [Some [Composed ItemBox [[Colors [Some [[Box Box]]]]]]]] [Place [[At [Some [-2.1 0.6]]]]]
+ [Prop
+  [[Name TypewriterDesk]
+   [Appearance [Some [Composed Desk [[Colors [Some [[Wood Wood]]]] [Stretch [Some [1.4 1 0.6]]]]]]]
+   [Place [[At [Some [-0.9 -1.9]]]]]]]
+
+ [Prop
+  [[Name Typewriter]
+   [Appearance [Some [Composed Typewriter [[Colors [Some [[Body Typewriter]]]]]]]]
+   [Place [[At [Some [-0.9 -1.95]]] [Height [Some 0.78]]]]
+   [Interact
+    [Some
+     [[InteractionType Use]
+      [Cue
+       [If
+        [Carries InkRibbon]
+        [Sequence [[Say ["A typewriter. There's an ink ribbon in your pocket."]] Save]]
+        [Say ["A typewriter. If only you had an ink ribbon."]]]]]]]]]
+
+ ; the item box - the same box, wherever one finds it
+ [Prop
+  [[Name ItemBox]
+   [Appearance [Some [Composed ItemBox [[Colors [Some [[Box Box]]]]]]]]
+   [Place [[At [Some [-2.1 0.6]]]]]
    [Interact [Some [[InteractionType Open] [Cue OpenBox]]]]]]
+
  ; the whiteboard, the drawer's code on it
- [Prop [[Name Whiteboard] [Appearance [Some [Slab [[Size [0.03 0.9 1.4]] [Surface Plastic] [Tint Board]]]]] [Place [[At [Some [2.47 -0.6]]] [Height [Some 1.05]]]]
-   [Interact [Some [[InteractionType Examine] [Cue [Say ["A whiteboard. Shifts and names, half rubbed out. In red, along the bottom:" "'RECORDS - the drawer code's the day the wing opened, month then day.'" "Above it someone's stuck the wing's dedication plaque photo: 'March 14'."]]]]]]]]
+ [Prop
+  [[Name Whiteboard]
+   [Appearance [Some [Slab [[Size [0.03 0.9 1.4]] [Surface Plastic] [Tint Board]]]]]
+   [Place [[At [Some [2.47 -0.6]]] [Height [Some 1.05]]]]
+   [Interact
+    [Some
+     [[InteractionType Examine]
+      [Cue
+       [Say ["A whiteboard. Shifts and names, half rubbed out. In red, along the bottom:" "'RECORDS - the drawer code's the day the wing opened, month then day.'" "Above it someone's stuck the wing's dedication plaque photo: 'March 14'."]]]]]]]]
+
  ; a cot, and what's left lying about
- [Prop [[Name Cot] [Appearance [Some [Composed Gurney [[Colors [Some [[Sheet Sheet]]]]]]]] [Place [[At [Some [1.5 1.3]]] [Facing 90]]]]]
- [Prop [[Name StationRibbons] [Place [[At [Some [-0.5 -1.85]]] [Height [Some 0.79]]]]
+ [Prop
+  [[Name Cot]
+   [Appearance [Some [Composed Gurney [[Colors [Some [[Sheet Sheet]]]]]]]]
+   [Place [[At [Some [1.5 1.3]]] [Facing 90]]]]]
+
+ ; the pickups
+ [Prop
+  [[Name StationRibbons]
+   [Place [[At [Some [-0.5 -1.85]]] [Height [Some 0.79]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item InkRibbon] [Count 3]]]]]]]]]
- [Prop [[Name StationAntiseptic] [Place [[At [Some [2 -1.8]]] [Height [Some 0.01]]]]
+
+ [Prop
+  [[Name StationAntiseptic]
+   [Place [[At [Some [2 -1.8]]] [Height [Some 0.01]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item Antiseptic] [Count 1]]]]]]]]]]

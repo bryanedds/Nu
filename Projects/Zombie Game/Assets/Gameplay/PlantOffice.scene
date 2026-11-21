@@ -1,34 +1,102 @@
 ; The foreman's office off the dock - the safe room, where nothing comes, with a typewriter for the shipping forms, the
 ; item box, the foreman's desk and his radio still on low.
 
-[[Palette [[Lino [0.36 0.33 0.28 1]] [Paint [0.58 0.56 0.48 1]] [Dado [0.36 0.3 0.24 1]] [Wood [0.4 0.32 0.22 1]] [Typewriter [0.18 0.2 0.18 1]] [Box [0.3 0.34 0.4 1]] [Paper [0.86 0.84 0.78 1]] [Radio [0.15 0.14 0.12 1]]]]
+[[Palette
+  [[Lino [0.36 0.33 0.28 1]]
+   [Paint [0.58 0.56 0.48 1]]
+   [Dado [0.36 0.3 0.24 1]]
+   [Wood [0.4 0.32 0.22 1]]
+   [Typewriter [0.18 0.2 0.18 1]]
+   [Box [0.3 0.34 0.4 1]]
+   [Paper [0.86 0.84 0.78 1]]
+   [Radio [0.15 0.14 0.12 1]]]]
 
- [Area [[Type [Plant Office]] [Name "Foreman's Office"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-3.5 -0.5 -3] [7 4 6]]] [Songs [[[Song SafeRoomSong]]]]]]
+ [Area
+  [[Type [Plant Office]]
+   [Name "Foreman's Office"]
+   [Ambient 0.75]
+   [Probe [0 1.6 0]]
+   [Bounds [[-3.5 -0.5 -3] [7 4 6]]]
+   [Songs [[[Song SafeRoomSong]]]]]]
+
  [Layout [Chamber [[Size [6 5]] [Floor Lino] [Walls Paint] [Dado Dado]]]]
 
  ; the doors
- [Prop [[Name DockOfficeDoor] [Appearance [Some [Composed WoodenWallDoor []]]] [Place [[Against [Some East]] [Along 0.5]]]
+ [Prop
+  [[Name DockOfficeDoor]
+   [Appearance [Some [Composed WoodenWallDoor []]]]
+   [Place [[Against [Some East]] [Along 0.5]]]
    [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant Dock]] [Style WoodenDoor]]]]]]]]]
 
- [Prop [[Name Lamp] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 2.2]]]]]] [Place [[At [Some [0 0]]] [Height [Some 2.7]]]]]]
+ ; the lights
+ [Prop
+  [[Name Lamp]
+   [Appearance [Some [Composed CeilingLamp [[Brightness [Some 2.2]]]]]]
+   [Place [[At [Some [0 0]]] [Height [Some 2.7]]]]]]
+
+ ; the cameras
  [Camera [[Zone [[-3 -2.5] [6 5]]] [At [2.5 2.75 2]] [LookAt [-1 0.6 -1]] [FieldOfView 68]]]
 
  ; the typewriter, where one saves for an ink ribbon
- [Prop [[Name TypewriterDesk] [Appearance [Some [Composed Desk [[Colors [Some [[Wood Wood]]]] [Stretch [Some [1.4 1 0.6]]]]]]] [Place [[At [Some [-1 -2]]]]]]]
- [Prop [[Name Typewriter] [Appearance [Some [Composed Typewriter [[Colors [Some [[Body Typewriter]]]]]]]] [Place [[At [Some [-1 -2.05]]] [Height [Some 0.78]]]]
-   [Interact [Some [[InteractionType Use] [Cue [If [Carries InkRibbon]
-                                         [Sequence [[Say ["The typewriter the shipping forms are typed on. There's an ink ribbon in your pocket."]] Save]]
-                                         [Say ["The typewriter the shipping forms are typed on. If only you had an ink ribbon."]]]]]]]]]
+ [Prop
+  [[Name TypewriterDesk]
+   [Appearance [Some [Composed Desk [[Colors [Some [[Wood Wood]]]] [Stretch [Some [1.4 1 0.6]]]]]]]
+   [Place [[At [Some [-1 -2]]]]]]]
+
+ [Prop
+  [[Name Typewriter]
+   [Appearance [Some [Composed Typewriter [[Colors [Some [[Body Typewriter]]]]]]]]
+   [Place [[At [Some [-1 -2.05]]] [Height [Some 0.78]]]]
+   [Interact
+    [Some
+     [[InteractionType Use]
+      [Cue
+       [If
+        [Carries InkRibbon]
+        [Sequence
+         [[Say ["The typewriter the shipping forms are typed on. There's an ink ribbon in your pocket."]] Save]]
+        [Say ["The typewriter the shipping forms are typed on. If only you had an ink ribbon."]]]]]]]]]
+
  ; the item box - the same box, wherever one finds it
- [Prop [[Name ItemBox] [Appearance [Some [Composed ItemBox [[Colors [Some [[Box Box]]]]]]]] [Place [[At [Some [-2.4 1]]]]]
+ [Prop
+  [[Name ItemBox]
+   [Appearance [Some [Composed ItemBox [[Colors [Some [[Box Box]]]]]]]]
+   [Place [[At [Some [-2.4 1]]]]]
    [Interact [Some [[InteractionType Open] [Cue OpenBox]]]]]]
+
  ; the foreman's desk, his memo and his radio
- [Prop [[Name ForemanDesk] [Appearance [Some [Composed Desk [[Colors [Some [[Wood Wood]]]] [Stretch [Some [1.6 1 0.8]]]]]]] [Place [[At [Some [1 1.6]]]]]]]
- [Prop [[Name Memo] [Appearance [Some [Slab [[Size [0.3 0.01 0.22]] [Surface Cloth] [Tint Paper]]]]] [Place [[At [Some [0.6 1.5]]] [Height [Some 0.79]]]]
-   [Interact [Some [[InteractionType Examine] [Cue [Say ["A memo on the foreman's desk, in block capitals:" "'RENDERING STAYS CHAINED. NOBODY GOES IN WITH THAT SOW. FREIGHT ELEVATOR KEY STAYS IN THERE WITH THE PEN KEYS. - G. BRANDT'" "Under it, in another hand: 'Gus went to bleed the freezers down and never came back.'"]]]]]]]]
- [Prop [[Name Radio] [Appearance [Some [Slab [[Size [0.26 0.16 0.12]] [Surface Plastic] [Tint Radio]]]]] [Place [[At [Some [1.5 1.6]]] [Height [Some 0.78]]]]
-   [Interact [Some [[InteractionType Examine] [Cue [Say ["A radio, turned down low, hissing." "'...repeat, last evacuation train leaves Brandt siding at six-fifteen. Survivors make for the platform behind the plant...'"]]]]]]]]
- [Prop [[Name OfficeRibbons] [Place [[At [Some [-0.5 -2]]] [Height [Some 0.79]]]]
+ [Prop
+  [[Name ForemanDesk]
+   [Appearance [Some [Composed Desk [[Colors [Some [[Wood Wood]]]] [Stretch [Some [1.6 1 0.8]]]]]]]
+   [Place [[At [Some [1 1.6]]]]]]]
+
+ [Prop
+  [[Name Memo]
+   [Appearance [Some [Slab [[Size [0.3 0.01 0.22]] [Surface Cloth] [Tint Paper]]]]]
+   [Place [[At [Some [0.6 1.5]]] [Height [Some 0.79]]]]
+   [Interact
+    [Some
+     [[InteractionType Examine]
+      [Cue
+       [Say ["A memo on the foreman's desk, in block capitals:" "'RENDERING STAYS CHAINED. NOBODY GOES IN WITH THAT SOW. FREIGHT ELEVATOR KEY STAYS IN THERE WITH THE PEN KEYS. - G. BRANDT'" "Under it, in another hand: 'Gus went to bleed the freezers down and never came back.'"]]]]]]]]
+
+ [Prop
+  [[Name Radio]
+   [Appearance [Some [Slab [[Size [0.26 0.16 0.12]] [Surface Plastic] [Tint Radio]]]]]
+   [Place [[At [Some [1.5 1.6]]] [Height [Some 0.78]]]]
+   [Interact
+    [Some
+     [[InteractionType Examine]
+      [Cue
+       [Say ["A radio, turned down low, hissing." "'...repeat, last evacuation train leaves Brandt siding at six-fifteen. Survivors make for the platform behind the plant...'"]]]]]]]]
+
+ ; the pickups
+ [Prop
+  [[Name OfficeRibbons]
+   [Place [[At [Some [-0.5 -2]]] [Height [Some 0.79]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item InkRibbon] [Count 2]]]]]]]]]
- [Prop [[Name OfficeAntiseptic] [Place [[At [Some [-2.4 -1.8]]] [Height [Some 0.01]]]]
+
+ [Prop
+  [[Name OfficeAntiseptic]
+   [Place [[At [Some [-2.4 -1.8]]] [Height [Some 0.01]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item Antiseptic] [Count 1]]]]]]]]]]

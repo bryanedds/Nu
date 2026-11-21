@@ -2,8 +2,13 @@
 ; cage bent in, one arm hanging long, his breath steaming. He swings, and charges as he was taught.
 
 [[Body
-  [Biped [[Legs 0.66] [Torso 0.72] [Shoulders 0.38] [Hips 0.18] [Arms 0.76]
-          [Clothes [Some [[Arms [Flesh Skin]] [Hands [Glove Leather]] [Legs [Pants Cloth]] [Feet [Cleat Rubber]]]]]]]]
+  [Biped
+   [[Legs 0.66]
+    [Torso 0.72]
+    [Shoulders 0.38]
+    [Hips 0.18]
+    [Arms 0.76]
+    [Clothes [Some [[Arms [Flesh Skin]] [Hands [Glove Leather]] [Legs [Pants Cloth]] [Feet [Cleat Rubber]]]]]]]]
  [Scale 1.55]
  [Palette
   [[Flesh [0.5 0.44 0.42 1]]
@@ -32,10 +37,16 @@
    [[Bone LegLeft] [Shape PartBox] [At [0 -0.3 0]] [Size [0.3 0.64 0.3]] [Color Pants] [Surface Cloth] [Mirror True]]]]
  [Animations
   [; wind back, then drive a shoulder and a fist down through the foe, and settle
-   [Animation Swing [[[From [Some Idle]] [To [Still Coil]] [Over 0.45] [Ease Out]]
-                     [[To [Still Cut]] [Over 0.2] [Ease Snap] [Marks [[Sweep 0.6] [Follow 1]]]]
-                     [[To [Still Cut]] [Over 0.3]]
-                     [[To Idle] [Over 0.55] [Marks [[End 1]]]]]]
+   [Animation Swing
+    [[[From [Some Idle]] [To [Still Coil]] [Over 0.45] [Ease Out]]
+     [[To [Still Cut]] [Over 0.2] [Ease Snap] [Marks [[Sweep 0.6] [Follow 1]]]]
+     [[To [Still Cut]] [Over 0.3]]
+     [[To Idle] [Over 0.55] [Marks [[End 1]]]]]]
 
    ; charge headlong, helmet down, as he was taught, to flatten whatever's in the way
-   [Animation Tackle [[[From [Some [Still Coil]]] [To [Still Grab]] [Over 0.3] [Ease Out] [Layers [[[Lay [Overlay [[Cycle Stride] [Rate 2.4]]]] [Onward True]]]]]]]]]]
+   [Animation Tackle
+    [[[From [Some [Still Coil]]]
+      [To [Still Grab]]
+      [Over 0.3]
+      [Ease Out]
+      [Layers [[[Lay [Overlay [[Cycle Stride] [Rate 2.4]]]] [Onward True]]]]]]]]]]

@@ -1,48 +1,143 @@
 ; The east wing's reception - the front entrance chained shut from outside, the desk the night guard held, and
 ; the waiting area. Play starts here, inside the entrance.
 
-[[Palette [[Lino [0.3 0.33 0.31 1]] [Paint [0.5 0.58 0.53 1]] [Dado [0.22 0.34 0.33 1]] [Blood [0.3 0.03 0.02 1]] [Wood [0.36 0.3 0.24 1]] [Glass [0.05 0.07 0.08 1]] [Chain [0.5 0.5 0.5 1]] [Screen [0.08 0.08 0.09 1]] [Uniform [0.12 0.13 0.18 1]] [Seat [0.2 0.32 0.45 1]] [Leaf [0.15 0.3 0.15 1]] [Belt [0.06 0.06 0.06 1]]]]
+[[Palette
+  [[Lino [0.3 0.33 0.31 1]]
+   [Paint [0.5 0.58 0.53 1]]
+   [Dado [0.22 0.34 0.33 1]]
+   [Blood [0.3 0.03 0.02 1]]
+   [Wood [0.36 0.3 0.24 1]]
+   [Glass [0.05 0.07 0.08 1]]
+   [Chain [0.5 0.5 0.5 1]]
+   [Screen [0.08 0.08 0.09 1]]
+   [Uniform [0.12 0.13 0.18 1]]
+   [Seat [0.2 0.32 0.45 1]]
+   [Leaf [0.15 0.3 0.15 1]]
+   [Belt [0.06 0.06 0.06 1]]]]
 
- [Area [[Type [Hospital Reception]] [Name "Reception"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-6.5 -0.5 -5] [13 4 10]]] [Songs [[[Song HospitalPoweredSong] [When [Some [Flagged PowerRestored]]]] [[Song HospitalSong]]]]]]
+ [Area
+  [[Type [Hospital Reception]]
+   [Name "Reception"]
+   [Ambient 0.75]
+   [Probe [0 1.6 0]]
+   [Bounds [[-6.5 -0.5 -5] [13 4 10]]]
+   [Songs [[[Song HospitalPoweredSong] [When [Some [Flagged PowerRestored]]]] [[Song HospitalSong]]]]]]
+
  [Layout [Chamber [[Size [12 9]] [Floor Lino] [Walls Paint] [Dado Dado]]]]
 
  ; the doors
- [Prop [[Name WestHallDoors] [Appearance [Some [Composed DoubleWallDoor []]]] [Place [[Against [Some West]] [Along 1.5]]]
+ [Prop
+  [[Name WestHallDoors]
+   [Appearance [Some [Composed DoubleWallDoor []]]]
+   [Place [[Against [Some West]] [Along 1.5]]]
    [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Hospital WestHall]] [Style DoubleDoor]]]]]]]]]
- [Prop [[Name EastHallDoors] [Appearance [Some [Composed DoubleWallDoor []]]] [Place [[Against [Some East]] [Along 1.5]]]
+
+ [Prop
+  [[Name EastHallDoors]
+   [Appearance [Some [Composed DoubleWallDoor []]]]
+   [Place [[Against [Some East]] [Along 1.5]]]
    [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Hospital EastHall]] [Style DoubleDoor]]]]]]]]]
- [Prop [[Name StationDoor] [Appearance [Some [Composed WoodenWallDoor []]]] [Place [[Against [Some North]] [Along -3.6]]]
+
+ [Prop
+  [[Name StationDoor]
+   [Appearance [Some [Composed WoodenWallDoor []]]]
+   [Place [[Against [Some North]] [Along -3.6]]]
    [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Hospital NurseStation]] [Style WoodenDoor]]]]]]]]]
 
+ ; where play starts
  [Arrival [[Name Start] [At [1.5 3.4]] [Facing 180]]]
 
- [Prop [[Name LampWest] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 2.5]]]]]] [Place [[At [Some [-3.5 0]]] [Height [Some 2.7]]]]]]
- [Prop [[Name LampEast] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 2]]]]]] [Place [[At [Some [3.5 0]]] [Height [Some 2.7]]]]]]
+ ; the lights
+ [Prop
+  [[Name LampWest]
+   [Appearance [Some [Composed CeilingLamp [[Brightness [Some 2.5]]]]]]
+   [Place [[At [Some [-3.5 0]]] [Height [Some 2.7]]]]]]
+
+ [Prop
+  [[Name LampEast]
+   [Appearance [Some [Composed CeilingLamp [[Brightness [Some 2]]]]]]
+   [Place [[At [Some [3.5 0]]] [Height [Some 2.7]]]]]]
+
+ ; the cameras
  [Camera [[Zone [[-6 -4.5] [6 9]]] [At [5.4 2.75 4.2]] [LookAt [-2.5 0.5 -1.5]] [FieldOfView 62]]]
  [Camera [[Zone [[0 -4.5] [6 9]]] [At [-5.4 2.75 4.2]] [LookAt [2.5 0.5 -1.5]] [FieldOfView 62]]]
 
  ; the front entrance, chained shut from outside
- [Prop [[Name Entrance] [Appearance [Some [Slab [[Size [2.6 2.4 0.1]] [Surface Glass] [Tint Glass] [Solid True]]]]] [Place [[At [Some [1.5 4.45]]]]]
-   [Interact [Some [[InteractionType Examine] [Cue [Say ["The front doors. A chain's been wound through the handles from outside and locked." "Somebody wanted to keep something in."]]]]]]]]
- [Prop [[Name Chain] [Appearance [Some [Slab [[Size [1.2 0.08 0.02]] [Surface Steel] [Tint Chain]]]]] [Place [[At [Some [1.5 4.38]]] [Height [Some 1.06]]]]]]
+ [Prop
+  [[Name Entrance]
+   [Appearance [Some [Slab [[Size [2.6 2.4 0.1]] [Surface Glass] [Tint Glass] [Solid True]]]]]
+   [Place [[At [Some [1.5 4.45]]]]]
+   [Interact
+    [Some
+     [[InteractionType Examine]
+      [Cue [Say ["The front doors. A chain's been wound through the handles from outside and locked." "Somebody wanted to keep something in."]]]]]]]]
+
+ [Prop
+  [[Name Chain]
+   [Appearance [Some [Slab [[Size [1.2 0.08 0.02]] [Surface Steel] [Tint Chain]]]]]
+   [Place [[At [Some [1.5 4.38]]] [Height [Some 1.06]]]]]]
+
  ; the reception desk, and the guard who held it, his holster empty - his gun kicked off into one corner, his rounds
  ; scattered into the far one
- [Prop [[Name Desk] [Appearance [Some [Composed Desk [[Colors [Some [[Wood Wood]]]] [Stretch [Some [4.4 1 0.8]]]]]]] [Place [[At [Some [0.5 -2.4]]]]]]]
- [Prop [[Name DeskReturn] [Appearance [Some [Composed Desk [[Colors [Some [[Wood Wood]]]] [Stretch [Some [0.8 1 1.8]]]]]]] [Place [[At [Some [-1.95 -3.3]]]]]]]
- [Prop [[Name Monitor] [Appearance [Some [Slab [[Size [0.45 0.32 0.05]] [Surface Plastic] [Tint Screen]]]]] [Place [[At [Some [1.2 -2.5]]] [Height [Some 0.82]]]]]]
- [Prop [[Name GuardBody] [Appearance [Some [Composed Body [[Colors [Some [[Clothes Uniform]]]]]]]] [Place [[At [Some [3.3 -0.95]]]]]
-   [Interact [Some [[InteractionType Examine] [Cue [Say ["The night guard. Whatever got him took its time." "His holster's empty - the gun must be close."]]]]]]]]
- [Prop [[Name GuardHolster] [Appearance [Some [Slab [[Size [0.18 0.12 0.06]] [Surface Leather] [Tint Belt]]]]] [Place [[At [Some [3.36 -0.745]]]]]]]
- [Prop [[Name GuardBlood] [Appearance [Some [Slab [[Size [1.6 0.01 1.3]] [Surface Blood] [Tint Blood]]]]] [Place [[At [Some [3 -1]]]]]]]
- [Prop [[Name GuardHandgun] [Place [[At [Some [5 -2.8]]] [Height [Some 0.01]]]]
+ [Prop
+  [[Name Desk]
+   [Appearance [Some [Composed Desk [[Colors [Some [[Wood Wood]]]] [Stretch [Some [4.4 1 0.8]]]]]]]
+   [Place [[At [Some [0.5 -2.4]]]]]]]
+
+ [Prop
+  [[Name DeskReturn]
+   [Appearance [Some [Composed Desk [[Colors [Some [[Wood Wood]]]] [Stretch [Some [0.8 1 1.8]]]]]]]
+   [Place [[At [Some [-1.95 -3.3]]]]]]]
+
+ [Prop
+  [[Name Monitor]
+   [Appearance [Some [Slab [[Size [0.45 0.32 0.05]] [Surface Plastic] [Tint Screen]]]]]
+   [Place [[At [Some [1.2 -2.5]]] [Height [Some 0.82]]]]]]
+
+ [Prop
+  [[Name GuardBody]
+   [Appearance [Some [Composed Body [[Colors [Some [[Clothes Uniform]]]]]]]]
+   [Place [[At [Some [3.3 -0.95]]]]]
+   [Interact
+    [Some
+     [[InteractionType Examine]
+      [Cue [Say ["The night guard. Whatever got him took its time." "His holster's empty - the gun must be close."]]]]]]]]
+
+ [Prop
+  [[Name GuardHolster]
+   [Appearance [Some [Slab [[Size [0.18 0.12 0.06]] [Surface Leather] [Tint Belt]]]]]
+   [Place [[At [Some [3.36 -0.745]]]]]]]
+
+ [Prop
+  [[Name GuardBlood]
+   [Appearance [Some [Slab [[Size [1.6 0.01 1.3]] [Surface Blood] [Tint Blood]]]]]
+   [Place [[At [Some [3 -1]]]]]]]
+
+ [Prop
+  [[Name GuardHandgun]
+   [Place [[At [Some [5 -2.8]]] [Height [Some 0.01]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item Handgun] [Count 1]]]]]]]]]
- [Prop [[Name GuardBullets] [Place [[At [Some [-5.5 4]]] [Height [Some 0.01]]]]
+
+ [Prop
+  [[Name GuardBullets]
+   [Place [[At [Some [-5.5 4]]] [Height [Some 0.01]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item HandgunBullets] [Count 15]]]]]]]]]
+
  ; the waiting area
- [Prop [[Name ChairsA] [Appearance [Some [Composed Chairs [[Colors [Some [[Seat Seat]]]]]]]] [Place [[At [Some [-3.2 1]]]]]]]
- [Prop [[Name ChairsB] [Appearance [Some [Composed Chairs [[Colors [Some [[Seat Seat]]]]]]]] [Place [[At [Some [-3.2 2.8]]] [Facing 180]]]]]
- [Prop [[Name Plant] [Appearance [Some [Slab [[Size [0.5 1.1 0.5]] [Surface Plastic] [Tint Leaf] [Solid True]]]]] [Place [[At [Some [5.3 3.8]]]]]]]
+ [Prop
+  [[Name ChairsA] [Appearance [Some [Composed Chairs [[Colors [Some [[Seat Seat]]]]]]]] [Place [[At [Some [-3.2 1]]]]]]]
+
+ [Prop
+  [[Name ChairsB]
+   [Appearance [Some [Composed Chairs [[Colors [Some [[Seat Seat]]]]]]]]
+   [Place [[At [Some [-3.2 2.8]]] [Facing 180]]]]]
+
+ [Prop
+  [[Name Plant]
+   [Appearance [Some [Slab [[Size [0.5 1.1 0.5]] [Surface Plastic] [Tint Leaf] [Solid True]]]]]
+   [Place [[At [Some [5.3 3.8]]]]]]]
 
  ; the creatures
- [While [Flagged [Taken MorgueFuse]]
+ [While
+  [Flagged [Taken MorgueFuse]]
   [[Enemy [[Name ReceptionNurse] [Creature Nurse] [Place [[At [Some [-1.9 -0.3]]] [Facing 76]]]]]]]]

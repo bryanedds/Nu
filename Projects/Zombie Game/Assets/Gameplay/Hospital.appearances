@@ -1,190 +1,210 @@
 ; Appearances composed of parts for the hospital's rooms, each placed in a scene as [Composed Name settings].
 
-[
- ; a door in a wall, in its frame - its origin at the wall, the door flush with it and its frame standing out round it,
+[; a door in a wall, in its frame - its origin at the wall, the door flush with it and its frame standing out round it,
  ; set into the wall a little so no gap shows behind it
  [Compose WoodenWallDoor
-  [[Colors [[Frame [0.2 0.22 0.22 1]]
-            [Door [0.4 0.3 0.2 1]]]]
+  [[Colors [[Frame [0.2 0.22 0.22 1]] [Door [0.4 0.3 0.2 1]]]]
    [Depth [0 0.1]]
-   [Pieces [[Part [[Surface Paint] [Shape PartBox] [At [-0.55 1.11 0.016]] [Size [0.1 2.22 0.052]] [Color Frame]]]
-            [Part [[Surface Paint] [Shape PartBox] [At [0.55 1.11 0.016]] [Size [0.1 2.22 0.052]] [Color Frame]]]
-            [Part [[Surface Paint] [Shape PartBox] [At [0 2.16 0.016]] [Size [1.2 0.12 0.052]] [Color Frame]]]
-            [Part [[Surface Wood] [Shape PartBox] [At [0 1.048 0.01]] [Size [0.996 2.096 0.016]] [Color Door] [Swings True]]]]]]]
+   [Pieces
+    [[Part [[Surface Paint] [Shape PartBox] [At [-0.55 1.11 0.016]] [Size [0.1 2.22 0.052]] [Color Frame]]]
+     [Part [[Surface Paint] [Shape PartBox] [At [0.55 1.11 0.016]] [Size [0.1 2.22 0.052]] [Color Frame]]]
+     [Part [[Surface Paint] [Shape PartBox] [At [0 2.16 0.016]] [Size [1.2 0.12 0.052]] [Color Frame]]]
+     [Part [[Surface Wood] [Shape PartBox] [At [0 1.048 0.01]] [Size [0.996 2.096 0.016]] [Color Door] [Swings True]]]]]]]
 
  ; a pair of swinging doors in a wall, in their frame - its origin at the wall, the doors flush with the wall
  [Compose DoubleWallDoor
-  [[Colors [[Frame [0.2 0.22 0.22 1]]
-            [Door [0.35 0.42 0.45 1]]]]
+  [[Colors [[Frame [0.2 0.22 0.22 1]] [Door [0.35 0.42 0.45 1]]]]
    [Depth [0 0.1]]
-   [Pieces [[Part [[Surface Paint] [Shape PartBox] [At [-0.95 1.11 0.016]] [Size [0.1 2.22 0.052]] [Color Frame]]]
-            [Part [[Surface Paint] [Shape PartBox] [At [0.95 1.11 0.016]] [Size [0.1 2.22 0.052]] [Color Frame]]]
-            [Part [[Surface Paint] [Shape PartBox] [At [0 2.16 0.016]] [Size [2 0.12 0.052]] [Color Frame]]]
-            [Part [[Surface Paint] [Shape PartBox] [At [-0.449 1.048 0.01]] [Size [0.898 2.096 0.016]] [Color Door] [Swings True]]]
-            [Part [[Surface Paint] [Shape PartBox] [At [0.449 1.048 0.01]] [Size [0.898 2.096 0.016]] [Color Door] [Swings True]]]]]]]
+   [Pieces
+    [[Part [[Surface Paint] [Shape PartBox] [At [-0.95 1.11 0.016]] [Size [0.1 2.22 0.052]] [Color Frame]]]
+     [Part [[Surface Paint] [Shape PartBox] [At [0.95 1.11 0.016]] [Size [0.1 2.22 0.052]] [Color Frame]]]
+     [Part [[Surface Paint] [Shape PartBox] [At [0 2.16 0.016]] [Size [2 0.12 0.052]] [Color Frame]]]
+     [Part
+      [[Surface Paint] [Shape PartBox] [At [-0.449 1.048 0.01]] [Size [0.898 2.096 0.016]] [Color Door] [Swings True]]]
+     [Part
+      [[Surface Paint] [Shape PartBox] [At [0.449 1.048 0.01]] [Size [0.898 2.096 0.016]] [Color Door] [Swings True]]]]]]]
 
  ; a steel door in a wall, in its frame - its origin at the wall, the door flush with the wall
  [Compose SteelWallDoor
-  [[Colors [[Frame [0.2 0.22 0.22 1]]
-            [Door [0.42 0.44 0.46 1]]]]
+  [[Colors [[Frame [0.2 0.22 0.22 1]] [Door [0.42 0.44 0.46 1]]]]
    [Depth [0 0.1]]
-   [Pieces [[Part [[Surface Paint] [Shape PartBox] [At [-0.65 1.11 0.016]] [Size [0.1 2.22 0.052]] [Color Frame]]]
-            [Part [[Surface Paint] [Shape PartBox] [At [0.65 1.11 0.016]] [Size [0.1 2.22 0.052]] [Color Frame]]]
-            [Part [[Surface Paint] [Shape PartBox] [At [0 2.16 0.016]] [Size [1.4 0.12 0.052]] [Color Frame]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 1.048 0.01]] [Size [1.196 2.096 0.016]] [Color Door] [Swings True]]]]]]]
+   [Pieces
+    [[Part [[Surface Paint] [Shape PartBox] [At [-0.65 1.11 0.016]] [Size [0.1 2.22 0.052]] [Color Frame]]]
+     [Part [[Surface Paint] [Shape PartBox] [At [0.65 1.11 0.016]] [Size [0.1 2.22 0.052]] [Color Frame]]]
+     [Part [[Surface Paint] [Shape PartBox] [At [0 2.16 0.016]] [Size [1.4 0.12 0.052]] [Color Frame]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 1.048 0.01]] [Size [1.196 2.096 0.016]] [Color Door] [Swings True]]]]]]]
 
  ; a roller shutter in a wall, in its frame - its origin at the wall: its ribbed slats between guide rails, flush with
  ; the wall, the box it rolls up into overhead with a warning lamp running on the power, and a yellow bottom bar with a
  ; handle
  [Compose ShutterWallDoor
-  [[Colors [[Frame [0.2 0.22 0.22 1]]
-            [Door [0.38 0.39 0.38 1]]
-            [Rib [0.3 0.31 0.3 1]]
-            [Rail [0.16 0.17 0.17 1]]
-            [Housing [0.26 0.28 0.27 1]]
-            [Bar [0.75 0.6 0.1 1]]
-            [Warning [1 0.55 0.1 1]]]]
+  [[Colors
+    [[Frame [0.2 0.22 0.22 1]]
+     [Door [0.38 0.39 0.38 1]]
+     [Rib [0.3 0.31 0.3 1]]
+     [Rail [0.16 0.17 0.17 1]]
+     [Housing [0.26 0.28 0.27 1]]
+     [Bar [0.75 0.6 0.1 1]]
+     [Warning [1 0.55 0.1 1]]]]
    [Depth [0 0.28]]
-   [Pieces [[Part [[Surface Paint] [Shape PartBox] [At [-1.575 1.46 0.0125]] [Size [0.05 2.92 0.045]] [Color Frame]]]
-            [Part [[Surface Paint] [Shape PartBox] [At [1.575 1.46 0.0125]] [Size [0.05 2.92 0.045]] [Color Frame]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 1.4 0.012]] [Size [2.896 2.8 0.016]] [Color Door] [Swings True]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 0.25 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 0.45 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 0.65 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 0.85 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 1.05 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 1.25 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 1.45 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 1.65 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 1.85 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 2.05 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 2.25 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 2.45 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 2.65 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [-1.5 1.4 0.065]] [Size [0.1 2.8 0.15]] [Color Rail]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [1.5 1.4 0.065]] [Size [0.1 2.8 0.15]] [Color Rail]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 2.88 0.135]] [Size [3.22 0.24 0.29]] [Color Housing]]]
-            [Part [[Surface Light] [Shape PartBox] [At [0 2.88 0.285]] [Size [0.14 0.07 0.01]] [Color Warning] [Flat True] [Glow [Some 2]] [Powered True]]]
-            [Part [[Surface Paint] [Shape PartBox] [At [0 0.05 0.02]] [Size [2.898 0.1 0.032]] [Color Bar] [Swings True]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 0.32 0.058]] [Size [0.4 0.04 0.05]] [Color Rail] [Swings True]]]]]]]
+   [Pieces
+    [[Part [[Surface Paint] [Shape PartBox] [At [-1.575 1.46 0.0125]] [Size [0.05 2.92 0.045]] [Color Frame]]]
+     [Part [[Surface Paint] [Shape PartBox] [At [1.575 1.46 0.0125]] [Size [0.05 2.92 0.045]] [Color Frame]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 1.4 0.012]] [Size [2.896 2.8 0.016]] [Color Door] [Swings True]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 0.25 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 0.45 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 0.65 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 0.85 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 1.05 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 1.25 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 1.45 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 1.65 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 1.85 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 2.05 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 2.25 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 2.45 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 2.65 0.026]] [Size [2.89 0.025 0.012]] [Color Rib] [Swings True]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [-1.5 1.4 0.065]] [Size [0.1 2.8 0.15]] [Color Rail]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [1.5 1.4 0.065]] [Size [0.1 2.8 0.15]] [Color Rail]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 2.88 0.135]] [Size [3.22 0.24 0.29]] [Color Housing]]]
+     [Part
+      [[Surface Light] [Shape PartBox] [At [0 2.88 0.285]] [Size [0.14 0.07 0.01]] [Color Warning] [Flat True] [Glow [Some 2]] [Powered True]]]
+     [Part [[Surface Paint] [Shape PartBox] [At [0 0.05 0.02]] [Size [2.898 0.1 0.032]] [Color Bar] [Swings True]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 0.32 0.058]] [Size [0.4 0.04 0.05]] [Color Rail] [Swings True]]]]]]]
 
  ; the ambulance, Unit 9, white with a red stripe down both sides - its body up on its wheels, its origin beneath
  ; its middle, its nose facing out
  [Compose Ambulance
-  [[Colors [[Body [0.85 0.85 0.82 1]]
-            [Stripe [0.7 0.12 0.1 1]]
-            [Glass [0.08 0.1 0.12 1]]
-            [Tire [0.06 0.06 0.06 1]]]]
+  [[Colors [[Body [0.85 0.85 0.82 1]] [Stripe [0.7 0.12 0.1 1]] [Glass [0.08 0.1 0.12 1]] [Tire [0.06 0.06 0.06 1]]]]
    [Depth [2.6 2.6]]
-   [Pieces [[Part [[Surface Paint] [Shape PartBox] [At [0 1.2 0]] [Size [2.2 2 5]] [Color Body]]]
-            [Part [[Surface Paint] [Shape PartBox] [At [0 1.1 0]] [Size [2.22 0.25 5.02]] [Color Stripe]]]
-            [Part [[Surface Glass] [Shape PartBox] [At [0 1.65 2.4]] [Size [2 0.6 0.22]] [Color Glass]]]
-            [Part [[Surface Rubber] [Shape PartCylinder] [At [-1.1 0.34 1.7]] [Size [0.68 0.25 0.68]] [Turn [0 0 90]] [Color Tire]]]
-            [Part [[Surface Rubber] [Shape PartCylinder] [At [1.1 0.34 1.7]] [Size [0.68 0.25 0.68]] [Turn [0 0 90]] [Color Tire]]]
-            [Part [[Surface Rubber] [Shape PartCylinder] [At [-1.1 0.34 -1.7]] [Size [0.68 0.25 0.68]] [Turn [0 0 90]] [Color Tire]]]
-            [Part [[Surface Rubber] [Shape PartCylinder] [At [1.1 0.34 -1.7]] [Size [0.68 0.25 0.68]] [Turn [0 0 90]] [Color Tire]]]
-            [SolidBox [0 0] [1.15 2.55]]]]]]
+   [Pieces
+    [[Part [[Surface Paint] [Shape PartBox] [At [0 1.2 0]] [Size [2.2 2 5]] [Color Body]]]
+     [Part [[Surface Paint] [Shape PartBox] [At [0 1.1 0]] [Size [2.22 0.25 5.02]] [Color Stripe]]]
+     [Part [[Surface Glass] [Shape PartBox] [At [0 1.65 2.4]] [Size [2 0.6 0.22]] [Color Glass]]]
+     [Part
+      [[Surface Rubber] [Shape PartCylinder] [At [-1.1 0.34 1.7]] [Size [0.68 0.25 0.68]] [Turn [0 0 90]] [Color Tire]]]
+     [Part
+      [[Surface Rubber] [Shape PartCylinder] [At [1.1 0.34 1.7]] [Size [0.68 0.25 0.68]] [Turn [0 0 90]] [Color Tire]]]
+     [Part
+      [[Surface Rubber] [Shape PartCylinder] [At [-1.1 0.34 -1.7]] [Size [0.68 0.25 0.68]] [Turn [0 0 90]] [Color Tire]]]
+     [Part
+      [[Surface Rubber] [Shape PartCylinder] [At [1.1 0.34 -1.7]] [Size [0.68 0.25 0.68]] [Turn [0 0 90]] [Color Tire]]]
+     [SolidBox [0 0] [1.15 2.55]]]]]]
 
  ; the item box - a steel footlocker, its lid overhanging, two straps round it, a brass hasp and a pale label on its
  ; front, handles at its ends and a dark plinth under it; its origin beneath its middle, its front facing +x
  [Compose ItemBox
-  [[Colors [[Box [0.3 0.34 0.4 1]]
-            [Lid [0.24 0.27 0.32 1]]
-            [Strap [0.14 0.15 0.17 1]]
-            [Brass [0.72 0.58 0.28 1]]
-            [Label [0.85 0.82 0.65 1]]]]
+  [[Colors
+    [[Box [0.3 0.34 0.4 1]] [Lid [0.24 0.27 0.32 1]] [Strap [0.14 0.15 0.17 1]] [Brass [0.72 0.58 0.28 1]] [Label [0.85 0.82 0.65 1]]]]
    [Depth [0.3 0.3]]
-   [Pieces [[Part [[Surface Steel] [Shape PartBox] [At [0 0.02 0]] [Size [0.62 0.04 1.12]] [Color Strap]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 0.27 0]] [Size [0.6 0.46 1.1]] [Color Box]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 0.56 0]] [Size [0.64 0.12 1.14]] [Color Lid]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 0.27 -0.34]] [Size [0.62 0.46 0.06]] [Color Strap]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 0.27 0.34]] [Size [0.62 0.46 0.06]] [Color Strap]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 0.56 -0.34]] [Size [0.66 0.13 0.06]] [Color Strap]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 0.56 0.34]] [Size [0.66 0.13 0.06]] [Color Strap]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0.32 0.47 0]] [Size [0.03 0.12 0.1]] [Color Brass]]]
-            [Part [[Surface Paint] [Shape PartBox] [At [0.302 0.28 0]] [Size [0.005 0.14 0.4]] [Color Label]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 0.4 -0.57]] [Size [0.22 0.04 0.04]] [Color Strap]]]
-            [Part [[Surface Steel] [Shape PartBox] [At [0 0.4 0.57]] [Size [0.22 0.04 0.04]] [Color Strap]]]
-            [SolidBox [0 0] [0.32 0.57]]]]]]
+   [Pieces
+    [[Part [[Surface Steel] [Shape PartBox] [At [0 0.02 0]] [Size [0.62 0.04 1.12]] [Color Strap]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 0.27 0]] [Size [0.6 0.46 1.1]] [Color Box]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 0.56 0]] [Size [0.64 0.12 1.14]] [Color Lid]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 0.27 -0.34]] [Size [0.62 0.46 0.06]] [Color Strap]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 0.27 0.34]] [Size [0.62 0.46 0.06]] [Color Strap]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 0.56 -0.34]] [Size [0.66 0.13 0.06]] [Color Strap]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 0.56 0.34]] [Size [0.66 0.13 0.06]] [Color Strap]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0.32 0.47 0]] [Size [0.03 0.12 0.1]] [Color Brass]]]
+     [Part [[Surface Paint] [Shape PartBox] [At [0.302 0.28 0]] [Size [0.005 0.14 0.4]] [Color Label]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 0.4 -0.57]] [Size [0.22 0.04 0.04]] [Color Strap]]]
+     [Part [[Surface Steel] [Shape PartBox] [At [0 0.4 0.57]] [Size [0.22 0.04 0.04]] [Color Strap]]]
+     [SolidBox [0 0] [0.32 0.57]]]]]]
 
  ; a typewriter - its body, the deck of keys sloping down in front of it, the carriage behind with its rubber platen
  ; and return lever, and a sheet of paper in it; its origin beneath its middle, its keys facing +z
  [Compose Typewriter
-  [[Colors [[Body [0.18 0.2 0.18 1]]
-            [Keys [0.78 0.76 0.68 1]]
-            [Platen [0.06 0.06 0.06 1]]
-            [Chrome [0.62 0.63 0.65 1]]
-            [Paper [0.9 0.88 0.82 1]]]]
+  [[Colors
+    [[Body [0.18 0.2 0.18 1]] [Keys [0.78 0.76 0.68 1]] [Platen [0.06 0.06 0.06 1]] [Chrome [0.62 0.63 0.65 1]] [Paper [0.9 0.88 0.82 1]]]]
    [Depth [0.16 0.16]]
-   [Pieces [[Part [[Surface Plastic] [Shape PartBox] [At [0 0.05 -0.02]] [Size [0.4 0.1 0.24]] [Color Body]]]
-            [Part [[Surface Plastic] [Shape PartBox] [At [0 0.035 0.12]] [Size [0.38 0.04 0.1]] [Turn [0 12 0]] [Color Body]]]
-            [Part [[Surface Plastic] [Shape PartBox] [At [0 0.065 0.12]] [Size [0.34 0.02 0.08]] [Turn [0 12 0]] [Color Keys]]]
-            [Part [[Surface Plastic] [Shape PartBox] [At [0 0.12 -0.09]] [Size [0.46 0.04 0.07]] [Color Body]]]
-            [Part [[Surface Rubber] [Shape PartCylinder] [At [0 0.15 -0.09]] [Size [0.045 0.44 0.045]] [Turn [0 0 90]] [Color Platen]]]
-            [Part [[Surface Chrome] [Shape PartBox] [At [-0.25 0.15 -0.06]] [Size [0.012 0.012 0.07]] [Color Chrome]]]
-            [Part [[Surface Paint] [Shape PartBox] [At [0 0.22 -0.1]] [Size [0.21 0.15 0.004]] [Turn [0 -12 0]] [Color Paper]]]]]]]
+   [Pieces
+    [[Part [[Surface Plastic] [Shape PartBox] [At [0 0.05 -0.02]] [Size [0.4 0.1 0.24]] [Color Body]]]
+     [Part [[Surface Plastic] [Shape PartBox] [At [0 0.035 0.12]] [Size [0.38 0.04 0.1]] [Turn [0 12 0]] [Color Body]]]
+     [Part [[Surface Plastic] [Shape PartBox] [At [0 0.065 0.12]] [Size [0.34 0.02 0.08]] [Turn [0 12 0]] [Color Keys]]]
+     [Part [[Surface Plastic] [Shape PartBox] [At [0 0.12 -0.09]] [Size [0.46 0.04 0.07]] [Color Body]]]
+     [Part
+      [[Surface Rubber] [Shape PartCylinder] [At [0 0.15 -0.09]] [Size [0.045 0.44 0.045]] [Turn [0 0 90]] [Color Platen]]]
+     [Part [[Surface Chrome] [Shape PartBox] [At [-0.25 0.15 -0.06]] [Size [0.012 0.012 0.07]] [Color Chrome]]]
+     [Part [[Surface Paint] [Shape PartBox] [At [0 0.22 -0.1]] [Size [0.21 0.15 0.004]] [Turn [0 -12 0]] [Color Paper]]]]]]]
 
  ; a ceiling lamp's panel and its light, casting shadows and running on the power - dim and flickering until it's
  ; restored; its origin at the light, a little below the ceiling
  [Compose CeilingLamp
-  [[Colors [[Panel [0.92 0.96 1 1]]
-            [Lamplight [0.92 0.96 1 1]]]]
-   [Depth [0.15 0.15]] [Height 2.7]
-   [Pieces [[Part [[Surface Light] [Shape PartBox] [At [0 0.27 0]] [Size [1.2 0.04 0.3]] [Color Panel] [Flat True] [Glow [Some 3]] [Powered True]]]
-            [Shine [[At [0 0 0]] [Color Lamplight] [Brightness 2] [Reach 8] [Shadowed True] [Powered True]]]]]]]
+  [[Colors [[Panel [0.92 0.96 1 1]] [Lamplight [0.92 0.96 1 1]]]]
+   [Depth [0.15 0.15]]
+   [Height 2.7]
+   [Pieces
+    [[Part
+      [[Surface Light] [Shape PartBox] [At [0 0.27 0]] [Size [1.2 0.04 0.3]] [Color Panel] [Flat True] [Glow [Some 3]] [Powered True]]]
+     [Shine [[At [0 0 0]] [Color Lamplight] [Brightness 2] [Reach 8] [Shadowed True] [Powered True]]]]]]]
 
  ; a desk or counter, a meter each way unless stretched - its body, solid as a whole, and its top
  [Compose Desk
-  [[Colors [[Wood [0.36 0.3 0.24 1]]
-            [Top [0.75 0.74 0.7 1]]]]
+  [[Colors [[Wood [0.36 0.3 0.24 1]] [Top [0.75 0.74 0.7 1]]]]
    [Depth [0.5 0.5]]
-   [Pieces [[Part [[Surface Wood] [Shape PartBox] [At [0 0.38 0]] [Size [1 0.76 1]] [Color Wood] [Stretches True]]]
-            [Part [[Surface Plastic] [Shape PartBox] [At [0 0.775 0]] [Size [1.03 0.03 1.05]] [Color Top] [Stretches True]]]
-            [SolidBox [0 0] [0.5 0.5]]]]]]
+   [Pieces
+    [[Part [[Surface Wood] [Shape PartBox] [At [0 0.38 0]] [Size [1 0.76 1]] [Color Wood] [Stretches True]]]
+     [Part [[Surface Plastic] [Shape PartBox] [At [0 0.775 0]] [Size [1.03 0.03 1.05]] [Color Top] [Stretches True]]]
+     [SolidBox [0 0] [0.5 0.5]]]]]]
 
  ; a hospital bed or gurney, a sheet over it
  [Compose Gurney
-  [[Colors [[Frame [0.6 0.62 0.64 1]]
-            [Sheet [0.5 0.55 0.55 1]]]]
+  [[Colors [[Frame [0.6 0.62 0.64 1]] [Sheet [0.5 0.55 0.55 1]]]]
    [Depth [1 1]]
-   [Pieces [[Part [[Surface Steel] [Shape PartBox] [At [0 0.35 0]] [Size [0.9 0.7 2]] [Color Frame]]]
-            [Part [[Surface Cloth] [Shape PartBox] [At [0 0.72 0]] [Size [0.95 0.06 1.9]] [Color Sheet]]]
-            [SolidBox [0 0] [0.475 1]]]]]]
+   [Pieces
+    [[Part [[Surface Steel] [Shape PartBox] [At [0 0.35 0]] [Size [0.9 0.7 2]] [Color Frame]]]
+     [Part [[Surface Cloth] [Shape PartBox] [At [0 0.72 0]] [Size [0.95 0.06 1.9]] [Color Sheet]]]
+     [SolidBox [0 0] [0.475 1]]]]]]
 
  ; a row of plastic chairs bolted to a rail - set Count for more or fewer; its origin at the row's middle
  [Compose Chairs
   [[Colors [[Seat [0.2 0.32 0.45 1]]]]
    [Depth [0.27 0.25]]
-   [Pieces [[Copies [[Count [Some 5]] [Arrange [Some [Row 0.6]]]]
-              [[Part [[Surface Plastic] [Shape PartBox] [At [0 0.22 0]] [Size [0.5 0.44 0.5]] [Color Seat]]]
-               [Part [[Surface Plastic] [Shape PartBox] [At [0 0.65 -0.24]] [Size [0.5 0.45 0.05]] [Color Seat]]]
-               [SolidBox [0 -0.0075] [0.25 0.2575]]]]]]]]
+   [Pieces
+    [[Copies
+      [[Count [Some 5]] [Arrange [Some [Row 0.6]]]]
+      [[Part [[Surface Plastic] [Shape PartBox] [At [0 0.22 0]] [Size [0.5 0.44 0.5]] [Color Seat]]]
+       [Part [[Surface Plastic] [Shape PartBox] [At [0 0.65 -0.24]] [Size [0.5 0.45 0.05]] [Color Seat]]]
+       [SolidBox [0 -0.0075] [0.25 0.2575]]]]]]]]
 
  ; a row of three security monitors lit up - its origin beneath the middle one's foot
  [Compose Monitors
   [[Colors [[Screen [0.4 0.6 0.7 1]]]]
-   [Depth [0.02 0.02]] [Height 0.87]
-   [Pieces [[Copies [[Count [Some 3]] [Arrange [Some [Row 0.7]]]]
-              [[Part [[Surface Light] [Shape PartBox] [At [0 0.18 0]] [Size [0.5 0.36 0.04]] [Color Screen] [Flat True] [Glow [Some 1.2]]]]]]]]]]
+   [Depth [0.02 0.02]]
+   [Height 0.87]
+   [Pieces
+    [[Copies
+      [[Count [Some 3]] [Arrange [Some [Row 0.7]]]]
+      [[Part
+        [[Surface Light] [Shape PartBox] [At [0 0.18 0]] [Size [0.5 0.36 0.04]] [Color Screen] [Flat True] [Glow [Some 1.2]]]]]]]]]]
 
  ; a vending machine's front, lit up - its origin beneath its middle
  [Compose VendingFront
   [[Colors [[Screen [0.7 0.8 1 1]]]]
    [Depth [0.01 0.01]]
-   [Pieces [[Part [[Surface Light] [Shape PartBox] [At [0 0.45 0]] [Size [0.02 0.9 0.6]] [Color Screen] [Flat True] [Glow [Some 1.5]]]]]]]]
+   [Pieces
+    [[Part
+      [[Surface Light] [Shape PartBox] [At [0 0.45 0]] [Size [0.02 0.9 0.6]] [Color Screen] [Flat True] [Glow [Some 1.5]]]]]]]]
 
  ; a panel's little lamp - its origin beneath it
  [Compose PanelLamp
   [[Colors [[Lamp [1 0.15 0.1 1]]]]
    [Depth [0.03 0.03]]
-   [Pieces [[Part [[Surface Light] [Shape PartBox] [At [0 0.03 0]] [Size [0.02 0.06 0.06]] [Color Lamp] [Flat True] [Glow [Some 3]]]]]]]]
+   [Pieces
+    [[Part
+      [[Surface Light] [Shape PartBox] [At [0 0.03 0]] [Size [0.02 0.06 0.06]] [Color Lamp] [Flat True] [Glow [Some 3]]]]]]]]
 
  ; an ambulance's light bar, dim and lit - its origin beneath its middle
  [Compose Siren
   [[Colors [[Siren [1 0.2 0.15 1]]]]
    [Depth [0.1 0.1]]
-   [Pieces [[Part [[Surface Light] [Shape PartBox] [At [0 0.05 0]] [Size [1.6 0.1 0.2]] [Color Siren] [Flat True] [Glow [Some 0.5]]]]]]]]
+   [Pieces
+    [[Part
+      [[Surface Light] [Shape PartBox] [At [0 0.05 0]] [Size [1.6 0.1 0.2]] [Color Siren] [Flat True] [Glow [Some 0.5]]]]]]]]
+
  [Compose SirenLit
   [[Colors [[Siren [1 0.2 0.15 1]]]]
    [Depth [0.1 0.1]]
-   [Pieces [[Part [[Surface Light] [Shape PartBox] [At [0 0.05 0]] [Size [1.6 0.1 0.2]] [Color Siren] [Flat True] [Glow [Some 2.5]]]]]]]]]
+   [Pieces
+    [[Part
+      [[Surface Light] [Shape PartBox] [At [0 0.05 0]] [Size [1.6 0.1 0.2]] [Color Siren] [Flat True] [Glow [Some 2.5]]]]]]]]]

@@ -1,31 +1,90 @@
 ; The records room - filing cabinets, and a desk whose drawer's keypad wants the code from the nurses' station.
 
-[[Palette [[Lino [0.3 0.33 0.31 1]] [Paint [0.55 0.55 0.5 1]] [Dado [0.3 0.3 0.28 1]] [Wood [0.36 0.3 0.24 1]] [Files [0.4 0.42 0.38 1]] [Keypad [0.12 0.12 0.12 1]]]]
+[[Palette
+  [[Lino [0.3 0.33 0.31 1]] [Paint [0.55 0.55 0.5 1]] [Dado [0.3 0.3 0.28 1]] [Wood [0.36 0.3 0.24 1]] [Files [0.4 0.42 0.38 1]] [Keypad [0.12 0.12 0.12 1]]]]
 
- [Area [[Type [Hospital Records]] [Name "Records"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-3.5 -0.5 -3] [7 4 6]]] [Songs [[[Song HospitalPoweredSong] [When [Some [Flagged PowerRestored]]]] [[Song HospitalSong]]]]]]
+ [Area
+  [[Type [Hospital Records]]
+   [Name "Records"]
+   [Ambient 0.75]
+   [Probe [0 1.6 0]]
+   [Bounds [[-3.5 -0.5 -3] [7 4 6]]]
+   [Songs [[[Song HospitalPoweredSong] [When [Some [Flagged PowerRestored]]]] [[Song HospitalSong]]]]]]
+
  [Layout [Chamber [[Size [6 5]] [Floor Lino] [Walls Paint] [Dado Dado]]]]
 
  ; the doors
- [Prop [[Name RecordsDoor] [Appearance [Some [Composed WoodenWallDoor []]]] [Place [[Against [Some East]] [Along 0]]]
+ [Prop
+  [[Name RecordsDoor]
+   [Appearance [Some [Composed WoodenWallDoor []]]]
+   [Place [[Against [Some East]] [Along 0]]]
    [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Hospital WestHall]] [Style WoodenDoor]]]]]]]]]
 
- [Prop [[Name Lamp] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.8]]]]]] [Place [[At [Some [0 0]]] [Height [Some 2.7]]]]]]
+ ; the lights
+ [Prop
+  [[Name Lamp]
+   [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.8]]]]]]
+   [Place [[At [Some [0 0]]] [Height [Some 2.7]]]]]]
+
+ ; the cameras
  [Camera [[Zone [[-3 -2.5] [6 5]]] [At [2.6 2.75 2.2]] [LookAt [-1 0.5 -1]] [FieldOfView 64]]]
 
- [Prop [[Name Files0] [Appearance [Some [Slab [[Size [0.8 1.4 0.55]] [Surface Steel] [Tint Files] [Solid True]]]]] [Place [[At [Some [-2.4 -2.2]]]]]]]
- [Prop [[Name Files1] [Appearance [Some [Slab [[Size [0.8 1.4 0.55]] [Surface Steel] [Tint Files] [Solid True]]]]] [Place [[At [Some [-1.5 -2.2]]]]]]]
- [Prop [[Name Files2] [Appearance [Some [Slab [[Size [0.8 1.4 0.55]] [Surface Steel] [Tint Files] [Solid True]]]]] [Place [[At [Some [-0.6 -2.2]]]]]]]
- [Prop [[Name Files3] [Appearance [Some [Slab [[Size [0.8 1.4 0.55]] [Surface Steel] [Tint Files] [Solid True]]]]] [Place [[At [Some [0.3 -2.2]]]]]]]
- [Prop [[Name Files4] [Appearance [Some [Slab [[Size [0.8 1.4 0.55]] [Surface Steel] [Tint Files] [Solid True]]]]] [Place [[At [Some [1.2 -2.2]]]]]]]
+ ; the files
+ [Prop
+  [[Name Files0]
+   [Appearance [Some [Slab [[Size [0.8 1.4 0.55]] [Surface Steel] [Tint Files] [Solid True]]]]]
+   [Place [[At [Some [-2.4 -2.2]]]]]]]
+
+ [Prop
+  [[Name Files1]
+   [Appearance [Some [Slab [[Size [0.8 1.4 0.55]] [Surface Steel] [Tint Files] [Solid True]]]]]
+   [Place [[At [Some [-1.5 -2.2]]]]]]]
+
+ [Prop
+  [[Name Files2]
+   [Appearance [Some [Slab [[Size [0.8 1.4 0.55]] [Surface Steel] [Tint Files] [Solid True]]]]]
+   [Place [[At [Some [-0.6 -2.2]]]]]]]
+
+ [Prop
+  [[Name Files3]
+   [Appearance [Some [Slab [[Size [0.8 1.4 0.55]] [Surface Steel] [Tint Files] [Solid True]]]]]
+   [Place [[At [Some [0.3 -2.2]]]]]]]
+
+ [Prop
+  [[Name Files4]
+   [Appearance [Some [Slab [[Size [0.8 1.4 0.55]] [Surface Steel] [Tint Files] [Solid True]]]]]
+   [Place [[At [Some [1.2 -2.2]]]]]]]
+
  ; the desk, its drawer's keypad
- [Prop [[Name Desk] [Appearance [Some [Composed Desk [[Colors [Some [[Wood Wood]]]] [Stretch [Some [1.6 1 0.8]]]]]]] [Place [[At [Some [-1.6 1.2]]] [Facing 90]]]
+ [Prop
+  [[Name Desk]
+   [Appearance [Some [Composed Desk [[Colors [Some [[Wood Wood]]]] [Stretch [Some [1.6 1 0.8]]]]]]]
+   [Place [[At [Some [-1.6 1.2]]] [Facing 90]]]
    ; its code the day the wing opened - the key in it left there, if there's no room for it, till there is
-   [Interact [Some [[InteractionType Examine] [Cue [If [Flagged [Examined RecordsDrawer]]
-                                                   [If [Flagged [Taken RecordsPharmacyKey]] [Say ["The drawer's empty now."]] [GiveAs RecordsPharmacyKey PharmacyKey 1]]
-                                                   [Sequence [[Say ["A locked drawer in the desk, a little keypad set in its front."]]
-                                                              [Keypad [[Code "0314"] [Then [Sequence [[SetFlag [Examined RecordsDrawer]] [Sound DrawerOpenSound] [GiveAs RecordsPharmacyKey PharmacyKey 1]]]]]]]]]]]]]]]
- [Prop [[Name Keypad] [Appearance [Some [Slab [[Size [0.02 0.18 0.12]] [Surface Plastic] [Tint Keypad]]]]] [Place [[At [Some [-1.15 1.2]]] [Height [Some 0.51]]]]]]
- [Prop [[Name RecordsBullets] [Place [[At [Some [1.4 -2.2]]] [Height [Some 1.42]]]]
+   [Interact
+    [Some
+     [[InteractionType Examine]
+      [Cue
+       [If
+        [Flagged [Examined RecordsDrawer]]
+        [If [Flagged [Taken RecordsPharmacyKey]] [Say ["The drawer's empty now."]] [GiveAs RecordsPharmacyKey PharmacyKey 1]]
+        [Sequence
+         [[Say ["A locked drawer in the desk, a little keypad set in its front."]]
+          [Keypad
+           [[Code "0314"]
+            [Then
+             [Sequence
+              [[SetFlag [Examined RecordsDrawer]] [Sound DrawerOpenSound] [GiveAs RecordsPharmacyKey PharmacyKey 1]]]]]]]]]]]]]]]
+
+ [Prop
+  [[Name Keypad]
+   [Appearance [Some [Slab [[Size [0.02 0.18 0.12]] [Surface Plastic] [Tint Keypad]]]]]
+   [Place [[At [Some [-1.15 1.2]]] [Height [Some 0.51]]]]]]
+
+ ; the pickups
+ [Prop
+  [[Name RecordsBullets]
+   [Place [[At [Some [1.4 -2.2]]] [Height [Some 1.42]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item HandgunBullets] [Count 15]]]]]]]]]
 
  ; the creatures

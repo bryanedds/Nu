@@ -6,8 +6,7 @@
    [Assets Assets/Default [cur] [] [Cursor]]
    [Assets Assets/Default [csv nueffect nuscript] [] [Symbol]]
    [Assets Assets/Default [bin frag nav nbrd nuentity nugroup tmx tsx vert] [] []]]]
- [Data
-  [[Assets Assets/Data [csv] [] [Symbol]]]]
+ [Data [[Assets Assets/Data [csv] [] [Symbol]]]]
  [Gameplay
   [[Assets Assets/Gameplay [bmp png psd ttf] [PsdToPng] [Render2d]]
    [Assets Assets/Gameplay [dds jpeg jpg ktx tga tif tiff] [BlockCompress] [Render3d]]

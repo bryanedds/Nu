@@ -3,30 +3,95 @@
 
 [[Palette [[Tile [0.55 0.56 0.54 1]] [Paint [0.62 0.64 0.62 1]] [Dado [0.5 0.12 0.1 1]] [Drain [0.3 0.08 0.06 1]]]]
 
- [Area [[Type [Plant KillFloor]] [Name "Kill Floor"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-4.5 -0.5 -8.5] [9 4 17]]] [Songs [[[Song PlantSong]]]]]]
- [Layout [Chamber [[Size [8 16]] [Floor Tile] [Walls Paint] [Dado Dado] [FloorSurface [Some Tile]] [WallSurface [Some Tile]]]]]
+ [Area
+  [[Type [Plant KillFloor]]
+   [Name "Kill Floor"]
+   [Ambient 0.75]
+   [Probe [0 1.6 0]]
+   [Bounds [[-4.5 -0.5 -8.5] [9 4 17]]]
+   [Songs [[[Song PlantSong]]]]]]
+
+ [Layout
+  [Chamber [[Size [8 16]] [Floor Tile] [Walls Paint] [Dado Dado] [FloorSurface [Some Tile]] [WallSurface [Some Tile]]]]]
 
  ; the doors
- [Prop [[Name DockKillDoors] [Appearance [Some [Composed DoubleWallDoor []]]] [Place [[Against [Some South]] [Along 1.5]]]
+ [Prop
+  [[Name DockKillDoors]
+   [Appearance [Some [Composed DoubleWallDoor []]]]
+   [Place [[Against [Some South]] [Along 1.5]]]
    [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant Dock]] [Style DoubleDoor]]]]]]]]]
- [Prop [[Name KillLockersDoor] [Appearance [Some [Composed WoodenWallDoor []]]] [Place [[Against [Some West]] [Along 3]]]
-   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant Lockers]] [Style WoodenDoor]]]]]]]]]
- [Prop [[Name KillGrinderDoors] [Appearance [Some [Composed DoubleWallDoor []]]] [Place [[Against [Some East]] [Along 1]]]
-   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant Grinder]] [Style DoubleDoor]]]]]]]]]
- [Prop [[Name KillColdDoor] [Appearance [Some [Composed SteelWallDoor []]]] [Place [[Against [Some West]] [Along -4.5]]]
-   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant ColdStorage]] [Style SteelDoor] [Opens [Some [Flagged [Examined BoilerValve]]]] [Locked [Some "Cold storage. Its door's frozen solid in its frame, the seals crusted thick with ice. Something would have to thaw it."]]]]]]]]]]
- [Prop [[Name RenderingDoor] [Appearance [Some [Composed SteelWallDoor []]]] [Place [[Against [Some North]] [Along 0]]]
-   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant Rendering]] [Style SteelDoor] [Key [Some BoltCutters]] [Locked [Some "Chained shut, a padlock through the handles. Stencilled on the steel: RENDERING - NO ENTRY."]]]]]]]]]]
 
- [Prop [[Name LampNorth] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.6]]]]]] [Place [[At [Some [0 -5]]] [Height [Some 2.7]]]]]]
- [Prop [[Name LampMiddle] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.4]]]]]] [Place [[At [Some [0 0]]] [Height [Some 2.7]]]]]]
- [Prop [[Name LampSouth] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.6]]]]]] [Place [[At [Some [0 5]]] [Height [Some 2.7]]]]]]
+ [Prop
+  [[Name KillLockersDoor]
+   [Appearance [Some [Composed WoodenWallDoor []]]]
+   [Place [[Against [Some West]] [Along 3]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant Lockers]] [Style WoodenDoor]]]]]]]]]
+
+ [Prop
+  [[Name KillGrinderDoors]
+   [Appearance [Some [Composed DoubleWallDoor []]]]
+   [Place [[Against [Some East]] [Along 1]]]
+   [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant Grinder]] [Style DoubleDoor]]]]]]]]]
+
+ [Prop
+  [[Name KillColdDoor]
+   [Appearance [Some [Composed SteelWallDoor []]]]
+   [Place [[Against [Some West]] [Along -4.5]]]
+   [Interact
+    [Some
+     [[InteractionType Open]
+      [Cue
+       [Enter
+        [[To [Plant ColdStorage]]
+         [Style SteelDoor]
+         [Opens [Some [Flagged [Examined BoilerValve]]]]
+         [Locked [Some "Cold storage. Its door's frozen solid in its frame, the seals crusted thick with ice. Something would have to thaw it."]]]]]]]]]]
+
+ [Prop
+  [[Name RenderingDoor]
+   [Appearance [Some [Composed SteelWallDoor []]]]
+   [Place [[Against [Some North]] [Along 0]]]
+   [Interact
+    [Some
+     [[InteractionType Open]
+      [Cue
+       [Enter
+        [[To [Plant Rendering]]
+         [Style SteelDoor]
+         [Key [Some BoltCutters]]
+         [Locked [Some "Chained shut, a padlock through the handles. Stencilled on the steel: RENDERING - NO ENTRY."]]]]]]]]]]
+
+ ; the lights
+ [Prop
+  [[Name LampNorth]
+   [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.6]]]]]]
+   [Place [[At [Some [0 -5]]] [Height [Some 2.7]]]]]]
+
+ [Prop
+  [[Name LampMiddle]
+   [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.4]]]]]]
+   [Place [[At [Some [0 0]]] [Height [Some 2.7]]]]]]
+
+ [Prop
+  [[Name LampSouth]
+   [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.6]]]]]]
+   [Place [[At [Some [0 5]]] [Height [Some 2.7]]]]]]
+
+ ; the cameras
  [Camera [[Zone [[-4 -8] [8 8]]] [At [-2.6 2.75 3]] [LookAt [0 0.3 -6]] [FieldOfView 62]]]
  [Camera [[Zone [[-4 0] [8 8]]] [At [2.6 2.75 -3]] [LookAt [0 0.3 6]] [FieldOfView 62]]]
 
  ; the rails, and the carcasses hung from them
- [Prop [[Name RailWest] [Appearance [Some [Composed Rail [[Stretch [Some [12 1 1]]]]]]] [Place [[At [Some [-1.8 0]]] [Facing 90]]]]]
- [Prop [[Name RailEast] [Appearance [Some [Composed Rail [[Stretch [Some [12 1 1]]]]]]] [Place [[At [Some [1.8 0]]] [Facing 90]]]]]
+ [Prop
+  [[Name RailWest]
+   [Appearance [Some [Composed Rail [[Stretch [Some [12 1 1]]]]]]]
+   [Place [[At [Some [-1.8 0]]] [Facing 90]]]]]
+
+ [Prop
+  [[Name RailEast]
+   [Appearance [Some [Composed Rail [[Stretch [Some [12 1 1]]]]]]]
+   [Place [[At [Some [1.8 0]]] [Facing 90]]]]]
+
  [Prop [[Name CarcassWest0] [Appearance [Some [Composed Carcass []]]] [Place [[At [Some [-1.8 -5.5]]] [Facing 10]]]]]
  [Prop [[Name CarcassWest1] [Appearance [Some [Composed Carcass []]]] [Place [[At [Some [-1.8 -3.5]]] [Facing 80]]]]]
  [Prop [[Name CarcassWest2] [Appearance [Some [Composed Carcass []]]] [Place [[At [Some [-1.8 1]]] [Facing 30]]]]]
@@ -35,12 +100,26 @@
  [Prop [[Name CarcassEast1] [Appearance [Some [Composed Carcass []]]] [Place [[At [Some [1.8 -1.5]]] [Facing 0]]]]]
  [Prop [[Name CarcassEast2] [Appearance [Some [Composed Carcass []]]] [Place [[At [Some [1.8 3.5]]] [Facing 100]]]]]
  [Prop [[Name CarcassEast3] [Appearance [Some [Composed Carcass []]]] [Place [[At [Some [1.8 5.8]]] [Facing 40]]]]]
+
  ; the scald tank, steaming at the far end
- [Prop [[Name ScaldTank] [Appearance [Some [Composed Vat []]]] [Place [[At [Some [2.9 -6.6]]]]]
-   [Interact [Some [[InteractionType Examine] [Cue [Say ["The scald tank, still steaming. Its dial's set where it always is - 140." "Something pale turns over slowly under the surface."]]]]]]]]
- [Prop [[Name KillBullets] [Place [[At [Some [-3.4 -1]]] [Height [Some 0.01]]]]
+ [Prop
+  [[Name ScaldTank]
+   [Appearance [Some [Composed Vat []]]]
+   [Place [[At [Some [2.9 -6.6]]]]]
+   [Interact
+    [Some
+     [[InteractionType Examine]
+      [Cue [Say ["The scald tank, still steaming. Its dial's set where it always is - 140." "Something pale turns over slowly under the surface."]]]]]]]]
+
+ ; the pickups
+ [Prop
+  [[Name KillBullets]
+   [Place [[At [Some [-3.4 -1]]] [Height [Some 0.01]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item HandgunBullets] [Count 15]]]]]]]]]
- [Prop [[Name KillAntiseptic] [Place [[At [Some [3.4 6.8]]] [Height [Some 0.01]]]]
+
+ [Prop
+  [[Name KillAntiseptic]
+   [Place [[At [Some [3.4 6.8]]] [Height [Some 0.01]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item Antiseptic] [Count 1]]]]]]]]]
 
  ; the creatures

@@ -1,24 +1,57 @@
 ; Room 104 - a bunk, a desk, and a note from a roommate about a hoodie left in dryer 3 with an ID in its pocket. Its
 ; owner lies on the floor.
 
-[[Palette [[Carpet [0.3 0.3 0.34 1]] [Paint [0.66 0.64 0.6 1]] [Dado [0.42 0.4 0.38 1]] [Wood [0.45 0.36 0.26 1]] [Paper [0.9 0.88 0.6 1]]]]
+[[Palette
+  [[Carpet [0.3 0.3 0.34 1]] [Paint [0.66 0.64 0.6 1]] [Dado [0.42 0.4 0.38 1]] [Wood [0.45 0.36 0.26 1]] [Paper [0.9 0.88 0.6 1]]]]
 
- [Area [[Type [Dorm Room104]] [Name "Room 104"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-3 -0.5 -2.8] [6 4 5.6]]] [Songs [[[Song DormSong]]]]]]
+ [Area
+  [[Type [Dorm Room104]]
+   [Name "Room 104"]
+   [Ambient 0.75]
+   [Probe [0 1.6 0]]
+   [Bounds [[-3 -0.5 -2.8] [6 4 5.6]]]
+   [Songs [[[Song DormSong]]]]]]
+
  [Layout [Chamber [[Size [5 4.6]] [Floor Carpet] [Walls Paint] [Dado Dado] [FloorSurface [Some Cloth]]]]]
 
  ; the doors
- [Prop [[Name Room104Door] [Appearance [Some [Composed WoodenWallDoor []]]] [Place [[Against [Some West]] [Along 0]]]
+ [Prop
+  [[Name Room104Door]
+   [Appearance [Some [Composed WoodenWallDoor []]]]
+   [Place [[Against [Some West]] [Along 0]]]
    [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Dorm EastCorridor]] [Style WoodenDoor]]]]]]]]]
 
- [Prop [[Name Lamp] [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.6]]]]]] [Place [[At [Some [0 0]]] [Height [Some 2.7]]]]]]
+ ; the lights
+ [Prop
+  [[Name Lamp]
+   [Appearance [Some [Composed CeilingLamp [[Brightness [Some 1.6]]]]]]
+   [Place [[At [Some [0 0]]] [Height [Some 2.7]]]]]]
+
+ ; the cameras
  [Camera [[Zone [[-2.5 -2.3] [5 4.6]]] [At [-2 2.75 2]] [LookAt [1 0.4 -1]] [FieldOfView 68]]]
 
  ; the bunk, the desk and the note
  [Prop [[Name Bunk] [Appearance [Some [Composed Bunk []]]] [Place [[At [Some [1.8 -1.05]]]]]]]
- [Prop [[Name Desk] [Appearance [Some [Composed Desk [[Colors [Some [[Wood Wood]]]] [Stretch [Some [1.2 1 0.6]]]]]]] [Place [[At [Some [-1.4 -1.95]]]]]]]
- [Prop [[Name Note] [Appearance [Some [Slab [[Size [0.2 0.01 0.25]] [Surface Cloth] [Tint Paper]]]]] [Place [[At [Some [-1.7 -1.95]]] [Height [Some 0.79]]]]
-   [Interact [Some [[InteractionType Examine] [Cue [Say ["A note taped to the desk, written in a hurry:" "'Dami - your hoodie's in DRYER 3, ID still in the pocket, sorry!! Stairwell's card-only since lockdown, don't lose it. - K'"]]]]]]]]
- [Prop [[Name Room104Antiseptic] [Place [[At [Some [-1 -1.95]]] [Height [Some 0.79]]]]
+
+ [Prop
+  [[Name Desk]
+   [Appearance [Some [Composed Desk [[Colors [Some [[Wood Wood]]]] [Stretch [Some [1.2 1 0.6]]]]]]]
+   [Place [[At [Some [-1.4 -1.95]]]]]]]
+
+ [Prop
+  [[Name Note]
+   [Appearance [Some [Slab [[Size [0.2 0.01 0.25]] [Surface Cloth] [Tint Paper]]]]]
+   [Place [[At [Some [-1.7 -1.95]]] [Height [Some 0.79]]]]
+   [Interact
+    [Some
+     [[InteractionType Examine]
+      [Cue
+       [Say ["A note taped to the desk, written in a hurry:" "'Dami - your hoodie's in DRYER 3, ID still in the pocket, sorry!! Stairwell's card-only since lockdown, don't lose it. - K'"]]]]]]]]
+
+ ; the pickups
+ [Prop
+  [[Name Room104Antiseptic]
+   [Place [[At [Some [-1 -1.95]]] [Height [Some 0.79]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item Antiseptic] [Count 1]]]]]]]]]
 
  ; the creatures

@@ -1,27 +1,65 @@
 ; The smokehouse - racks of sausages gone black in the smoke, an ember-red lamp, and on the wall the board of the line's
 ; temperatures.
 
-[[Palette [[Brick [0.24 0.17 0.13 1]] [Soot [0.2 0.16 0.13 1]] [Dado [0.14 0.11 0.09 1]] [Board [0.85 0.86 0.84 1]] [Ember [1 0.45 0.2 1]]]]
+[[Palette
+  [[Brick [0.24 0.17 0.13 1]] [Soot [0.2 0.16 0.13 1]] [Dado [0.14 0.11 0.09 1]] [Board [0.85 0.86 0.84 1]] [Ember [1 0.45 0.2 1]]]]
 
- [Area [[Type [Plant Smokehouse]] [Name "Smokehouse"] [Ambient 0.75] [Probe [0 1.6 0]] [Bounds [[-3.5 -0.5 -3.5] [7 4 7]]] [Songs [[[Song PlantSong]]]]]]
- [Layout [Chamber [[Size [6 6]] [Floor Brick] [Walls Soot] [Dado Dado] [FloorSurface [Some Concrete]] [WallSurface [Some Concrete]]]]]
+ [Area
+  [[Type [Plant Smokehouse]]
+   [Name "Smokehouse"]
+   [Ambient 0.75]
+   [Probe [0 1.6 0]]
+   [Bounds [[-3.5 -0.5 -3.5] [7 4 7]]]
+   [Songs [[[Song PlantSong]]]]]]
+
+ [Layout
+  [Chamber
+   [[Size [6 6]] [Floor Brick] [Walls Soot] [Dado Dado] [FloorSurface [Some Concrete]] [WallSurface [Some Concrete]]]]]
 
  ; the doors
- [Prop [[Name GrinderSmokeDoor] [Appearance [Some [Composed WoodenWallDoor []]]] [Place [[Against [Some West]] [Along 0]]]
+ [Prop
+  [[Name GrinderSmokeDoor]
+   [Appearance [Some [Composed WoodenWallDoor []]]]
+   [Place [[Against [Some West]] [Along 0]]]
    [Interact [Some [[InteractionType Open] [Cue [Enter [[To [Plant Grinder]] [Style WoodenDoor]]]]]]]]]
 
- [Prop [[Name LampNorth] [Appearance [Some [Composed CageLamp [[Colors [Some [[Bulb Ember] [Lamplight Ember]]]]]]]] [Place [[Against [Some North]] [Along -1]]]]]
- [Prop [[Name LampSouth] [Appearance [Some [Composed CageLamp [[Colors [Some [[Bulb Ember] [Lamplight Ember]]]] [Brightness [Some 1.2]]]]]] [Place [[Against [Some South]] [Along 1]]]]]
+ ; the lights
+ [Prop
+  [[Name LampNorth]
+   [Appearance [Some [Composed CageLamp [[Colors [Some [[Bulb Ember] [Lamplight Ember]]]]]]]]
+   [Place [[Against [Some North]] [Along -1]]]]]
+
+ [Prop
+  [[Name LampSouth]
+   [Appearance [Some [Composed CageLamp [[Colors [Some [[Bulb Ember] [Lamplight Ember]]]] [Brightness [Some 1.2]]]]]]
+   [Place [[Against [Some South]] [Along 1]]]]]
+
+ ; the cameras
  [Camera [[Zone [[-3 -3] [6 6]]] [At [-2.4 2.75 2.4]] [LookAt [1 0.3 -1]] [FieldOfView 70]]]
 
  ; the racks, and the board
  [Prop [[Name RackNorth] [Appearance [Some [Composed SmokerRack []]]] [Place [[At [Some [0.4 -1.6]]]]]]]
  [Prop [[Name RackSouth] [Appearance [Some [Composed SmokerRack []]]] [Place [[At [Some [0.4 1.2]]]]]]]
- [Prop [[Name Whiteboard] [Appearance [Some [Slab [[Size [0.03 0.9 1.4]] [Surface Plastic] [Tint Board]]]]] [Place [[At [Some [2.97 -0.2]]] [Height [Some 1.05]]]]
-   [Interact [Some [[InteractionType Examine] [Cue [Say ["A whiteboard of the line's temperatures, in a careful hand:" "'SCALD 140    SMOKE 165    CHILL 34    RENDER 230'" "Under it, in another: 'RAY - THIS BOARD IS NOT FOR YOUR LOCKER COMBINATION.'"]]]]]]]]
- [Prop [[Name SmokeAntiseptic] [Place [[At [Some [-2.3 -2.3]]] [Height [Some 0.01]]]]
+
+ [Prop
+  [[Name Whiteboard]
+   [Appearance [Some [Slab [[Size [0.03 0.9 1.4]] [Surface Plastic] [Tint Board]]]]]
+   [Place [[At [Some [2.97 -0.2]]] [Height [Some 1.05]]]]
+   [Interact
+    [Some
+     [[InteractionType Examine]
+      [Cue
+       [Say ["A whiteboard of the line's temperatures, in a careful hand:" "'SCALD 140    SMOKE 165    CHILL 34    RENDER 230'" "Under it, in another: 'RAY - THIS BOARD IS NOT FOR YOUR LOCKER COMBINATION.'"]]]]]]]]
+
+ ; the pickups
+ [Prop
+  [[Name SmokeAntiseptic]
+   [Place [[At [Some [-2.3 -2.3]]] [Height [Some 0.01]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item Antiseptic] [Count 1]]]]]]]]]
- [Prop [[Name SmokeShells] [Place [[At [Some [2.3 2.4]]] [Height [Some 0.01]]]]
+
+ [Prop
+  [[Name SmokeShells]
+   [Place [[At [Some [2.3 2.4]]] [Height [Some 0.01]]]]
    [Interact [Some [[InteractionType Take] [Cue [PickUp [[Item ShotgunShells] [Count 4]]]]]]]]]
 
  ; the creatures
