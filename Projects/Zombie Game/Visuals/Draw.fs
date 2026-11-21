@@ -7,13 +7,12 @@ open System.Numerics
 open Prime
 open Nu
 
-/// A shape made ready to draw - its model matrix, material properties, model and render type worked out once, so it can
-/// be drawn in every render pass of a frame without working them out again.
+/// A shape made ready to draw - its model matrix, material properties and model worked out once, so it can be drawn in
+/// every render pass of a frame without working them out again.
 type Drawing =
     { DrawingMatrix : Matrix4x4
       DrawingProperties : MaterialProperties
       DrawingModel : StaticModel AssetTag
-      DrawingRenderType : RenderType
       DrawingCastShadow : bool }
 
 /// Immediate-mode drawing for visuals that have no simulation identity of their own - puppet parts, things in hand,
@@ -30,13 +29,11 @@ module Draw =
         | ShadowPass _ -> castShadow && (World.getRenderer3dConfig world).LightShadowingEnabled
         | LightMapPass _ | ReflectionPass _ -> false
 
-    /// Make a shape with a model matrix and material properties ready to draw. A shape glowing brighter than its own
-    /// color is forward rendered, since the deferred material buffer holds emission in 8 bits and so caps it at 1.
+    /// Make a shape with a model matrix and material properties ready to draw.
     let prepareProperties partShape (matrix : Matrix4x4) (properties : MaterialProperties) castShadow =
         { DrawingMatrix = matrix
           DrawingProperties = properties
           DrawingModel = PartShapeType.getModel partShape
-          DrawingRenderType = if ValueOption.defaultValue 0.0f properties.EmissionOpt > 1.0f then ForwardRenderType (0.0f, 0.0f) else DeferredRenderType
           DrawingCastShadow = castShadow }
 
     /// Make a shape with a model matrix ready to draw.
@@ -49,7 +46,7 @@ module Draw =
             let mutable matrix = drawing.DrawingMatrix
             World.renderStaticModelFast
                 (&matrix, drawing.DrawingCastShadow, Exterior, ValueNone, SurfaceType.BasicMaterial, drawing.DrawingProperties,
-                 drawing.DrawingModel, drawing.DrawingRenderType, renderPass, world)
+                 drawing.DrawingModel, DeferredRenderType, renderPass, world)
 
     /// Draw a shape with a model matrix.
     let shapeMatrix renderPass surface partShape (matrix : Matrix4x4) (color : Color) emission castShadow world =

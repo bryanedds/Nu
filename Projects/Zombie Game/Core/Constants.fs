@@ -27,7 +27,7 @@ module Constants =
         let WallThickness = 0.3f
         let DadoHeight = 1.0f // the band of darker paint along the walls' feet
         let DoorwayDadoTuck = 0.02f // how far past a doorway's sides the dado's break in it reaches, so its ends hide in the frame
-        let PartGlow = 6.0f // above 1, so forward rendered - deferred caps emission at 1
+        let PartGlow = 6.0f // above 1, so a glowing part blooms and reads as a light source
 
     /// Gui layout and colors shared across the screens.
     [<RequireQualifiedAccess>]

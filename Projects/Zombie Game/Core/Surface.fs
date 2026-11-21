@@ -51,10 +51,10 @@ type SurfaceType =
     static member getMaterial surface (color : Color) =
         if color.A < 1.0f && surface <> Light then SurfaceType.TranslucentMaterial else SurfaceType.BasicMaterial
 
-    /// How a surface in a color renders - forward if it glows past its color, is see-through, or is to stay out of
-    /// screen-space reflections, as a ceiling, else deferred.
+    /// How a surface in a color renders - forward if it's see-through or is to stay out of screen-space reflections, as
+    /// a ceiling, else deferred.
     static member getRenderStyle surface (color : Color) unreflected =
-        if surface = Light || color.A < 1.0f || unreflected then Forward (0.0f, 0.0f) else Deferred
+        if (color.A < 1.0f && surface <> Light) || unreflected then Forward (0.0f, 0.0f) else Deferred
 
 /// How a surface takes the light - its roughness, metalness, subsurface scattering and clear coat.
 type SurfaceData =
