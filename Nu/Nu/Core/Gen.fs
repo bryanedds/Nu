@@ -128,6 +128,127 @@ module Gen =
         static member randomShuffle (seq : 'a seq) =
             Seq.randomShuffle seq
 
+        /// Get the random number integer for a target under a seed, GTE 0 and LTE Int32.MaxValue. The target is any
+        /// value HashdFolder folds, so the same seed and target give the same number on every run and machine.
+        /// Thread-safe.
+        static member inline randomk (target : ^a) (seed : uint64) =
+            int (Randomk.toUInt64 target (Randomk.make seed) >>> 33)
+
+        /// Get the random boolean for a target under a seed.
+        /// Thread-safe.
+        static member inline randomkb (target : ^a) (seed : uint64) =
+            (Randomk.toUInt64 target (Randomk.make seed)) >>> 63 = 1UL
+
+        /// Get the random byte for a target under a seed.
+        /// Thread-safe.
+        static member inline randomky (target : ^a) (seed : uint64) =
+            byte ((Randomk.toUInt64 target (Randomk.make seed)) >>> 56)
+
+        /// Get the random unsigned for a target under a seed, GTE 0 and LTE Int32.MaxValue.
+        /// Thread-safe.
+        static member inline randomku (target : ^a) (seed : uint64) =
+            uint (Gen.randomk target seed)
+
+        /// Get the random long for a target under a seed, GTE 0 and LTE Int64.MaxValue.
+        /// Thread-safe.
+        static member inline randomkl (target : ^a) (seed : uint64) =
+            int64 ((Randomk.toUInt64 target (Randomk.make seed)) >>> 1)
+
+        /// Get the random unsigned long for a target under a seed, GTE 0 and LTE Int64.MaxValue.
+        /// Thread-safe.
+        static member inline randomkul (target : ^a) (seed : uint64) =
+            uint64 (Gen.randomkl target seed)
+
+        /// Get the random single for a target under a seed, >= 0.0f and < 1.0f.
+        /// Thread-safe.
+        static member inline randomkf (target : ^a) (seed : uint64) =
+            Randomk.toSingle target (Randomk.make seed)
+
+        /// Get the random double for a target under a seed, >= 0.0 and < 1.0.
+        /// Thread-safe.
+        static member inline randomkd (target : ^a) (seed : uint64) =
+            Randomk.toDouble target (Randomk.make seed)
+
+        /// Get the random number integer for a target under a seed, below ceiling, or 0 when ceiling is 0.
+        /// Thread-safe.
+        static member inline randomk3 (ceiling : int) (target : ^a) (seed : uint64) =
+            if ceiling < 0 then raise (ArgumentOutOfRangeException (nameof ceiling, "Ceiling must not be negative."))
+            if ceiling = 0 then 0 else Randomk.toIndex ceiling target (Randomk.make seed)
+
+        /// Get the random byte for a target under a seed, below ceiling, or 0 when ceiling is 0.
+        /// Thread-safe.
+        static member inline randomky3 (ceiling : byte) (target : ^a) (seed : uint64) =
+            byte (Gen.randomk3 (int ceiling) target seed)
+
+        /// Get the random number single for a target under a seed, below ceiling.
+        /// Thread-safe.
+        static member inline randomkf3 (ceiling : single) (target : ^a) (seed : uint64) =
+            Gen.randomkf target seed * ceiling
+
+        /// Get the random number double for a target under a seed, below ceiling.
+        /// Thread-safe.
+        static member inline randomkd3 (ceiling : double) (target : ^a) (seed : uint64) =
+            Gen.randomkd target seed * ceiling
+
+        /// Get the random number integer for a target under a seed, GTE minValue and LT ceiling, or minValue when
+        /// they're equal.
+        /// Thread-safe.
+        static member inline randomk4 (minValue : int) (ceiling : int) (target : ^a) (seed : uint64) =
+            if minValue > ceiling then
+                raise (ArgumentOutOfRangeException (nameof minValue, "Min value must not exceed ceiling."))
+            let range = uint64 (int64 ceiling - int64 minValue)
+            if range = 0UL then minValue
+            else
+                let bits = Randomk.toUInt64 target (Randomk.make seed)
+                int (int64 minValue + int64 (bits % range))
+
+        /// Get the element of a sequence for a target under a seed if there are any elements or None.
+        /// Each call enumerates seq, so a sequence whose order varies between calls gives varying elements.
+        /// Thread-safe.
+        static member inline randomkChoiceOpt (target : ^a) (seq : 'b seq) (seed : uint64) =
+            let array = Seq.toArray seq
+            if array.Length = 0 then None
+            else Some array.[Randomk.toIndex array.Length target (Randomk.make seed)]
+
+        /// Get the element of a sequence for a target under a seed or a default if sequence is empty.
+        /// Thread-safe.
+        static member inline randomkChoiceOrDefault (target : ^a) (default_ : 'b) (seq : 'b seq) (seed : uint64) =
+            match Gen.randomkChoiceOpt target seq seed with
+            | Some item -> item
+            | None -> default_
+
+        /// Get the element of a sequence for a target under a seed, throwing if the sequence is empty.
+        /// Thread-safe.
+        static member inline randomkChoice (target : ^a) (seq : 'b seq) (seed : uint64) =
+            match Gen.randomkChoiceOpt target seq seed with
+            | Some item -> item
+            | None -> raise (ArgumentException ("The input sequence was empty.", nameof seq))
+
+        /// Get a key of a dictionary for a target under a seed if there are any or None.
+        /// A dictionary's enumeration order isn't guaranteed, so use one whose order is stable between calls.
+        /// Thread-safe.
+        static member inline randomkKeyOpt (target : ^a) (dict : IDictionary<'k, 'v>) (seed : uint64) =
+            Gen.randomkChoiceOpt target dict.Keys seed
+
+        /// Get a value of a dictionary for a target under a seed if there are any or None.
+        /// A dictionary's enumeration order isn't guaranteed, so use one whose order is stable between calls.
+        /// Thread-safe.
+        static member inline randomkValueOpt (target : ^a) (dict : IDictionary<'k, 'v>) (seed : uint64) =
+            Gen.randomkChoiceOpt target dict.Values seed
+
+        /// Shuffle a sequence in the order for a target under a seed.
+        /// If seq is large, this may allocate to the LOH.
+        /// Thread-safe.
+        static member inline randomkShuffle (target : ^a) (seq : 'b seq) (seed : uint64) =
+            let randomk = Randomk.make seed
+            let array = Seq.toArray seq
+            for i in dec array.Length .. -1 .. 1 do
+                let j = Randomk.toIndex (inc i) (target, i) randomk
+                let item = array.[i]
+                array.[i] <- array.[j]
+                array.[j] <- item
+            array :> 'b seq
+
         /// Generate a unique name based on a 64-bit id.
         /// Thread-safe.
         static member name =
