@@ -137,7 +137,8 @@ void main()
     float metallic = texture(sampler2D(metallicTexture, materialRepeatSampler), texCoords).g * material.g;
     float ambientOcclusion = texture(sampler2D(ambientOcclusionTexture, materialRepeatSampler), texCoords).b * material.b;
     float emission = texture(sampler2D(emissionTexture, materialRepeatSampler), texCoords).r * material.a;
-    materialOut = vec4(roughness, metallic, ambientOcclusion, emission);
+    float emissionEncoded = max(emission, 0.0) / (1.0 + max(emission, 0.0)); // NOTE: maps [0, inf) to [0, 1) for the 8-bit buffer.
+    materialOut = vec4(roughness, metallic, ambientOcclusion, emissionEncoded);
 
     // compute subsurface scattering properties
     float scatterType = subsurfacePlus.g;
