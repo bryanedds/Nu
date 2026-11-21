@@ -668,7 +668,7 @@ type GameplayDispatcher () =
                 let name = enemy.EnemyName
                 if screen.EvalConditionOpt enemy.EnemyConditionOpt world && not (screen.HasTranspired (Killed name) world) || (screen.GetArea world / name).GetExists world then
                     let data = Data.Creatures[enemy.EnemyCreatureType]
-                    let fate = RandKeyed.make (screen.GetGameSeed world) |> RandKeyed.withName "rise" |> RandKeyed.withName name |> RandKeyed.toSingle
+                    let fate = Gen.randomkf ("rise", name) (screen.GetGameSeed world)
                     World.doEntity<CreatureDispatcher> name
                         [Entity.CreatureType .= enemy.EnemyCreatureType
                          Entity.Position |= enemy.EnemyPosition

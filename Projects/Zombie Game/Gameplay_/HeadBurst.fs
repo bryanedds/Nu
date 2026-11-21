@@ -25,9 +25,10 @@ module HeadBurstDispatcherExtensions =
 type HeadBurstDispatcher () =
     inherit Entity3dDispatcher (false, false, false)
 
-    /// A bit's value between zero and one, set apart by what it's for.
-    static let roll (key : RandKeyed) (name : string) =
-        key |> RandKeyed.withName name |> RandKeyed.toSingle
+    /// A bit's value between zero and one, set apart by the burst's address, the bit and what it's for. A struct
+    /// tuple, so rolling every bit every frame allocates nothing.
+    static let roll (address : string) (bit : int) (name : string) =
+        Gen.randomkf (struct ("burst", address, bit, name)) 0UL
 
     /// A value between two others, as far along as a share of the way.
     static let lerp (a : single) (b : single) (share : single) =
@@ -52,16 +53,15 @@ type HeadBurstDispatcher () =
                 Draw.shape renderPass Blood PartBall origin quatIdentity (v3Dup size) Constants.Gameplay.HeadBurstBloodColor 0.0f false world
 
             // the bits flung out of it, tumbling as they fall and lying where they land
-            let key = RandKeyed.make 0UL |> RandKeyed.withName "burst" |> RandKeyed.withName (string entity.EntityAddress)
-            for index in 0 .. dec Constants.Gameplay.HeadBurstBits do
-                let bit = key |> RandKeyed.withIndex index
+            let address = string entity.EntityAddress
+            for bit in 0 .. dec Constants.Gameplay.HeadBurstBits do
                 let (surface, color, size) =
-                    if index < Constants.Gameplay.HeadBurstBloodBits then (Blood, Constants.Gameplay.HeadBurstBloodColor, lerp 0.03f 0.065f (roll bit "size"))
-                    elif index < Constants.Gameplay.HeadBurstBits - Constants.Gameplay.HeadBurstBoneBits then (Rot, Constants.Gameplay.HeadBurstFleshColor, lerp 0.035f 0.06f (roll bit "size"))
-                    else (Bone, Constants.Gameplay.HeadBurstBoneColor, lerp 0.02f 0.035f (roll bit "size"))
-                let heading = roll bit "heading" * MathF.Tau
-                let outward = lerp 0.4f 1.4f (roll bit "outward")
-                let upward = lerp 0.6f 2.4f (roll bit "upward")
+                    if bit < Constants.Gameplay.HeadBurstBloodBits then (Blood, Constants.Gameplay.HeadBurstBloodColor, lerp 0.03f 0.065f (roll address bit "size"))
+                    elif bit < Constants.Gameplay.HeadBurstBits - Constants.Gameplay.HeadBurstBoneBits then (Rot, Constants.Gameplay.HeadBurstFleshColor, lerp 0.035f 0.06f (roll address bit "size"))
+                    else (Bone, Constants.Gameplay.HeadBurstBoneColor, lerp 0.02f 0.035f (roll address bit "size"))
+                let heading = roll address bit "heading" * MathF.Tau
+                let outward = lerp 0.4f 1.4f (roll address bit "outward")
+                let upward = lerp 0.6f 2.4f (roll address bit "upward")
                 let velocity = v3 (MathF.Cos heading * outward) upward (MathF.Sin heading * outward)
                 let rest = floor + size * 0.15f
                 let drop = max 0.0f (origin.Y - rest)
@@ -69,8 +69,8 @@ type HeadBurstDispatcher () =
                 let flight = min age landing
                 let position = origin + velocity * flight + v3 0.0f (-0.5f * gravity * flight * flight) 0.0f
                 if age < landing then
-                    let axis = Vector3.Normalize (v3 (roll bit "axisX" - 0.5f) 0.5f (roll bit "axisZ" - 0.5f))
-                    let spin = Quaternion.CreateFromAxisAngle (axis, age * lerp 4.0f 14.0f (roll bit "spin"))
+                    let axis = Vector3.Normalize (v3 (roll address bit "axisX" - 0.5f) 0.5f (roll address bit "axisZ" - 0.5f))
+                    let spin = Quaternion.CreateFromAxisAngle (axis, age * lerp 4.0f 14.0f (roll address bit "spin"))
                     Draw.shape renderPass surface PartBox position spin (v3Dup size) color 0.0f false world
                 else
                     let lying = Quaternion.CreateFromAxisAngle (v3Up, heading)
