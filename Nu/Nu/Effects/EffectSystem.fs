@@ -396,7 +396,7 @@ module EffectSystem =
                 | _ -> Log.info ("Expected Aspect for definition '" + definitionName + "'."); slice
             | None -> Log.info ("Could not find definition with name '" + definitionName + "'."); slice
         | Aspects aspects ->
-            Array.fold (fun slice aspect -> evalAspect aspect slice effectSystem) slice aspects
+            evalAspects aspects slice effectSystem
 
     and private evalAspects aspects (slice : Slice) effectSystem =
         Array.fold (fun slice aspect -> evalAspect aspect slice effectSystem) slice aspects
@@ -772,7 +772,7 @@ module EffectSystem =
         evalContents3 contents slice history effectSystem
 
     and private evalContent content slice history effectSystem =
-        let slice = Slice.copy slice // protect original slice from mutation
+        let slice = if content.NeedsDefensiveCopy then Slice.copy slice else slice
         match content with
         | Nil ->
             effectSystem
