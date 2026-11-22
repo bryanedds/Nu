@@ -507,9 +507,12 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
           BodyTargets : Dictionary<BodyId, struct (Vector3 * Quaternion)>
           BodiesTargeted : BodyId HashSet
           Characters : Dictionary<BodyId, Box2dNetKinematicCharacter>
+          SensorShapes : Dictionary<BodyId, B2ShapeId array> // NOTE: for finding the sensors that detect a body.
           Joints : Dictionary<BodyJointId, B2JointId>
-          BreakableJoints : Dictionary<BodyJointId, struct {| BreakingPoint : single; BreakingPointSquared : single |}>
+          JointsBreakable : Dictionary<BodyJointId, struct {| BreakingPoint : single; BreakingPointSquared : single |}>
+          JointsBroken : BodyJointId HashSet
           CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
+          BodyJointDeclarations : Dictionary<BodyJointId, BodyJointProperties> // NOTE: for answering joint existence.
           FluidEmitters : Dictionary<FluidEmitterId, Box2dNetFluidEmitter>
           KinematicCollisionContext : Box2dNetKinematicCollisionContext // OPTIMIZATION: presumably cached to avoid allocation?
           IntegrationMessages : IntegrationMessage List // OPTIMIZATION: cached to avoid large arrays filling up the LOH.
@@ -1159,6 +1162,9 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             
             // otherwise just attach the body shape normally
             else Box2dNetPhysicsEngine.attachBodyShape bodyId.BodySource bodyProperties bodyProperties.BodyShape body
+
+            // register any sensor shapes so intersection queries can find what they detect
+            Box2dNetPhysicsEngine.registerSensorShapes bodyId body physicsEngine
         
         // failed to add body
         else Log.error ("Could not add body for '" + scstring bodyId + "' as it already exists.")
@@ -1198,6 +1204,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             physicsEngine.BodyTargets.Remove bodyId |> ignore<bool>
             physicsEngine.BodiesTargeted.Remove bodyId |> ignore<bool>
             physicsEngine.Characters.Remove bodyId |> ignore<bool>
+            physicsEngine.SensorShapes.Remove bodyId |> ignore<bool>
             physicsEngine.KinematicCollisionContext.PushLimits.Remove body |> ignore<bool>
             B2Bodies.b2DestroyBody body
         | (false, _) -> ()
@@ -1209,6 +1216,13 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             
     /// unlike createBodyJoint, whether the body joint is re-created on connected body re-creation is unchanged.
     static member private createBodyJointInternal bodyJointProperties bodyJointId physicsEngine =
+
+        // track whether the joint is broken, a joint created unbroken being whole until it breaks
+        if bodyJointProperties.Broken
+        then physicsEngine.JointsBroken.Add bodyJointId |> ignore<bool>
+        else physicsEngine.JointsBroken.Remove bodyJointId |> ignore<bool>
+
+        // attempt to create the joint
         if bodyJointProperties.BodyJointEnabled && not bodyJointProperties.Broken then
             match bodyJointProperties.BodyJoint with
             | EmptyJoint -> ()
@@ -1224,7 +1238,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                     if physicsEngine.Joints.TryAdd (bodyJointId, joint) then
                         match bodyJointProperties.BreakingPointOpt with
                         | Some breakingPoint ->
-                            physicsEngine.BreakableJoints.Add (bodyJointId, struct {| BreakingPoint = breakingPoint; BreakingPointSquared = breakingPoint * breakingPoint |})
+                            physicsEngine.JointsBreakable.Add (bodyJointId, struct {| BreakingPoint = breakingPoint; BreakingPointSquared = breakingPoint * breakingPoint |})
                         | None -> ()
                     else Log.warn ("Could not add body joint for '" + scstring bodyJointId + "' as it already exists.")
                 | _ -> ()
@@ -1240,6 +1254,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
 
         // attempt to add body joint
         let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = createBodyJointMessage.BodyJointProperties.BodyJointIndex }
+        physicsEngine.BodyJointDeclarations[bodyJointId] <- createBodyJointMessage.BodyJointProperties
         Box2dNetPhysicsEngine.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
         
     static member private destroyBodyJointInternal (bodyJointId : BodyJointId) physicsEngine =
@@ -1248,7 +1263,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         match physicsEngine.Joints.TryGetValue bodyJointId with
         | (true, joint) ->
             physicsEngine.Joints.Remove bodyJointId |> ignore<bool>
-            physicsEngine.BreakableJoints.Remove bodyJointId |> ignore<bool>
+            physicsEngine.JointsBreakable.Remove bodyJointId |> ignore<bool>
             B2Joints.b2DestroyJoint (joint, true)
         | (false, _) -> ()
 
@@ -1265,6 +1280,8 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             | (false, _) -> ()
 
         // attempt to destroy body joint
+        physicsEngine.BodyJointDeclarations.Remove destroyBodyJointMessage.BodyJointId |> ignore<bool>
+        physicsEngine.JointsBroken.Remove destroyBodyJointMessage.BodyJointId |> ignore<bool>
         Box2dNetPhysicsEngine.destroyBodyJointInternal destroyBodyJointMessage.BodyJointId physicsEngine
 
     static member private createFluidEmitter (createFluidEmitterMessage : CreateFluidEmitterMessage) physicsEngine =
@@ -1475,6 +1492,59 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             normals[contacts.Length] <- Vector3 (normal.X, normal.Y, 0.0f) // points from ground to body
         | ValueNone -> ()
         normals
+
+    static member private registerSensorShapes bodyId body physicsEngine =
+        let shapes = Array.zeroCreate<B2ShapeId> (B2Bodies.b2Body_GetShapeCount body)
+        let count = B2Bodies.b2Body_GetShapes (body, shapes.AsSpan (), shapes.Length)
+        let sensors = Array.filter B2Shapes.b2Shape_IsSensor (Array.truncate count shapes)
+        if sensors.Length > 0 then physicsEngine.SensorShapes[bodyId] <- sensors
+
+    static member private tryGetBodyShapeIndex (shapeId : B2ShapeId) =
+        if B2Worlds.b2Shape_IsValid shapeId then
+            let userData = B2Shapes.b2Shape_GetUserData shapeId
+            if not (userData.IsEmpty ()) then ValueSome (userData.GetRef<BodyShapeIndex> ()) else ValueNone
+        else ValueNone
+
+    static member private getSensorVisitors (sensor : B2ShapeId) =
+        let capacity = B2Shapes.b2Shape_GetSensorCapacity sensor
+        let visitors = Array.zeroCreate<B2ShapeId> capacity
+        Array.truncate (B2Shapes.b2Shape_GetSensorData (sensor, visitors.AsSpan (), capacity)) visitors
+
+    static member private getBodyIntersections bodyId physicsEngine =
+        let intersections = List<BodyShapeIntersection> ()
+        let addIntersection intersectorShape intersecteeShape =
+            let intersectorOpt = Box2dNetPhysicsEngine.tryGetBodyShapeIndex intersectorShape
+            let intersecteeOpt = Box2dNetPhysicsEngine.tryGetBodyShapeIndex intersecteeShape
+            match (intersectorOpt, intersecteeOpt) with
+            | (ValueSome intersector, ValueSome intersectee) ->
+                intersections.Add { BodyShapeIntersector = intersector; BodyShapeIntersectee = intersectee }
+            | (_, _) -> ()
+        match physicsEngine.Bodies.TryGetValue bodyId with
+        | (true, body) ->
+
+            // touching contacts, which in Box2D v3 never involve sensors
+            let capacity = B2Bodies.b2Body_GetContactCapacity body
+            let contacts = Array.zeroCreate<B2ContactData> capacity
+            let count = B2Bodies.b2Body_GetContactData (body, contacts.AsSpan (), capacity)
+            for i in 0 .. dec count do
+                let contact = &contacts[i]
+                if contact.manifold.pointCount > 0 then
+                    if B2Shapes.b2Shape_GetBody contact.shapeIdA = body
+                    then addIntersection contact.shapeIdA contact.shapeIdB
+                    else addIntersection contact.shapeIdB contact.shapeIdA
+
+            // what the body's sensors detect, then the other sensors that detect the body (visitors are checked for
+            // validity since Box2D keeps destroyed ones until the next step)
+            // NOTE: the latter is linear in the number of sensor shapes in the world.
+            for KeyValue (sensorBodyId, sensors) in physicsEngine.SensorShapes do
+                for sensor in sensors do
+                    for visitor in Box2dNetPhysicsEngine.getSensorVisitors sensor do
+                        if sensorBodyId = bodyId then addIntersection sensor visitor
+                        elif B2Worlds.b2Shape_IsValid visitor && B2Shapes.b2Shape_GetBody visitor = body then
+                            addIntersection visitor sensor
+
+        | (false, _) -> ()
+        intersections.ToArray ()
 
     static member private getBodyGroundDirection bodyId physicsEngine =
         match physicsEngine.Bodies.TryGetValue bodyId with
@@ -1696,9 +1766,12 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
           BodyTargets = Dictionary HashIdentity.Structural
           BodiesTargeted = HashSet HashIdentity.Structural
           Characters = Dictionary HashIdentity.Structural
+          SensorShapes = Dictionary HashIdentity.Structural
           Joints = Dictionary HashIdentity.Structural
-          BreakableJoints = Dictionary HashIdentity.Structural
+          JointsBreakable = Dictionary HashIdentity.Structural
+          JointsBroken = HashSet HashIdentity.Structural
           CreateBodyJointMessages = Dictionary HashIdentity.Structural
+          BodyJointDeclarations = Dictionary HashIdentity.Structural
           FluidEmitters = Dictionary<FluidEmitterId, Box2dNetFluidEmitter> HashIdentity.Structural
           ContactsTracker = contactsTracker
           KinematicCollisionContext = collisionContext
@@ -1899,6 +1972,9 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         member physicsEngine.GetBodyContactNormals bodyId =
             Box2dNetPhysicsEngine.getBodyContactNormals bodyId physicsEngine
 
+        member physicsEngine.GetBodyIntersections bodyId =
+            Box2dNetPhysicsEngine.getBodyIntersections bodyId physicsEngine
+
         member physicsEngine.GetBodyLinearVelocity bodyId =
             let body = physicsEngine.Bodies[bodyId]
             Box2dNetPhysicsEngine.toVector3 (B2Bodies.b2Body_GetLinearVelocity body)
@@ -1947,7 +2023,19 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             None // no vehicle controller support
 
         member physicsEngine.GetBodyJointExists bodyJointId =
-            physicsEngine.Joints.ContainsKey bodyJointId
+
+            // NOTE: Box2D v3 can't disable a joint, so a disabled or broken joint isn't kept live here. So that this
+            // answers as the other engines do, which keep disabled and broken joints, a joint exists while it's
+            // declared, of a supported type, and both of its bodies exist.
+            match physicsEngine.BodyJointDeclarations.TryGetValue bodyJointId with
+            | (true, bodyJointProperties) ->
+                bodyJointProperties.BodyJoint.IsBox2dNetBodyJoint &&
+                physicsEngine.Bodies.ContainsKey bodyJointProperties.BodyJointTarget &&
+                physicsEngine.Bodies.ContainsKey bodyJointProperties.BodyJointTarget2
+            | (false, _) -> false
+
+        member physicsEngine.GetBodyJointBroken bodyJointId =
+            physicsEngine.JointsBroken.Contains bodyJointId
 
         member physicsEngine.GetBodyJointMotorSpeed bodyJointId =
             match physicsEngine.Joints.TryGetValue bodyJointId with
@@ -2107,7 +2195,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                     | None -> ()
                 
                 // collect joint breaks
-                for KeyValue (jointId, breakableJoint) in physicsEngine.BreakableJoints do
+                for KeyValue (jointId, breakableJoint) in physicsEngine.JointsBreakable do
                     let joint = physicsEngine.Joints[jointId]
                     let mutable force = B2Joints.b2Joint_GetConstraintForce joint
                     let forceSquared = B2MathFunction.b2LengthSquared &force
@@ -2117,6 +2205,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                                 { BodyJointId = (B2Joints.b2Joint_GetUserData joint).GetRef<BodyJointId> ()
                                   BreakingPoint = breakableJoint.BreakingPoint
                                   BreakingOverflow = sqrt forceSquared - breakableJoint.BreakingPoint })
+                        physicsEngine.JointsBroken.Add jointId |> ignore<bool>
                         Box2dNetPhysicsEngine.destroyBodyJointInternal jointId physicsEngine
 
                 // collect penetrations for non-sensors that aren't ground penetrations by characters
@@ -2280,16 +2369,19 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
             | _ -> ()
 
         member physicsEngine.ClearInternal () =
-            physicsEngine.FluidEmitters.Clear ()
-            physicsEngine.Joints.Clear ()
-            physicsEngine.BreakableJoints.Clear ()
             physicsEngine.Bodies.Clear ()
             physicsEngine.BodyGravityOverrides.Clear ()
             physicsEngine.BodyTargets.Clear ()
             physicsEngine.BodiesTargeted.Clear ()
             physicsEngine.Characters.Clear ()
-            physicsEngine.KinematicCollisionContext.PushLimits.Clear ()
+            physicsEngine.SensorShapes.Clear ()
+            physicsEngine.Joints.Clear ()
+            physicsEngine.JointsBreakable.Clear ()
+            physicsEngine.JointsBroken.Clear ()
             physicsEngine.CreateBodyJointMessages.Clear ()
+            physicsEngine.BodyJointDeclarations.Clear ()
+            physicsEngine.FluidEmitters.Clear ()
+            physicsEngine.KinematicCollisionContext.PushLimits.Clear ()
             let contextId = physicsEngine.PhysicsContextId
             physicsEngine.PhysicsContextId <- Box2dNetPhysicsEngine.makePhysicsContext (B2Worlds.b2World_GetGravity contextId) physicsEngine.ContactsTracker
             B2Worlds.b2DestroyWorld contextId

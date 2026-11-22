@@ -29,6 +29,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
           BodyTargets : Dictionary<BodyId, struct (Vector3 * Quaternion)>
           BodiesTargeted : BodyId HashSet
           Joints : Dictionary<BodyJointId, Dynamics.Joints.Joint>
+          JointsBroken : BodyJointId HashSet
           CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
           IntegrationMessages : IntegrationMessage List
           PenetrationHandler : OnCollisionEventHandler
@@ -94,7 +95,9 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
     static member private handleBreak
         (joint : Joint)
         (jointError : single)
+        (jointsBroken : BodyJointId HashSet)
         (integrationMessages : IntegrationMessage List) =
+        jointsBroken.Add (joint.Tag :?> BodyJointId) |> ignore<bool>
         let jointBreakPointPixel = AetherPhysicsEngine.toPixel joint.Breakpoint
         let jointErrorPixel = AetherPhysicsEngine.toPixel jointError
         let bodyJointBreakMessage =
@@ -446,6 +449,13 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
             
     /// unlike createBodyJoint, whether the body joint is re-created on connected body re-creation is unchanged.
     static member private createBodyJointInternal bodyJointProperties bodyJointId physicsEngine =
+
+        // track whether the joint is broken, a joint created unbroken being whole until it breaks
+        if bodyJointProperties.Broken
+        then physicsEngine.JointsBroken.Add bodyJointId |> ignore<bool>
+        else physicsEngine.JointsBroken.Remove bodyJointId |> ignore<bool>
+
+        // attempt to create the joint
         let resultOpt =
             match bodyJointProperties.BodyJoint with
             | EmptyJoint -> None
@@ -507,6 +517,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
             | (false, _) -> ()
 
         // attempt to destroy body joint
+        physicsEngine.JointsBroken.Remove destroyBodyJointMessage.BodyJointId |> ignore<bool>
         AetherPhysicsEngine.destroyBodyJointInternal destroyBodyJointMessage.BodyJointId physicsEngine
 
     static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
@@ -664,6 +675,16 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
                 let normal = if bodyShapeIndex.BodyId = bodyId then -normal else normal // negate normal when appropriate
                 Vector3 (normal.X, normal.Y, 0.0f)|]
 
+    static member private getBodyIntersections bodyId physicsEngine =
+        [|for contact in AetherPhysicsEngine.getBodyContacts bodyId physicsEngine do
+            if contact.IsTouching then // contacts from the broad phase may not be touching
+                match (contact.FixtureA.Tag, contact.FixtureB.Tag) with
+                | (:? BodyShapeIndex as bodyShapeA, (:? BodyShapeIndex as bodyShapeB)) ->
+                    if bodyShapeA.BodyId = bodyId
+                    then { BodyShapeIntersector = bodyShapeA; BodyShapeIntersectee = bodyShapeB }
+                    else { BodyShapeIntersector = bodyShapeB; BodyShapeIntersectee = bodyShapeA }
+                | (_, _) -> ()|]
+
     static member private getBodyGroundDirection bodyId physicsEngine =
         match physicsEngine.Bodies.TryGetValue bodyId with
         | (true, (gravity, body)) ->
@@ -772,13 +793,16 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         let integrationMessages = List ()
         let penetrationHandler = fun fixture fixture2 collision -> AetherPhysicsEngine.handlePenetration fixture fixture2 collision integrationMessages
         let separationHandler = fun fixture fixture2 _ -> AetherPhysicsEngine.handleSeparation fixture fixture2 integrationMessages
-        let breakHandler = fun joint jointError -> AetherPhysicsEngine.handleBreak joint jointError integrationMessages
+        let jointsBroken = HashSet HashIdentity.Structural
+        let breakHandler = fun joint jointError ->
+            AetherPhysicsEngine.handleBreak joint jointError jointsBroken integrationMessages
         let physicsEngine =
             { PhysicsContext = World (AetherPhysicsEngine.toPhysicsV2 gravity)
               Bodies = Dictionary<BodyId, Gravity * Dynamics.Body> HashIdentity.Structural
               BodyTargets = Dictionary HashIdentity.Structural
               BodiesTargeted = HashSet HashIdentity.Structural
               Joints = Dictionary<BodyJointId, Dynamics.Joints.Joint> HashIdentity.Structural
+              JointsBroken = jointsBroken
               CreateBodyJointMessages = Dictionary<BodyId, CreateBodyJointMessage List> HashIdentity.Structural
               IntegrationMessages = integrationMessages
               PenetrationHandler = penetrationHandler
@@ -800,6 +824,9 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
 
         member physicsEngine.GetBodyContactNormals bodyId =
             AetherPhysicsEngine.getBodyContactNormals bodyId physicsEngine
+
+        member physicsEngine.GetBodyIntersections bodyId =
+            AetherPhysicsEngine.getBodyIntersections bodyId physicsEngine
 
         member physicsEngine.GetBodyLinearVelocity bodyId =
             let (_, body) = physicsEngine.Bodies[bodyId]
@@ -871,6 +898,9 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
 
         member physicsEngine.GetBodyJointExists bodyJointId =
             physicsEngine.Joints.ContainsKey bodyJointId
+
+        member physicsEngine.GetBodyJointBroken bodyJointId =
+            physicsEngine.JointsBroken.Contains bodyJointId
 
         member physicsEngine.GetBodyJointMotorSpeed bodyJointId =
             match physicsEngine.Joints.TryGetValue bodyJointId with
@@ -1012,10 +1042,11 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
             | _ -> ()
 
         member physicsEngine.ClearInternal () =
-            physicsEngine.Joints.Clear ()
             physicsEngine.Bodies.Clear ()
             physicsEngine.BodyTargets.Clear ()
             physicsEngine.BodiesTargeted.Clear ()
+            physicsEngine.Joints.Clear ()
+            physicsEngine.JointsBroken.Clear ()
             physicsEngine.CreateBodyJointMessages.Clear ()
             physicsEngine.IntegrationMessages.Clear ()
             physicsEngine.PhysicsContext.Clear ()

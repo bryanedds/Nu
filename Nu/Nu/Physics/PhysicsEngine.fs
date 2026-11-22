@@ -166,6 +166,11 @@ type BodySeparationMessage =
     { BodyShapeSource : BodyShapeIndex
       BodyShapeTarget : BodyShapeIndex }
 
+/// A body's shape intersecting another body's shape, as found by querying the body's intersections.
+type BodyShapeIntersection =
+    { BodyShapeIntersector : BodyShapeIndex
+      BodyShapeIntersectee : BodyShapeIndex }
+
 /// A message from the physics system describing the updated transform of a body.
 type BodyTransformMessage =
     { BodyId : BodyId
@@ -271,6 +276,12 @@ type PhysicsEngine =
     // TODO: Jolt's contact normals are defined as "direction along which to move body 2 out of collision along the shortest path".
     // is that definition is consistent with "point towards the body"? should we settle on "point towards the body"?
     abstract GetBodyContactNormals : bodyId : BodyId -> Vector3 array
+
+    /// Get what intersects the shapes of the body with the given body id as of the last physics step - its touching
+    /// contacts and what its sensors detect or what detects it - each intersector being one of the body's shapes.
+    /// Unlike penetration and separation messages, which report changes, this reports the current state, so
+    /// intersection state derived from it can't drift from the physics engine's.
+    abstract GetBodyIntersections : bodyId : BodyId -> BodyShapeIntersection array
     
     /// Get the linear velocity of the body with the given body id.
     abstract GetBodyLinearVelocity : bodyId : BodyId -> Vector3
@@ -310,6 +321,11 @@ type PhysicsEngine =
     
     /// Check that the physics engine contains the body with the given body id.
     abstract GetBodyJointExists : bodyJointId : BodyJointId -> bool
+
+    /// Check that the body joint with the given body joint id is broken, whether it broke during simulation or was
+    /// declared broken. A joint is whole again once it's created unbroken, as when it's re-declared or one of its
+    /// bodies is re-created.
+    abstract GetBodyJointBroken : bodyJointId : BodyJointId -> bool
 
     /// Get the motor speed of the body joint with the given body joint id.
     abstract GetBodyJointMotorSpeed : bodyJointId : BodyJointId -> single
@@ -358,6 +374,7 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.Gravity = v3Zero
         member physicsEngine.GetBodyExists _ = false
         member physicsEngine.GetBodyContactNormals _ = failwith "No bodies in StubPhysicsEngine"
+        member physicsEngine.GetBodyIntersections _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyLinearVelocity _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyAngularVelocity _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyToGroundContactNormals _ = failwith "No bodies in StubPhysicsEngine"
@@ -371,6 +388,7 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.GetBodyWheelStateOpt (_, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyVehicleStateOpt _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyJointExists _ = failwith "No body joints in StubPhysicsEngine"
+        member physicsEngine.GetBodyJointBroken _ = failwith "No body joints in StubPhysicsEngine"
         member physicsEngine.GetBodyJointMotorSpeed _ = failwith "No body joints in StubPhysicsEngine"
         member physicsEngine.GetBodyJointTargetAngle _ = failwith "No body joints in StubPhysicsEngine"
         member physicsEngine.GetFluidEmitterExists _ = failwith "No fluid emitters in StubPhysicsEngine"

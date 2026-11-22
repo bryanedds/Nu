@@ -158,6 +158,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
           BodyContactEvents : BodyContactEvent HashSet
           BodyCollisionsGround : Dictionary<BodyId, Dictionary<BodyId, Vector3>>
           BodyCollisionsAll : Dictionary<BodyId, Dictionary<BodyId, Vector3>>
+          BodyIntersections : Dictionary<BodyId, BodyId HashSet> // NOTE: includes characters and sensors.
           BodyUserData : Dictionary<BodyID, BodyUserData>
           Bodies : Dictionary<BodyId, BodyID>
           BodyTargets : Dictionary<BodyId, struct (Vector3 * Quaternion)>
@@ -166,6 +167,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
           BodyConstraintEvents : BodyConstraintEvent List
           BodyConstraintBreakingPoints : Dictionary<BodyJointId, single>
           BodyConstraints : Dictionary<BodyJointId, TwoBodyConstraint>
+          BodyConstraintsBroken : BodyJointId HashSet
           IntegrationMessages : IntegrationMessage List }
 
     static member private sanitizeHeight (height : single) =
@@ -195,6 +197,27 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                 Log.warnOnce "Invalid utilization of BodyShape.PropertiesOpt in JoltPhysicsEngine. Only BodyShapeProperties.BodyShapeIndex can be utilized in the context of Jolt physics."
         | None -> ()
 
+    static member private addBodyIntersection (bodyId : BodyId) (body2Id : BodyId) physicsEngine =
+        match physicsEngine.BodyIntersections.TryGetValue bodyId with
+        | (true, intersections) -> intersections.Add body2Id |> ignore<bool>
+        | (false, _) -> physicsEngine.BodyIntersections[bodyId] <- hashSetPlus HashIdentity.Structural [body2Id]
+
+    static member private removeBodyIntersection (bodyId : BodyId) (body2Id : BodyId) physicsEngine =
+        match physicsEngine.BodyIntersections.TryGetValue bodyId with
+        | (true, intersections) ->
+            intersections.Remove body2Id |> ignore<bool>
+            if intersections.Count = 0 then physicsEngine.BodyIntersections.Remove bodyId |> ignore<bool>
+        | (false, _) -> ()
+
+    /// Remove a body's intersections both ways, since a destroyed body's contacts are never reported as removed (its
+    /// user data is gone by then).
+    static member private removeBodyIntersections (bodyId : BodyId) physicsEngine =
+        match physicsEngine.BodyIntersections.TryGetValue bodyId with
+        | (true, intersections) ->
+            for body2Id in intersections do JoltPhysicsEngine.removeBodyIntersection body2Id bodyId physicsEngine
+            physicsEngine.BodyIntersections.Remove bodyId |> ignore<bool>
+        | (false, _) -> ()
+
     static member private handleBodyPenetration (bodyId : BodyId) (body2Id : BodyId) (contactNormal : Vector3) physicsEngine =
 
         // construct body penetration message
@@ -204,6 +227,9 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
               Normal = contactNormal }
         let integrationMessage = BodyPenetrationMessage bodyPenetrationMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
+
+        // track body intersections
+        JoltPhysicsEngine.addBodyIntersection bodyId body2Id physicsEngine
 
         // track body ground collisions
         let theta = contactNormal.Dot Vector3.UnitY |> max -1.0f |> min 1.0f |> acos
@@ -226,6 +252,9 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         let integrationMessage = BodySeparationMessage bodySeparationMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
 
+        // track body intersections
+        JoltPhysicsEngine.removeBodyIntersection bodyId body2Id physicsEngine
+
         // track body ground collisions
         match physicsEngine.BodyCollisionsGround.TryGetValue bodyId with
         | (true, collisions) ->
@@ -247,6 +276,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
               Normal = contactNormal }
         let integrationMessage = BodyPenetrationMessage bodyPenetrationMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
+        JoltPhysicsEngine.addBodyIntersection bodyId body2Id physicsEngine
 
     static member private handleCharacterSeparation (bodyId : BodyId) (body2Id : BodyId) physicsEngine =
         let bodySeparationMessage =
@@ -254,6 +284,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
               BodyShapeTarget = { BodyId = body2Id; BodyShapeIndex = 0 }}
         let integrationMessage = BodySeparationMessage bodySeparationMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
+        JoltPhysicsEngine.removeBodyIntersection bodyId body2Id physicsEngine
 
     /// Store the body shape index of a body's sole shape as its body shape's user data since Jolt creates a compound
     /// shape of one sub-shape as just that sub-shape, losing the sub-shape's user data.
@@ -1111,6 +1142,9 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                 JoltPhysicsEngine.destroyBodyJointInternal bodyJointId physicsEngine
         | (false, _) -> ()
 
+        // forget body intersections
+        JoltPhysicsEngine.removeBodyIntersections bodyId physicsEngine
+
         // attempt to destroy character
         match physicsEngine.Characters.TryGetValue bodyId with
         | (true, character) ->
@@ -1148,6 +1182,13 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             destroyBodiesMessage.BodyIds
 
     static member private createBodyJointInternal bodyJointProperties bodyJointId physicsEngine =
+
+        // track whether the joint is broken, a joint created unbroken being whole until it breaks
+        if bodyJointProperties.Broken
+        then physicsEngine.BodyConstraintsBroken.Add bodyJointId |> ignore<bool>
+        else physicsEngine.BodyConstraintsBroken.Remove bodyJointId |> ignore<bool>
+
+        // attempt to create the joint
         match bodyJointProperties.BodyJoint with
         | EmptyJoint -> ()
         | JoltBodyJoint bodyJoint ->
@@ -1204,6 +1245,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             | (false, _) -> ()
 
         // attempt to destroy body joint
+        physicsEngine.BodyConstraintsBroken.Remove destroyBodyJointMessage.BodyJointId |> ignore<bool>
         JoltPhysicsEngine.destroyBodyJointInternal destroyBodyJointMessage.BodyJointId physicsEngine
 
     static member private tryGetBodyID bodyId physicsEngine =
@@ -1672,6 +1714,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
           BodyContactEvents = bodyContactEvents
           BodyCollisionsGround = dictPlus HashIdentity.Structural []
           BodyCollisionsAll = dictPlus HashIdentity.Structural []
+          BodyIntersections = dictPlus HashIdentity.Structural []
           BodyUserData = bodyUserData
           Bodies = dictPlus HashIdentity.Structural []
           BodyTargets = dictPlus HashIdentity.Structural []
@@ -1680,6 +1723,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
           BodyConstraintEvents = List ()
           BodyConstraintBreakingPoints = dictPlus HashIdentity.Structural []
           BodyConstraints = dictPlus HashIdentity.Structural []
+          BodyConstraintsBroken = hashSetPlus HashIdentity.Structural []
           IntegrationMessages = List () }
 
     interface PhysicsEngine with
@@ -1704,6 +1748,14 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                   match physicsEngine.BodyCollisionsAll.TryGetValue bodyId with
                   | (true, collisions) -> for collision in collisions.Values do collision
                   | (false, _) -> ()|]
+
+        member physicsEngine.GetBodyIntersections bodyId =
+            [|match physicsEngine.BodyIntersections.TryGetValue bodyId with
+              | (true, intersections) ->
+                  for body2Id in intersections do
+                      { BodyShapeIntersector = { BodyId = bodyId; BodyShapeIndex = 0 }
+                        BodyShapeIntersectee = { BodyId = body2Id; BodyShapeIndex = 0 }}
+              | (false, _) -> ()|]
 
         member physicsEngine.GetBodyLinearVelocity bodyId =
             match physicsEngine.Characters.TryGetValue bodyId with
@@ -1844,6 +1896,9 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
 
         member physicsEngine.GetBodyJointExists bodyJointId =
             physicsEngine.BodyConstraints.ContainsKey bodyJointId
+
+        member physicsEngine.GetBodyJointBroken bodyJointId =
+            physicsEngine.BodyConstraintsBroken.Contains bodyJointId
 
         member physicsEngine.GetBodyJointMotorSpeed _ =
             0.0f // no body joint motor speed support
@@ -2037,6 +2092,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                         let breakingDelta = lambdaPosition - breakingPoint
                         if breakingDelta >= 0.0f && constrain.Enabled then
                             physicsEngine.BodyConstraintEvents.Add (BodyConstraintBreak (bodyJointId, breakingPoint, breakingDelta))
+                            physicsEngine.BodyConstraintsBroken.Add bodyJointId |> ignore<bool>
                             constrain.Enabled <- false
                     | ValueNone -> ()
 
@@ -2093,6 +2149,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             // clear body collision tracking
             physicsEngine.BodyCollisionsGround.Clear ()
             physicsEngine.BodyCollisionsAll.Clear ()
+            physicsEngine.BodyIntersections.Clear ()
 
             // destroy constraints
             for constrain in physicsEngine.BodyConstraints.Values do
@@ -2112,6 +2169,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             physicsEngine.BodyConstraintEvents.Clear ()
             physicsEngine.BodyConstraintBreakingPoints.Clear ()
             physicsEngine.BodyConstraints.Clear ()
+            physicsEngine.BodyConstraintsBroken.Clear ()
 
             // clear vehicle step listeners and constraints
             for vehicleConstraint in physicsEngine.VehicleConstraints.Values do
