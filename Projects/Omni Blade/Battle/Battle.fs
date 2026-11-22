@@ -1852,6 +1852,26 @@ module Battle =
             withSignals sigs battle
         | None -> just battle
 
+    and private updateWoundsInflicted battle world =
+        match battle.BattleState_ with
+        | BattleRunning when battle.MessageOpt_.IsNone ->
+            match battle.CurrentCommandOpt_ with
+            | Some currentCommand when currentCommand.ActionCommand.Action.IsWound ->
+                let (signals, battle) = updateWound currentCommand.ActionCommand.TargetIndexOpt battle world
+                if battle.CurrentCommandOpt_.IsNone then
+                    let (signals2, battle) = updateWoundsInflicted battle world
+                    (signals @ signals2, battle)
+                else (signals, battle)
+            | Some _ -> just battle
+            | None ->
+                match battle.ActionCommands_ with
+                | FQueue.Cons (nextCommand, futureCommands) when nextCommand.Action.IsWound ->
+                    let battle = setActionCommands futureCommands battle
+                    let battle = setCurrentCommandOpt (Some (CurrentCommand.make battle.BattleTime_ nextCommand)) battle
+                    updateWoundsInflicted battle world
+                | _ -> just battle
+        | _ -> just battle
+
     and private updateReadying startTime battle world =
         let localTime = battle.BattleTime_ - startTime
         if localTime = 0L then
@@ -1880,14 +1900,19 @@ module Battle =
         let sourceIndex = currentCommand.ActionCommand.SourceIndex
         let targetIndexOpt = currentCommand.ActionCommand.TargetIndexOpt
         let observerIndexOpt = currentCommand.ActionCommand.ObserverIndexOpt
-        match currentCommand.ActionCommand.Action with
-        | Attack -> updateAttack sourceIndex targetIndexOpt localTime battle world
-        | Defend -> updateDefend sourceIndex localTime battle
-        | Tech techType -> updateTech techType sourceIndex targetIndexOpt localTime battle
-        | Consume consumable -> updateConsume consumable sourceIndex targetIndexOpt localTime battle world
-        | Consequence consequence -> updateConsequence sourceIndex targetIndexOpt observerIndexOpt consequence localTime battle
-        | ActionType.Message (text, lifeTime) -> updateMessage text lifeTime localTime battle
-        | Wound -> updateWound targetIndexOpt battle world
+        let (signals, battle) =
+            match currentCommand.ActionCommand.Action with
+            | Attack -> updateAttack sourceIndex targetIndexOpt localTime battle world
+            | Defend -> updateDefend sourceIndex localTime battle
+            | Tech techType -> updateTech techType sourceIndex targetIndexOpt localTime battle
+            | Consume consumable -> updateConsume consumable sourceIndex targetIndexOpt localTime battle world
+            | Consequence consequence -> updateConsequence sourceIndex targetIndexOpt observerIndexOpt consequence localTime battle
+            | ActionType.Message (text, lifeTime) -> updateMessage text lifeTime localTime battle
+            | Wound -> updateWound targetIndexOpt battle world
+        if not currentCommand.ActionCommand.Action.IsWound then
+            let (signals2, battle) = updateWoundsInflicted battle world
+            (signals @ signals2, battle)
+        else (signals, battle)
 
     and private updateNextCommand nextCommand futureCommands battle =
         let command = CurrentCommand.make battle.BattleTime_ nextCommand
