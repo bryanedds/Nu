@@ -40,6 +40,7 @@ module EffectTests =
           Specularity = 1.0f
           LightCutoff = 1.0f
           Volume = 1.0f
+          PerimeterCentered = true
           Enabled = true
           UserDefinedSettings = UserDefinedSettings.defaultSettings }
 

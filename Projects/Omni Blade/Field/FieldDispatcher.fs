@@ -57,6 +57,23 @@ type FieldDispatcher () =
             true
         else false
 
+    // derive the props the avatar intersects from what physics says intersects it now, rather than from penetration
+    // and separation events, so the field can't drift from physics when its model is replaced from outside, such as by
+    // editing it in Gaia
+    static let getAvatarIntersectedPropIds world =
+        let avatarBodyId = Simulants.FieldAvatar.GetBodyId world
+        if World.getBodyExists avatarBodyId world then
+            World.getBodyIntersections avatarBodyId world
+            |> Seq.filter (fun intersection ->
+                intersection.BodyShapeIntersectee.BodyId.BodySource :? Entity &&
+                isIntersectedProp intersection.BodyShapeIntersector intersection.BodyShapeIntersectee world)
+            |> Seq.map (fun intersection ->
+                let prop = intersection.BodyShapeIntersectee.BodyId.BodySource :?> Entity
+                (prop.GetPropPlus world).Prop.PropId)
+            |> Seq.distinct
+            |> List.ofSeq
+        else []
+
     override this.GetFallbackModel (_, screen, world) =
         if screen.GetSelected world || Simulants.Battle.GetSelected world
         then Field.initial world.UpdateTime Slot1
@@ -91,8 +108,10 @@ type FieldDispatcher () =
         match message with
         | Update ->
 
-            // update field
-            Field.update field world
+            // update field, synchronizing the avatar intersected prop ids with what physics says intersects it now
+            // since a direct model edit in Gaia may cause it to become out of date
+            let avatarIntersectedPropIds = getAvatarIntersectedPropIds world
+            Field.update avatarIntersectedPropIds field world
 
         | AdvanceTime ->
 
@@ -193,10 +212,8 @@ type FieldDispatcher () =
 
             // add collided body shape
             let field =
-                if isIntersectedProp penetration.BodyShapePenetrator penetration.BodyShapePenetratee world then
-                    let field = Field.mapAvatarCollidedPropIds (List.cons ((penetration.BodyShapePenetratee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId) field
-                    let field = Field.mapAvatarIntersectedPropIds (List.cons ((penetration.BodyShapePenetratee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId) field
-                    field
+                if isIntersectedProp penetration.BodyShapePenetrator penetration.BodyShapePenetratee world
+                then Field.mapAvatarCollidedPropIds (List.cons ((penetration.BodyShapePenetratee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId) field
                 else field
             just field
 
@@ -204,10 +221,8 @@ type FieldDispatcher () =
 
             // add separated body shape
             let field =
-                if isIntersectedProp separation.BodyShapeSeparator separation.BodyShapeSeparatee world then
-                    let field = Field.mapAvatarSeparatedPropIds (List.cons ((separation.BodyShapeSeparatee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId) field
-                    let field = Field.mapAvatarIntersectedPropIds (List.remove ((=) ((separation.BodyShapeSeparatee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId)) field
-                    field
+                if isIntersectedProp separation.BodyShapeSeparator separation.BodyShapeSeparatee world
+                then Field.mapAvatarSeparatedPropIds (List.cons ((separation.BodyShapeSeparatee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId) field
                 else field
             just field
 

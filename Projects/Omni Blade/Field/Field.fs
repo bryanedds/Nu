@@ -1217,11 +1217,15 @@ module Field =
             | None -> Right field
         | Some _ -> Right field
 
-    let update field world =
+    let update avatarIntersectedPropIds field world =
 
         // ensure we're playing
         match field.FieldState_ with
         | Playing ->
+
+            // update avater intersected prop IDs
+            let field =
+                { field with AvatarIntersectedPropIds_ = avatarIntersectedPropIds }
 
             // update dialog
             let field =
