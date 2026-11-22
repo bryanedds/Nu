@@ -17,6 +17,8 @@
 		<Compile Include="OctreeTests.fs" />
 		<Compile Include="AStarTests.fs" />
 		<Compile Include="FluidEmitterTests.fs" />
+		<Compile Include="PhysicsEngineQueryTests.fs" />
+		<Compile Include="EffectTests.fs" />
 		<Compile Include="WorldTests.fs" />
 		<Compile Include="NamedSubscriptionTests.fs" />
 		<Compile Include="TraversalInterpolatedFacetTests.fs" />

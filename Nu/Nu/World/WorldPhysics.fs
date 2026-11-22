@@ -110,6 +110,18 @@ module WorldPhysics =
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
                 [||]
 
+        /// Get what intersects the shapes of the body with the given body id as of the last physics step - its
+        /// touching contacts and what its sensors detect or what detects it - each intersector being one of the body's
+        /// shapes.
+        static member getBodyIntersections bodyId (world : World) =
+            if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine3d.GetBodyIntersections bodyId
+            elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine2d.GetBodyIntersections bodyId
+            else
+                Log.info ("Body for '" + scstring bodyId + "' not found.")
+                [||]
+
         /// Get the linear velocity of the body with the given body id.
         static member getBodyLinearVelocity bodyId (world : World) =
             if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
@@ -237,6 +249,13 @@ module WorldPhysics =
         static member getBodyJointExists bodyJointId (world : World) =
             world.Subsystems.PhysicsEngine3d.GetBodyJointExists bodyJointId ||
             world.Subsystems.PhysicsEngine2d.GetBodyJointExists bodyJointId
+
+        /// Check that the body joint with the given body joint id is broken, whether it broke during simulation or
+        /// was declared broken. A joint is whole again once it's created unbroken, as when it's re-declared or one of
+        /// its bodies is re-created.
+        static member getBodyJointBroken bodyJointId (world : World) =
+            world.Subsystems.PhysicsEngine3d.GetBodyJointBroken bodyJointId ||
+            world.Subsystems.PhysicsEngine2d.GetBodyJointBroken bodyJointId
 
         /// Get the enabled-ness of the motor of the body joint with the given body joint id.
         static member getBodyJointMotorSpeed bodyId (world : World) =
