@@ -8,6 +8,20 @@ open Prime
 open Nu
 open BattleInteractionSystem
 
+/// Where the battle's cursor is, for the gamepad and keyboard - whose input it's in, which of their menus, and what
+/// it's on.
+type BattleCursor =
+    { CursorAllyOpt : CharacterIndex option
+      CursorMenu : string // "Regular", "Tech", "Consumable", "Reticles" or "Result"
+      CursorIndex : int
+      CursorParents : (string * int) list } // the menus under this one and what the cursor was on in each
+
+    static member initial =
+        { CursorAllyOpt = None
+          CursorMenu = ""
+          CursorIndex = 0
+          CursorParents = [] }
+
 type BattleMessage =
     | Update
     | UpdateRideTokens of Map<string, Effects.Slice>
@@ -129,7 +143,9 @@ module Battle =
               ActionCommands_ : ActionCommand FQueue
               MessageOpt_ : (int64 * int64 * Dialog) option
               DialogOpt_ : Dialog option
-              BattleSpeed_ : BattleSpeed }
+              BattleSpeed_ : BattleSpeed
+              BattleCursor_ : BattleCursor
+              InputAllyOpt_ : CharacterIndex option } // whose ring menus are in use while the pointing hand shows
 
         (* Local Properties *)
         member this.BattleTime = this.BattleTime_
@@ -148,6 +164,8 @@ module Battle =
         member this.MessageOpt = this.MessageOpt_
         member this.DialogOpt = this.DialogOpt_
         member this.BattleSpeed = this.BattleSpeed_
+        member this.BattleCursor = this.BattleCursor_
+        member this.InputAllyOpt = this.InputAllyOpt_
 
     (* Low-Level Operations *)
 
@@ -162,6 +180,14 @@ module Battle =
 
     let setDialogOpt dialogOpt field =
         { field with DialogOpt_ = dialogOpt }
+
+    let setBattleCursor cursor battle =
+        { battle with BattleCursor_ = cursor }
+
+    /// Set the ally whose ring menus are in use while the pointing hand shows, the others' showing disabled - none
+    /// while it doesn't show.
+    let setInputAllyOpt inputAllyOpt battle =
+        { battle with InputAllyOpt_ = inputAllyOpt }
 
     let setCurrentCommandOpt currentCommandOpt battle =
         { battle with CurrentCommandOpt_ = currentCommandOpt }
@@ -2227,7 +2253,9 @@ module Battle =
           ActionCommands_ = FQueue.empty
           MessageOpt_ = None
           DialogOpt_ = None
-          BattleSpeed_ = battleSpeed }
+          BattleSpeed_ = battleSpeed
+          BattleCursor_ = BattleCursor.initial
+          InputAllyOpt_ = None }
 
     let empty =
         match Map.tryFind EmptyBattle Data.Value.Battles with
@@ -2247,7 +2275,9 @@ module Battle =
               ActionCommands_ = FQueue.empty
               MessageOpt_ = None
               DialogOpt_ = None
-              BattleSpeed_ = WaitSpeed }
+              BattleSpeed_ = WaitSpeed
+              BattleCursor_ = BattleCursor.initial
+              InputAllyOpt_ = None }
         | None -> failwith "Expected data for DebugBattle to be available."
 
 type Battle = Battle.Battle

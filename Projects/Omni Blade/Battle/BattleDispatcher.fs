@@ -15,9 +15,6 @@ module BattleExtensions =
         member this.Battle = this.ModelGeneric<Battle> ()
         member this.ConcludingBattleEvent = Events.ConcludingBattleEvent --> this
         member this.ConcludeBattleEvent = Events.ConcludeBattleEvent --> this
-        member this.GetBattleCursor world : BattleCursor = this.Get (nameof this.BattleCursor) world
-        member this.SetBattleCursor (value : BattleCursor) world = this.Set (nameof this.BattleCursor) value world
-        member this.BattleCursor = lens (nameof this.BattleCursor) this this.GetBattleCursor this.SetBattleCursor
 
 type BattleDispatcher () =
     inherit ScreenDispatcher<Battle, BattleMessage, BattleCommand> (Battle.empty : Battle)
@@ -36,9 +33,6 @@ type BattleDispatcher () =
             entity.SetSelfDestruct true world
             entity.SetEffectDescriptor descriptor world)
             screen world
-
-    static member Properties =
-        [nonPersistent Screen.BattleCursor BattleCursor.initial]
 
     override this.Definitions (_, _) =
         [Screen.UpdateEvent => ProcessInput // before the update, as gui clicks are handled
@@ -163,20 +157,29 @@ type BattleDispatcher () =
         match command with
         | ProcessInput ->
             if screen.GetIdling world then
-                let (cursor, signals, _) = BattleInput.update (Game.GetIntent world) battle (screen.GetBattleCursor world) world
-                screen.SetBattleCursor cursor world
+                let (cursor, signals, _) = BattleInput.update (Game.GetIntent world) battle battle.BattleCursor world
                 for signal in signals do screen.Signal signal world
+
+                // the cursor follows what the signals changed now rather than next frame, so a ring shown again is
+                // turned before it's drawn, and while the pointer shows, only the rings of the ally it's in are in use
+                let battle = screen.GetBattle world
+                let (cursor, _, _) = BattleInput.update Intent.empty battle cursor world
+                let inputAllyOpt = if (Game.GetIntentState world).PointerHidden then None else cursor.CursorAllyOpt
+                screen.SetBattle (battle |> Battle.setBattleCursor cursor |> Battle.setInputAllyOpt inputAllyOpt) world
 
                 // the focus of the ring the cursor's in follows it, the rings it's left staying as they were
                 match BattleInput.tryGetTurningRingFocus (screen.GetBattle world) cursor world with
                 | Some (ring, item) when ring.GetExists world ->
                     if ring.GetRingMenuFocusOpt world <> Some item then
-                        // right turns the ring counterclockwise, left clockwise
+                        // right turns the ring counterclockwise, left clockwise, down or up the way it last turned,
+                        // and otherwise, as when a ring's shown again on coming back from one opened over it, the
+                        // ring's at its item at once, before it's drawn
+                        ring.SetRingMenuFocusOpt (Some item) world
                         match (Game.GetIntent world).Step with
                         | Some Rightward -> ring.SetRingMenuSpin -1.0f world
                         | Some Leftward -> ring.SetRingMenuSpin 1.0f world
-                        | Some _ | None -> ()
-                        ring.SetRingMenuFocusOpt (Some item) world
+                        | Some (Downward | Upward) -> ()
+                        | None -> RingMenuDispatcher.snapToFocus ring world
                 | Some _ | None -> ()
 
         | UpdateEye ->
@@ -400,7 +403,7 @@ type BattleDispatcher () =
     override this.Render (battle, renderPass, screen, world) =
         match renderPass with
         | NormalPass when screen.GetIdling world ->
-            match BattleInput.tryGetPointed battle (screen.GetBattleCursor world) world with
+            match BattleInput.tryGetPointed battle battle.BattleCursor world with
             | Some entity ->
 
                 // a ring's item has arrows either side, a character's pointed at its center offset, as its reticle
@@ -588,6 +591,8 @@ type BattleDispatcher () =
                                [Entity.Position := ally.Perimeter.CenterOffset
                                 Entity.Elevation == Constants.Battle.GuiInputElevation
                                 Entity.Enabled :=
+                                   // in use, and no ally partway through choosing
+                                   (match battle.InputAllyOpt with Some inputAlly -> inputAlly = index | None -> true) &&
                                    Battle.getAllies battle |>
                                    Map.toValueList |>
                                    Seq.notExists (fun (ally : Character) -> match ally.CharacterInputState with NoInput | RegularMenu -> false | _ -> true)
@@ -603,6 +608,7 @@ type BattleDispatcher () =
                            Content.entity<RingMenuDispatcher> "ConsumableMenu"
                                [Entity.Position := ally.Perimeter.CenterOffset
                                 Entity.Elevation == Constants.Battle.GuiInputElevation
+                                Entity.Enabled := match battle.InputAllyOpt with Some inputAlly -> inputAlly = index | None -> true
                                 Entity.RingMenu := { Items = consumables; Cancellable = true }
                                 Entity.ItemSelectEvent =|> fun evt -> ConsumableItemSelect (index, evt.Data) |> signal
                                 Entity.CancelEvent => ConsumableItemCancel index]
@@ -626,6 +632,7 @@ type BattleDispatcher () =
                            Content.entity<RingMenuDispatcher> "TechMenu"
                                [Entity.Position := ally.Perimeter.CenterOffset
                                 Entity.Elevation == Constants.Battle.GuiInputElevation
+                                Entity.Enabled := match battle.InputAllyOpt with Some inputAlly -> inputAlly = index | None -> true
                                 Entity.RingMenu := { Items = techs; Cancellable = true }
                                 Entity.ItemSelectEvent =|> fun evt -> TechItemSelect (index, evt.Data) |> signal
                                 Entity.CancelEvent => TechItemCancel index]

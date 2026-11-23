@@ -16,9 +16,6 @@ module FieldExtensions =
         member this.QuitFieldEvent = Events.QuitFieldEvent --> this
         member this.CommencingBattleEvent = Events.CommencingBattleEvent --> this
         member this.CommenceBattleEvent = Events.CommenceBattleEvent --> this
-        member this.GetFieldCursor world : FieldCursor = this.Get (nameof this.FieldCursor) world
-        member this.SetFieldCursor (value : FieldCursor) world = this.Set (nameof this.FieldCursor) value world
-        member this.FieldCursor = lens (nameof this.FieldCursor) this this.GetFieldCursor this.SetFieldCursor
 
 type FieldDispatcher () =
     inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.empty)
@@ -76,9 +73,6 @@ type FieldDispatcher () =
             |> Seq.distinct
             |> List.ofSeq
         else []
-
-    static member Properties =
-        [nonPersistent Screen.FieldCursor FieldCursor.initial]
 
     override this.GetFallbackModel (_, screen, world) =
         if screen.GetSelected world || Simulants.Battle.GetSelected world
@@ -796,8 +790,8 @@ type FieldDispatcher () =
 
         | ProcessMenuInput ->
             if screen.GetIdling world then
-                let (cursor, signals, _) = FieldInput.update (Game.GetIntent world) field (screen.GetFieldCursor world) world
-                screen.SetFieldCursor cursor world
+                let (cursor, signals, _) = FieldInput.update (Game.GetIntent world) field field.FieldCursor world
+                screen.SetField (Field.setFieldCursor cursor (screen.GetField world)) world
                 for signal in signals do screen.Signal signal world
 
         | ProcessTouchInput position ->
@@ -896,7 +890,7 @@ type FieldDispatcher () =
     override this.Render (field, renderPass, screen, world) =
         match renderPass with
         | NormalPass when screen.GetIdling world ->
-            match FieldInput.tryGetPointed field (screen.GetFieldCursor world) world with
+            match FieldInput.tryGetPointed field field.FieldCursor world with
             | Some entity -> Pointer.render entity field.FieldTime world
             | None -> ()
         | _ -> ()

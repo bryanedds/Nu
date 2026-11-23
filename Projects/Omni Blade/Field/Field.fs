@@ -9,6 +9,31 @@ open Prime
 open Nu
 open CueSystem
 
+/// Where a field menu's cursor rests.
+type FieldCursorPosition =
+    { InSidebar : bool
+      SidebarRow : int
+      Column : int
+      Row : int }
+
+    static member sidebar =
+        { InSidebar = true; SidebarRow = 0; Column = 0; Row = 0 }
+
+    static member content =
+        { InSidebar = false; SidebarRow = 0; Column = 0; Row = 0 }
+
+/// Where the field's menu cursor is, for the gamepad and keyboard. It starts over whenever the field shows another
+/// menu, except when coming back out of a menu opened over the one it was in, where it returns to where it was.
+type FieldCursor =
+    { CursorMenu : string // the menu the cursor is in, such as "Team" or "Shop"
+      CursorPosition : FieldCursorPosition
+      CursorParents : (string * FieldCursorPosition) list } // the menus under this one and where the cursor was in each
+
+    static member initial =
+        { CursorMenu = ""
+          CursorPosition = FieldCursorPosition.sidebar
+          CursorParents = [] }
+
 type FieldMessage =
     | Update
     | UpdateFieldTransition
@@ -147,7 +172,8 @@ module Field =
               DialogOpt_ : Dialog option
               FieldSongTimeOpt_ : int64 option
               AutoMaps_ : Map<FieldType, Vector2i Set>
-              FieldType_ : FieldType }
+              FieldType_ : FieldType
+              FieldCursor_ : FieldCursor } // never saved, starting over when loaded
 
         (* Local Properties *)
         member this.FieldTime = this.FieldTime_
@@ -177,6 +203,7 @@ module Field =
         member this.FieldSongTimeOpt = this.FieldSongTimeOpt_
         member this.AutoMaps = this.AutoMaps_
         member this.FieldType = this.FieldType_
+        member this.FieldCursor = this.FieldCursor_
 
     (* Low-Level Operations *)
 
@@ -503,6 +530,9 @@ module Field =
     let mapInventory mapper field =
         { field with Inventory_ = mapper field.Inventory_ }
 
+    let setFieldCursor cursor field =
+        { field with FieldCursor_ = cursor }
+
     let mapMenu mapper field =
         { field with Menu_ = mapper field.Menu_ }
 
@@ -602,7 +632,8 @@ module Field =
             AvatarSeparatedPropIds_ = []
             AvatarIntersectedPropIds_ = []
             Props_ = Map.empty
-            FieldSongTimeOpt_ = None }
+            FieldSongTimeOpt_ = None
+            FieldCursor_ = FieldCursor.initial }
 
     let private computeChecksum (str : string) =
         let mutable checksum = 13L
@@ -1369,7 +1400,8 @@ module Field =
           DialogOpt_ = None
           FieldSongTimeOpt_ = None
           AutoMaps_ = Map.empty
-          FieldType_ = fieldType }
+          FieldType_ = fieldType
+          FieldCursor_ = FieldCursor.initial }
 
     let empty =
         { FieldTime_ = 0L
@@ -1400,7 +1432,8 @@ module Field =
           DialogOpt_ = None
           FieldSongTimeOpt_ = None
           AutoMaps_ = Map.empty
-          FieldType_ = EmptyField }
+          FieldType_ = EmptyField
+          FieldCursor_ = FieldCursor.initial }
 
     let initial time saveSlot =
         make time TombOuter saveSlot (max 1UL Gen.randomul) Avatar.initial (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial
@@ -1429,7 +1462,7 @@ module Field =
                     if saveValidated then
                         let field = scvalue<Field> fieldStr
                         let props = makeProps time field.FieldType_ field.OmniSeedState_
-                        Some { field with Props_ = props }
+                        Some { field with Props_ = props; FieldCursor_ = FieldCursor.initial }
                     else Log.error "Failed to load save file due to invalid checksum."; None
                 else Log.error "Failed to load save file due to unparsable checksum."; None
             | _ -> Log.error "Failed to load save file due to missing checksum or invalid format."; None

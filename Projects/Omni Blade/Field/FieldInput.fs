@@ -7,32 +7,6 @@ open System.Numerics
 open Prime
 open Nu
 
-/// Where a field menu's cursor rests.
-type FieldCursorPosition =
-    { InSidebar : bool
-      SidebarRow : int
-      Column : int
-      Row : int }
-
-    static member sidebar =
-        { InSidebar = true; SidebarRow = 0; Column = 0; Row = 0 }
-
-    static member content =
-        { InSidebar = false; SidebarRow = 0; Column = 0; Row = 0 }
-
-/// Where the field's menu cursor is, kept beside the field rather than in it, so it neither saves nor shows in Gaia.
-/// The cursor starts over whenever the field shows another menu, except when coming back out of a menu opened over
-/// the one it was in, where it returns to where it was.
-type FieldCursor =
-    { CursorMenu : string // the menu the cursor is in, such as "Team" or "Shop"
-      CursorPosition : FieldCursorPosition
-      CursorParents : (string * FieldCursorPosition) list } // the menus under this one and where the cursor was in each
-
-    static member initial =
-        { CursorMenu = ""
-          CursorPosition = FieldCursorPosition.sidebar
-          CursorParents = [] }
-
 /// The field's gamepad and keyboard input - walking about, the dialog, and a routine for each menu.
 [<RequireQualifiedAccess>]
 module FieldInput =
@@ -319,7 +293,8 @@ module FieldInput =
             (cursor, signals, pointedOpt)
 
     /// The inventory and key items menus, which lay out a page of ten items alike - two columns of five, left of
-    /// whose first is the sidebar. Right past the second column turns the page, as do the page buttons.
+    /// whose first is the sidebar. Right past the second column turns to the next page and left past the first to the
+    /// previous, as do the page buttons, left past the first going to the sidebar from the first page.
     let private updateItemPage (intent : Intent) panel enabled (select : _ -> Signal) pageUpMessage pageDownMessage (field : Field) (cursor : FieldCursor) world =
         let (pageUp, pageDown, items) = Content.pageItems 10 field
         let count = items.Count
@@ -334,7 +309,9 @@ module FieldInput =
             let (indexOpt, stepping) =
                 match intent.Step with
                 | Some (Upward | Downward as direction) -> (Some (column * 5 + Selection.wrap (Selection.rowDelta direction) (columnCount column) row), [])
-                | Some Leftward -> ((if column = 1 then Some (index - 5) else None), [])
+                | Some Leftward when column = 1 -> (Some (index - 5), [])
+                | Some Leftward when pageUp -> (Some index, [pageUpMessage])
+                | Some Leftward -> (None, [])
                 | Some Rightward ->
                     if column = 0 && columnCount 1 > 0 then (Some (5 + min row (dec (columnCount 1))), [])
                     elif pageDown then (Some index, [pageDownMessage])
@@ -414,32 +391,57 @@ module FieldInput =
         | Some Rightward -> 1
         | _ -> column
 
-    /// Using a consumable - the teammates in columns of three, confirm using it on the one pointed at.
+    /// Using a consumable - the teammates in columns of three, up and down cycling through each, confirm using it on
+    /// the one pointed at, and the close button above and right of them, reached right from the last column.
     let private updateUse (intent : Intent) itemType (field : Field) (cursor : FieldCursor) world =
         let count = field.Team.Count
-        let index = min cursor.CursorPosition.Row (dec count)
-        let column = index / 3
-        let row = index % 3
+        let lastColumn = dec count / 3
         let columnCount column = max 0 (min 3 (count - column * 3))
-        let index =
-            match intent.Step with
-            | Some (Upward | Downward as direction) -> column * 3 + Selection.wrap (Selection.rowDelta direction) (columnCount column) row
-            | Some (Leftward | Rightward as direction) ->
-                let column' = column + Selection.columnDelta direction
-                if column' >= 0 && columnCount column' > 0 then column' * 3 + min row (dec (columnCount column')) else index
-            | None -> index
-        let teammate = Seq.item index field.Team.Values
-        let signals =
-            if intent.Confirm then
-                if Teammate.canUseItem itemType teammate
-                then affirm (signal (MenuInventoryUse index)) world
-                else Selection.playMistake world; []
-            elif intent.Cancel then affirm (signal MenuInventoryCancel) world
-            else []
-        (moveTo 0 index cursor, signals, Some (teammateEntity "Use" index field))
+        if cursor.CursorPosition.Column = 1 then
 
-    /// The equip panel - a page of items down the right, and on the left the current equipment's info or, once an
-    /// item's chosen, the equip button. Choosing an item moves to the equip button; choosing that equips it.
+            // the close button, left going back to the top of the last column
+            let cursor =
+                match intent.Step with
+                | Some Leftward -> moveTo 0 (lastColumn * 3) cursor
+                | _ -> cursor
+            let signals =
+                if cursor.CursorPosition.Column = 1 && (intent.Confirm || intent.Cancel)
+                then affirm (signal MenuInventoryCancel) world
+                else []
+            let pointedOpt =
+                if cursor.CursorPosition.Column = 1 then Some (scene "Use" / "Close")
+                else Some (teammateEntity "Use" cursor.CursorPosition.Row field)
+            (cursor, signals, pointedOpt)
+        else
+            let index = min cursor.CursorPosition.Row (dec count)
+            let column = index / 3
+            let row = index % 3
+            let indexOpt =
+                match intent.Step with
+                | Some (Upward | Downward as direction) -> Some (column * 3 + Selection.wrap (Selection.rowDelta direction) (columnCount column) row)
+                | Some Rightward when column = lastColumn -> None
+                | Some (Leftward | Rightward as direction) ->
+                    let column' = column + Selection.columnDelta direction
+                    Some (if column' >= 0 && columnCount column' > 0 then column' * 3 + min row (dec (columnCount column')) else index)
+                | None -> Some index
+            match indexOpt with
+            | Some index ->
+                let teammate = Seq.item index field.Team.Values
+                let signals =
+                    if intent.Confirm then
+                        if Teammate.canUseItem itemType teammate
+                        then affirm (signal (MenuInventoryUse index)) world
+                        else Selection.playMistake world; []
+                    elif intent.Cancel then affirm (signal MenuInventoryCancel) world
+                    else []
+                (moveTo 0 index cursor, signals, Some (teammateEntity "Use" index field))
+            | None ->
+                let signals = if intent.Cancel then affirm (signal MenuInventoryCancel) world else []
+                (moveTo 1 0 cursor, signals, Some (scene "Use" / "Close"))
+
+    /// The equip panel - a page of items down the middle, the close button right of the first, and on the left the
+    /// current equipment's info or, once an item's chosen, the equip button. Choosing an item moves to the equip
+    /// button; choosing that equips it.
     let private updateEquip (intent : Intent) (menuTeam : MenuTeam) (equip : Equip) (field : Field) (cursor : FieldCursor) world =
         let teammate = field.Team[menuTeam.TeamIndex]
         let (changing, currentName) =
@@ -452,23 +454,44 @@ module FieldInput =
         let count = items.Count
         let paging = (if intent.PageUp && pageUp then [MenuTeamEquipPageUp] else []) @ (if intent.PageDown && pageDown then [MenuTeamEquipPageDown] else [])
         let paging = List.map (fun message -> message :> Signal) paging
-        let onLeft = (cursor.CursorPosition.Column = 0 || count = 0) && leftOpt.IsSome
-        if onLeft then
+        let onClose = cursor.CursorPosition.Column = 2 || (count = 0 && leftOpt.IsNone)
+        let onLeft = not onClose && (cursor.CursorPosition.Column = 0 || count = 0) && leftOpt.IsSome
+        if onClose then
+
+            // the close button, top right, right of the first item, left going back to it
+            let (cursor, signals) =
+                match intent.Step with
+                | Some Leftward when count > 0 -> (moveTo 1 0 cursor, [])
+                | Some Leftward when leftOpt.IsSome -> (moveTo 0 0 cursor, [])
+                | _ ->
+                    let cursor = moveTo 2 0 cursor
+                    if intent.Confirm || intent.Cancel then (cursor, affirm (signal MenuTeamEquipCancel) world) else (cursor, [])
+            let pointedOpt =
+                match (cursor.CursorPosition.Column, leftOpt) with
+                | (1, _) -> Some (scene "Equip" / (fst (snd items[0])).Name)
+                | (0, Some left) -> Some (scene "Equip" / left)
+                | (_, _) -> Some (scene "Equip" / "EquipCancel")
+            (cursor, paging @ signals, pointedOpt)
+        elif onLeft then
             let left = leftOpt.Value
             let (cursor, signals) =
                 match intent.Step with
                 | Some Rightward when count > 0 -> (moveTo 1 0 cursor, [])
+                | Some Rightward -> (moveTo 2 0 cursor, [])
                 | _ ->
                     let cursor = moveTo 0 0 cursor
                     if intent.Confirm then
+                        // equipping goes back to the items, where the panel starts
                         if left = "EquipButton"
-                        then (cursor, (sound Assets.Field.EquipSound world; signal MenuTeamEquipConfirm))
+                        then (moveTo 1 0 cursor, (sound Assets.Field.EquipSound world; signal MenuTeamEquipConfirm))
                         else (cursor, affirm (signal MenuTeamEquipMenuUseOpen) world)
                     elif intent.Cancel then (cursor, affirm (signal MenuTeamEquipCancel) world)
                     else (cursor, [])
             let pointedOpt =
-                if cursor.CursorPosition.Column = 1 then Some (scene "Equip" / (fst (snd items[0])).Name)
-                else Some (scene "Equip" / left)
+                match cursor.CursorPosition.Column with
+                | 1 when count > 0 -> Some (scene "Equip" / (fst (snd items[0])).Name)
+                | 2 -> Some (scene "Equip" / "EquipCancel")
+                | _ -> Some (scene "Equip" / left)
             (cursor, paging @ signals, pointedOpt)
         elif count > 0 then
             let index = min cursor.CursorPosition.Row (dec count)
@@ -477,7 +500,9 @@ module FieldInput =
                 | Some (Upward | Downward as direction) -> (Selection.wrap (Selection.rowDelta direction) count index, 1, [])
                 | Some Leftward when leftOpt.IsSome -> (index, 0, [])
                 | Some Leftward when pageUp -> (index, 1, [MenuTeamEquipPageUp :> Signal])
-                | Some Rightward when pageDown -> (index, 1, [MenuTeamEquipPageDown :> Signal])
+                // right from the first item goes to the close button, from the others to the next page if any
+                | Some Rightward when index > 0 && pageDown -> (index, 1, [MenuTeamEquipPageDown :> Signal])
+                | Some Rightward -> (0, 2, [])
                 | _ -> (index, 1, [])
             let page = items[index]
             let (column, signals) =
@@ -489,11 +514,10 @@ module FieldInput =
             let pointedOpt =
                 match (column, leftOpt) with
                 | (0, Some left) when not intent.Confirm -> Some (scene "Equip" / left)
+                | (2, _) -> Some (scene "Equip" / "EquipCancel")
                 | (_, _) -> Some (scene "Equip" / (fst (snd page)).Name)
             (cursor, paging @ stepping @ signals, pointedOpt)
-        else
-            let signals = if intent.Cancel then affirm (signal MenuTeamEquipCancel) world else []
-            (cursor, paging @ signals, None)
+        else (cursor, paging, None)
 
     /// The party menu - the team to choose from on the left, those chosen in the middle, and the confirm button on the
     /// right, which the cursor moves to once three are chosen. Cancel takes back the last one chosen.
@@ -568,7 +592,7 @@ module FieldInput =
                 let itemColumn = row / rows
                 let itemRow = row % rows
                 match intent.Step with
-                | Some Upward when itemRow = 0 -> (itemColumn, -1, [])
+                | Some Upward when itemRow = 0 -> (0, -1, []) // up to the top row's leftmost button, buy or sell
                 | Some Upward -> (0, dec row, [])
                 | Some Downward when itemRow = dec (columnCount itemColumn) -> (itemColumn, -1, [])
                 | Some Downward -> (0, inc row, [])
@@ -602,11 +626,11 @@ module FieldInput =
             else []
         (cursor, signals, None)
 
-    /// The dialog - confirm turns the page, and cancel skips it where it can be skipped.
+    /// The dialog - confirm or cancel presses the skip button where it shows, and otherwise confirm turns the page.
     let private updateDialog (intent : Intent) (field : Field) (cursor : FieldCursor) world =
         let signals =
-            if intent.Confirm && canInteract field then signal Interact
-            elif intent.Cancel && canSkip field then affirm (signal SkipDialog) world
+            if (intent.Confirm || intent.Cancel) && canSkip field then affirm (signal SkipDialog) world
+            elif intent.Confirm && canInteract field then signal Interact
             else []
         (cursor, signals, None)
 

@@ -7,20 +7,6 @@ open System.Numerics
 open Prime
 open Nu
 
-/// Where the battle's cursor is - whose input it's in, which of their menus, and what it's on. It's kept beside the
-/// battle rather than in it, as it's only how the player is choosing, not part of the battle.
-type BattleCursor =
-    { CursorAllyOpt : CharacterIndex option
-      CursorMenu : string // "Regular", "Tech", "Consumable", "Reticles" or "Result"
-      CursorIndex : int
-      CursorParents : (string * int) list } // the menus under this one and what the cursor was on in each
-
-    static member initial =
-        { CursorAllyOpt = None
-          CursorMenu = ""
-          CursorIndex = 0
-          CursorParents = [] }
-
 /// The battle's gamepad and keyboard input - a routine for the ring menus, one for choosing targets, and one for the
 /// battle's end.
 [<RequireQualifiedAccess>]
@@ -60,12 +46,14 @@ module BattleInput =
         | _ -> "ConsumableMenu"
 
     /// A step through a turning ring - right to the item clockwise of the top, so the ring turns counterclockwise to
-    /// bring it up, and left the other way. Up and down don't step.
+    /// bring it up, left the other way, and down or up to the item at the bottom - of two nearest the bottom of an odd
+    /// ring, down the one clockwise of it and up the one counterclockwise.
     let private stepRing direction count index =
         match direction with
         | Rightward -> Selection.wrap 1 count index
         | Leftward -> Selection.wrap -1 count index
-        | Upward | Downward -> index
+        | Downward -> Selection.wrap (count / 2) count index
+        | Upward -> Selection.wrap -(count / 2) count index
 
     /// The item a ring was left on, where it's been turned to one, else its first.
     let private getRingFocusIndex allyIndex menu (items : (string * bool) array) world =
@@ -215,12 +203,12 @@ module BattleInput =
                         match intent.Step with
                         | Some direction when targets.Length > 0 ->
                             // allies or enemies left through their order and right back, and down through rows top to
-                            // bottom, each left to right, and up back - rows by the corner a target's placed by, as
-                            // columns are
+                            // bottom, each left to right, and up back, each wrapping round at the ends - rows by the
+                            // corner a target's placed by, as columns are
                             let index =
                                 match direction with
-                                | Leftward -> min (inc index) (dec targets.Length)
-                                | Rightward -> max (dec index) 0
+                                | Leftward -> Selection.wrap 1 targets.Length index
+                                | Rightward -> Selection.wrap -1 targets.Length index
                                 | Upward | Downward ->
                                     let corners =
                                         let characters = Battle.getCharacters battle
@@ -231,7 +219,7 @@ module BattleInput =
                                             if abs (corners[i].Y - corners[j].Y) >= TargetTie then compare corners[j].Y corners[i].Y
                                             else compare corners[i].X corners[j].X)
                                     let place = Array.findIndex ((=) index) rows
-                                    let place = if direction = Downward then min (inc place) (dec rows.Length) else max (dec place) 0
+                                    let place = Selection.wrap (if direction = Downward then 1 else -1) rows.Length place
                                     rows[place]
                             { cursor with CursorIndex = index }
                         | _ -> { cursor with CursorIndex = index }

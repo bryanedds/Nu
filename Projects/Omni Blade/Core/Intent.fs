@@ -86,9 +86,11 @@ module Intent =
         // alt+enter toggles full screen, so it doesn't confirm
         let keyConfirm = not altDown && (keyPressed KeyboardKey.Enter || keyPressed KeyboardKey.Space)
         let keyCancel = keyPressed KeyboardKey.Escape || keyPressed KeyboardKey.Backspace
-        let keyMenu = keyPressed KeyboardKey.Tab
+        // shift+tab goes back as page up does, such as to the previous ally in battle, rather than to the menu
+        let shiftDown = World.isKeyboardShiftDown world
+        let keyMenu = not shiftDown && keyPressed KeyboardKey.Tab
         let keyParty = keyPressed KeyboardKey.P
-        let keyPageUp = keyPressed KeyboardKey.Q || keyPressed KeyboardKey.PageUp
+        let keyPageUp = keyPressed KeyboardKey.Q || keyPressed KeyboardKey.PageUp || (shiftDown && keyPressed KeyboardKey.Tab)
         let keyPageDown = keyPressed KeyboardKey.E || keyPressed KeyboardKey.PageDown
 
         // gamepads

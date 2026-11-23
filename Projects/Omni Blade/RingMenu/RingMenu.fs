@@ -53,6 +53,26 @@ type RingMenuDispatcher () =
         let angle = single index / single count * MathF.TWO_PI + rotation
         v3 (radius * sin angle) (radius * cos angle) 0.0f - ButtonSize * 0.5f
 
+    /// The rotation that puts a ring's focused item at the top, if it's focusing one.
+    static let tryGetFocusRotation (entity : Entity) world =
+        let layout = RingMenu.getLayout (entity.GetRingMenu world)
+        match entity.GetRingMenuFocusOpt world |> Option.bind (fun focus -> layout |> Array.tryFind (fun (name, _, _, _) -> name = focus)) with
+        | Some (_, index, count, _) -> Some (-(single index / single count) * MathF.TWO_PI)
+        | None -> None
+
+    /// Turn a ring to a rotation, placing its items.
+    static let place (entity : Entity) rotation world =
+        entity.SetRingMenuRotation rotation world
+        for (itemName, index, count, _) in RingMenu.getLayout (entity.GetRingMenu world) do
+            let item = entity / scstring itemName
+            if item.GetExists world then item.SetPositionLocal (getItemPosition index count rotation) world
+
+    /// Turn a ring to its focused item at once rather than over the frames to come, as when it's shown again.
+    static member snapToFocus (entity : Entity) world =
+        match tryGetFocusRotation entity world with
+        | Some rotation -> place entity rotation world
+        | None -> ()
+
     // the ring's turn is kept apart from its model, which the battle sets anew each frame
     static member Properties =
         [nonPersistent Entity.RingMenuFocusOpt None
@@ -69,13 +89,10 @@ type RingMenuDispatcher () =
         | Turn ->
 
             // turn quickly the short way round toward the focused item being at the top, placing the items as it goes
-            let ringMenu = entity.GetRingMenu world
-            let layout = RingMenu.getLayout ringMenu
             let rotation = entity.GetRingMenuRotation world
             let rotation =
-                match entity.GetRingMenuFocusOpt world |> Option.bind (fun focus -> layout |> Array.tryFind (fun (name, _, _, _) -> name = focus)) with
-                | Some (_, index, count, _) ->
-                    let target = -(single index / single count) * MathF.TWO_PI
+                match tryGetFocusRotation entity world with
+                | Some target ->
                     let delta = target - rotation
                     let delta = delta - MathF.Round (delta / MathF.TWO_PI) * MathF.TWO_PI
                     // a half turn's as short either way, so it goes the way the ring was turned
@@ -85,10 +102,7 @@ type RingMenuDispatcher () =
                         else delta
                     if abs delta < 0.01f then target else rotation + delta * TurnRate
                 | None -> rotation
-            entity.SetRingMenuRotation rotation world
-            for (itemName, index, count, _) in layout do
-                let item = entity / scstring itemName
-                if item.GetExists world then item.SetPositionLocal (getItemPosition index count rotation) world
+            place entity rotation world
 
     override this.Content (ringMenu, _) =
         [for (itemName, itemIndex, itemCount, itemEnabled) in RingMenu.getLayout ringMenu do

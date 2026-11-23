@@ -11,7 +11,7 @@ type OmniBlade =
     | Splash
     | Title
     | Credits
-    | Pick
+    | Pick of int // the row selected - a save slot's, or back after them
     | Intro of SaveSlot
     | Field
     | Battle
@@ -53,9 +53,6 @@ module OmniBladeExtensions =
         | Slot3 -> Assets.User.SaveFilePath3
 
     type Game with
-        member this.GetPickSelection world : int = this.Get (nameof this.PickSelection) world
-        member this.SetPickSelection (value : int) world = this.Set (nameof this.PickSelection) value world
-        member this.PickSelection = lens (nameof this.PickSelection) this this.GetPickSelection this.SetPickSelection
         member this.GetOmniBlade world = this.GetModelGeneric<OmniBlade> world
         member this.SetOmniBlade value world = this.SetModelGeneric<OmniBlade> value world
         member this.OmniBlade = this.ModelGeneric<OmniBlade> ()
@@ -66,8 +63,7 @@ type OmniBladeDispatcher () =
     static member Properties =
         [nonPersistent Game.Intent Intent.empty
          nonPersistent Game.IntentOverrideOpt None
-         nonPersistent Game.IntentState IntentState.initial
-         nonPersistent Game.PickSelection 0]
+         nonPersistent Game.IntentState IntentState.initial]
 
     override this.Register (game, world) =
         base.Register (game, world)
@@ -109,8 +105,7 @@ type OmniBladeDispatcher () =
             just Credits
 
         | ShowPick ->
-            Game.SetPickSelection 0 world
-            just Pick
+            just (Pick 0)
 
         | ShowIntro slot ->
             just (Intro slot)
@@ -168,10 +163,10 @@ type OmniBladeDispatcher () =
             Game.SetIntent intent world
 
             // the pick screen's menu - a row for each save slot, then back
-            if Simulants.Pick.GetSelected world && Simulants.Pick.GetIdling world then
-                let selection = Game.GetPickSelection world
+            match Game.GetOmniBlade world with
+            | Pick selection when Simulants.Pick.GetSelected world && Simulants.Pick.GetIdling world ->
                 match intent.Step with
-                | Some direction -> Game.SetPickSelection (Selection.wrap (Selection.rowDelta direction) 4 selection) world
+                | Some direction -> Game.SetOmniBlade (Pick (Selection.wrap (Selection.rowDelta direction) 4 selection)) world
                 | None -> ()
                 if intent.Confirm then
                     match selection with
@@ -185,6 +180,7 @@ type OmniBladeDispatcher () =
                 elif intent.Cancel then
                     Selection.playAffirm world
                     Game.Signal ShowTitle world
+            | _ -> ()
 
         | UpdatePicks ->
             if  Simulants.Pick.GetSelected world then
@@ -227,13 +223,13 @@ type OmniBladeDispatcher () =
             if world.Unaccompanied then
                 World.exit world
 
-    override this.Render (_, renderPass, _, world) =
+    override this.Render (omniBlade, renderPass, _, world) =
 
         // point at the pick screen's selection
-        match renderPass with
-        | NormalPass when Simulants.Pick.GetSelected world && Simulants.Pick.GetIdling world ->
+        match (omniBlade, renderPass) with
+        | (Pick selection, NormalPass) when Simulants.Pick.GetSelected world && Simulants.Pick.GetIdling world ->
             let entity =
-                match Game.GetPickSelection world with
+                match selection with
                 | 0 -> if File.Exists (pickSaveFilePath Slot1) then Simulants.PickLoadGame1 else Simulants.PickNewGame1
                 | 1 -> if File.Exists (pickSaveFilePath Slot2) then Simulants.PickLoadGame2 else Simulants.PickNewGame2
                 | 2 -> if File.Exists (pickSaveFilePath Slot3) then Simulants.PickLoadGame3 else Simulants.PickNewGame3

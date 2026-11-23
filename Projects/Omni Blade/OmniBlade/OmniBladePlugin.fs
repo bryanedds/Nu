@@ -15,7 +15,7 @@ type [<Sealed>] OmniBladePlugin () =
             [("Splash", fun world -> Game.SetOmniBlade Splash world)
              ("Title", fun world -> Game.SetOmniBlade Title world)
              ("Credits", fun world -> Game.SetOmniBlade Credits world)
-             ("Pick", fun world -> Game.SetOmniBlade Pick world)
+             ("Pick", fun world -> Game.SetOmniBlade (Pick 0) world)
              ("Intro", fun world -> Game.SetOmniBlade (Intro Slot1) world)
              ("Gameplay", fun world ->
                 let field = Field.initial world.UpdateTime Slot1
