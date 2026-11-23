@@ -13,6 +13,7 @@ type Reticles =
 type ReticlesCommand =
     | TargetCancel
     | TargetSelect of CharacterIndex
+    | ShowReticles
     interface Command
 
 [<AutoOpen>]
@@ -26,10 +27,20 @@ module ReticlesExtensions =
 type ReticlesDispatcher () =
     inherit GuiDispatcher<Reticles, Message, ReticlesCommand> (Map.empty)
 
-    override this.Command (_, command, entity, world) =
+    override this.Definitions (_, _) =
+        [Entity.UpdateEvent => ShowReticles]
+
+    override this.Command (reticles, command, entity, world) =
         match command with
         | TargetCancel -> World.publish () entity.CancelEvent entity world
         | TargetSelect index -> World.publish index entity.TargetSelectEvent entity world
+        | ShowReticles ->
+
+            // the reticles show only for the mouse, the pointing hand showing the target otherwise
+            let visible = (Game.GetIntentState world).PointerHidden
+            for index in reticles.Keys do
+                let reticle = entity / CharacterIndex.toEntityName index
+                if reticle.GetExists world && reticle.GetVisible world <> visible then reticle.SetVisible visible world
 
     override this.Content (reticles, _) =
         [Content.button "Cancel"
@@ -43,6 +54,7 @@ type ReticlesDispatcher () =
                 [Entity.MountOpt == None
                  Entity.Size == v3 96.0f 96.0f 0.0f
                  Entity.PerimeterCenter := center
+                 Entity.Visible == false // shown only for the mouse (see ShowReticles)
                  Entity.UpImage == asset Assets.Battle.PackageName "ReticleUp"
                  Entity.DownImage == asset Assets.Battle.PackageName "ReticleDown"
                  Entity.ClickEvent => TargetSelect index]]

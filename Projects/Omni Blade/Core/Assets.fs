@@ -64,6 +64,7 @@ module Assets =
         let AffirmSound = asset<Sound> PackageName "Affirm"
         let MistakeSound = asset<Sound> PackageName "Mistake"
         let SlotSound = asset<Sound> PackageName "Slot"
+        let PointerImage = asset<Image> PackageName "Pointer"
         let TitleSong = { FadeInTime = 0L; FadeOutTime = Constants.Audio.FadeOutTimeDefault; StartTime = 0L; RepeatLimitOpt = None; Volume = Constants.Audio.SongVolumeDefault; Song = asset<Song> PackageName "Title" }
         let CreditsSong = { FadeInTime = 0L; FadeOutTime = Constants.Audio.FadeOutTimeDefault; StartTime = 0L; RepeatLimitOpt = Some 0u; Volume = Constants.Audio.SongVolumeDefault; Song = asset<Song> PackageName "Credits" }
         let IntroSong = { FadeInTime = 0L; FadeOutTime = 90L; StartTime = 0L; RepeatLimitOpt = None; Volume = Constants.Audio.SongVolumeDefault; Song = asset<Song> PackageName "Intro" }
@@ -148,6 +149,8 @@ module Assets =
     module Battle =
 
         let PackageName = "Battle"
+        let RingLeftImage = asset<Image> PackageName "RingLeft"
+        let RingRightImage = asset<Image> PackageName "RingRight"
         let InfoShortImage = asset<Image> PackageName "InfoShort"
         let InfoLongImage = asset<Image> PackageName "InfoLong"
         let CriticalMessageImage = asset<Image> PackageName "CriticalMessage"

@@ -1,4 +1,4 @@
-// Nu Game Engine.
+﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds, 2013-2023.
 
 namespace OmniBlade
@@ -8,17 +8,24 @@ open Prime
 open Nu
 
 type Title =
-    { TitleTime : int64 }
+    { TitleTime : int64
+      TitleSelection : int } // play, credits or exit, as chosen with a gamepad or the keyboard
 
     static member val empty =
-        { TitleTime = 0L }
+        { TitleTime = 0L; TitleSelection = 0 }
 
     static member val initial =
-        { TitleTime = 0L }
+        { TitleTime = 0L; TitleSelection = 0 }
 
 type TitleMessage =
     | Scroll
+    | ProcessInput
+    | ResetSelection
     interface Message
+
+type TitleCommand =
+    | Choose of Entity
+    interface Command
 
 [<AutoOpen>]
 module TitleExtensions =
@@ -28,7 +35,10 @@ module TitleExtensions =
         member this.Title = this.ModelGeneric<Title> ()
 
 type TitleDispatcher () =
-    inherit ScreenDispatcher<Title, TitleMessage, Command> (Title.empty)
+    inherit ScreenDispatcher<Title, TitleMessage, TitleCommand> (Title.empty)
+
+    static let getChoices () =
+        [|Simulants.TitlePlay; Simulants.TitleCredits; Simulants.TitleExit|]
 
     let scroll speed which title =
         let offsetX = single Constants.Render.DisplayVirtualResolution.X * 0.5f * if which then -1.0f else 1.0f
@@ -43,13 +53,42 @@ type TitleDispatcher () =
         else Title.empty
 
     override this.Definitions (_, _) =
-        [Screen.UpdateEvent => Scroll]
+        [Screen.SelectEvent => ResetSelection
+         Screen.UpdateEvent => Scroll
+         Screen.UpdateEvent => ProcessInput]
 
-    override this.Message (title, message, _, _) =
+    override this.Message (title, message, screen, world) =
         match message with
         | Scroll ->
             let title = { title with TitleTime = inc title.TitleTime }
             just title
+        | ResetSelection ->
+            just { title with TitleSelection = 0 }
+        | ProcessInput ->
+            if screen.GetIdling world then
+                let intent = Game.GetIntent world
+                let choices = getChoices ()
+                let title =
+                    match intent.Step with
+                    | Some direction -> { title with TitleSelection = Selection.wrap (Selection.rowDelta direction) choices.Length title.TitleSelection }
+                    | None -> title
+                if intent.Confirm
+                then withSignal (Choose choices[title.TitleSelection]) title
+                else just title
+            else just title
+
+    override this.Command (_, command, _, world) =
+        match command with
+        | Choose button ->
+            Selection.playAffirm world
+            World.publish () button.ClickEvent button world
+
+    override this.Render (title, renderPass, screen, world) =
+        match renderPass with
+        | NormalPass when screen.GetIdling world ->
+            let choices = getChoices ()
+            Pointer.render choices[title.TitleSelection] title.TitleTime world
+        | _ -> ()
 
     override this.Content (title, _) =
         [Content.group Simulants.TitleScene.Name []

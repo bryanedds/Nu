@@ -30,6 +30,7 @@ type BattleMessage =
 
 type BattleCommand =
     | UpdateEye
+    | ProcessInput
     | Concluding
     | Conclude
     | ScheduleSound of int64 * single * Sound AssetTag

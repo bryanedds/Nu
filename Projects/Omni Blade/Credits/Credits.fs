@@ -23,6 +23,7 @@ type Credits =
 type CreditsMessage =
     | StartScrolling
     | Scroll
+    | ProcessInput
     interface Message
 
 type CreditsCommand =
@@ -47,9 +48,10 @@ type CreditsDispatcher () =
 
     override this.Definitions (_, _) =
         [Screen.SelectEvent => StartScrolling
-         Screen.UpdateEvent => Scroll]
+         Screen.UpdateEvent => Scroll
+         Screen.UpdateEvent => ProcessInput]
 
-    override this.Message (credits, message, _, world) =
+    override this.Message (credits, message, screen, world) =
 
         match message with
         | StartScrolling ->
@@ -70,9 +72,23 @@ type CreditsDispatcher () =
             then withSignal (signal StartQuitting) credits
             else just credits
 
+        | ProcessInput ->
+            // confirm or cancel quits once quitting's offered
+            let intent = Game.GetIntent world
+            if credits.QuitVisible && screen.GetIdling world && (intent.Confirm || intent.Cancel) then
+                Selection.playAffirm world
+                withSignal (signal StartQuitting) credits
+            else just credits
+
     override this.Command (_, StartQuitting, screen, world) =
         World.fadeOutSong 60L world
         World.publish () screen.QuitCreditsEvent screen world
+
+    override this.Render (credits, renderPass, screen, world) =
+        match renderPass with
+        | NormalPass when credits.QuitVisible && screen.GetIdling world ->
+            Pointer.render (Simulants.CreditsGui / "Quit") world.UpdateTime world
+        | _ -> ()
 
     override this.Content (credits, _) =
         [Content.group Simulants.CreditsGui.Name []

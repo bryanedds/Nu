@@ -18,6 +18,8 @@
 		<Compile Include="Core\Data.fs" />
 		<Compile Include="Core\Algorithms.fs" />
 		<Compile Include="Core\Events.fs" />
+		<Compile Include="Core\Intent.fs" />
+		<Compile Include="Core\Pointer.fs" />
 		<Compile Include="Effects\EffectAspects.fs" />
 		<Compile Include="Effects\EffectDescriptors.fs" />
 		<Compile Include="Title\Title.fs" />
@@ -33,6 +35,7 @@
 		<Compile Include="Battle\Dialog.fs" />
 		<Compile Include="Battle\DialogContent.fs" />
 		<Compile Include="Battle\Battle.fs" />
+		<Compile Include="Battle\BattleInput.fs" />
 		<Compile Include="Battle\BattleDispatcher.fs" />
 		<Compile Include="SpiritOrb\Chest.fs" />
 		<Compile Include="SpiritOrb\Portal.fs" />
@@ -52,6 +55,7 @@
 		<Compile Include="Field\Shop.fs" />
 		<Compile Include="Field\Field.fs" />
 		<Compile Include="Field\FieldContent.fs" />
+		<Compile Include="Field\FieldInput.fs" />
 		<Compile Include="Field\FieldDispatcher.fs" />
 		<Compile Include="OmniBlade\OmniBlade.fs" />
 		<Compile Include="OmniBlade\OmniBladePlugin.fs" />

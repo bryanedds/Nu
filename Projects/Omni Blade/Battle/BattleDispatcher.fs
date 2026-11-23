@@ -15,6 +15,9 @@ module BattleExtensions =
         member this.Battle = this.ModelGeneric<Battle> ()
         member this.ConcludingBattleEvent = Events.ConcludingBattleEvent --> this
         member this.ConcludeBattleEvent = Events.ConcludeBattleEvent --> this
+        member this.GetBattleCursor world : BattleCursor = this.Get (nameof this.BattleCursor) world
+        member this.SetBattleCursor (value : BattleCursor) world = this.Set (nameof this.BattleCursor) value world
+        member this.BattleCursor = lens (nameof this.BattleCursor) this this.GetBattleCursor this.SetBattleCursor
 
 type BattleDispatcher () =
     inherit ScreenDispatcher<Battle, BattleMessage, BattleCommand> (Battle.empty : Battle)
@@ -34,8 +37,12 @@ type BattleDispatcher () =
             entity.SetEffectDescriptor descriptor world)
             screen world
 
+    static member Properties =
+        [nonPersistent Screen.BattleCursor BattleCursor.initial]
+
     override this.Definitions (_, _) =
-        [Screen.UpdateEvent => Update
+        [Screen.UpdateEvent => ProcessInput // before the update, as gui clicks are handled
+         Screen.UpdateEvent => Update
          Screen.DeselectingEvent => Conclude
          Screen.PostUpdateEvent => UpdateEye
          Screen.TimeAdvanceEvent => AdvanceTime
@@ -154,6 +161,24 @@ type BattleDispatcher () =
     override this.Command (battle, command, screen, world) =
 
         match command with
+        | ProcessInput ->
+            if screen.GetIdling world then
+                let (cursor, signals, _) = BattleInput.update (Game.GetIntent world) battle (screen.GetBattleCursor world) world
+                screen.SetBattleCursor cursor world
+                for signal in signals do screen.Signal signal world
+
+                // the focus of the ring the cursor's in follows it, the rings it's left staying as they were
+                match BattleInput.tryGetTurningRingFocus (screen.GetBattle world) cursor world with
+                | Some (ring, item) when ring.GetExists world ->
+                    if ring.GetRingMenuFocusOpt world <> Some item then
+                        // right turns the ring counterclockwise, left clockwise
+                        match (Game.GetIntent world).Step with
+                        | Some Rightward -> ring.SetRingMenuSpin -1.0f world
+                        | Some Leftward -> ring.SetRingMenuSpin 1.0f world
+                        | Some _ | None -> ()
+                        ring.SetRingMenuFocusOpt (Some item) world
+                | Some _ | None -> ()
+
         | UpdateEye ->
             World.setEye2dCenter v2Zero world
 
@@ -371,6 +396,30 @@ type BattleDispatcher () =
             match Battle.tryGetCharacter targetIndex battle with
             | Some target -> displayEffect delay (v3 144.0f 144.0f 0.0f) (Bottom target.Perimeter.Bottom) Over EffectDescriptors.silk screen world
             | None -> ()
+
+    override this.Render (battle, renderPass, screen, world) =
+        match renderPass with
+        | NormalPass when screen.GetIdling world ->
+            match BattleInput.tryGetPointed battle (screen.GetBattleCursor world) world with
+            | Some entity ->
+
+                // a ring's item has arrows either side, a character's pointed at its center offset, as its reticle would
+                // be, and other gui from its left
+                let ringItem =
+                    entity.Names.Length >= 2 &&
+                    match entity.Names[entity.Names.Length - 2] with "RegularMenu" | "TechMenu" | "ConsumableMenu" -> true | _ -> false
+                let characterOpt =
+                    Battle.getCharacters battle |>
+                    Map.tryFindKey (fun index _ -> CharacterIndex.toEntityName index = entity.Name && entity = Simulants.BattleScene / entity.Name) |>
+                    Option.map (fun index -> (Battle.getCharacters battle)[index])
+                match characterOpt with
+                | _ when ringItem -> RingArrows.render entity battle.BattleTime world
+                | Some character ->
+                    let point = match character.Stature with BossStature -> character.Perimeter.CenterOffset2 | _ -> character.Perimeter.CenterOffset
+                    Pointer.renderAt point entity battle.BattleTime world
+                | None -> Pointer.render entity battle.BattleTime world
+            | None -> ()
+        | _ -> ()
 
     override this.Content (battle, _) =
 

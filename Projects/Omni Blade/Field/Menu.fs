@@ -93,7 +93,8 @@ type Equip =
 type MenuTeam =
     { TeamIndex : int
       TeamIndices : int list
-      TeamEquipOpt : Equip option }
+      TeamEquipOpt : Equip option
+      TeamAutoMapSelected : bool }
 
     static member tryGetTeammate (team : Map<int, Teammate>) menuTeam =
         Map.tryFind menuTeam.TeamIndex team
@@ -127,7 +128,14 @@ type MenuState =
     | MenuTechs of MenuTechs
     | MenuKeyItems of MenuKeyItems
     | MenuOptions of bool
+    | MenuCloseSelected of MenuState // the sidebar's close button selected, over the menu to go back to, shown empty
     | MenuClosed
+
+    /// The menu being shown, which is the one under the sidebar's close button while that's selected.
+    member this.Shown =
+        match this with
+        | MenuCloseSelected state -> state
+        | state -> state
 
 type [<SymbolicExpansion>] Menu =
     { MenuState : MenuState

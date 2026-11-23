@@ -31,6 +31,7 @@ type OmniBladeMessage =
 
 type OmniBladeCommand =
     | UpdateFullScreen of KeyboardKeyData
+    | ProcessInput
     | UpdatePicks
     | SetField of Field
     | FromFieldToBattle of BattleData * PrizePool
@@ -43,7 +44,18 @@ type OmniBladeCommand =
 
 [<AutoOpen>]
 module OmniBladeExtensions =
+
+    /// The file a save slot is kept in.
+    let pickSaveFilePath slot =
+        match slot with
+        | Slot1 -> Assets.User.SaveFilePath1
+        | Slot2 -> Assets.User.SaveFilePath2
+        | Slot3 -> Assets.User.SaveFilePath3
+
     type Game with
+        member this.GetPickSelection world : int = this.Get (nameof this.PickSelection) world
+        member this.SetPickSelection (value : int) world = this.Set (nameof this.PickSelection) value world
+        member this.PickSelection = lens (nameof this.PickSelection) this this.GetPickSelection this.SetPickSelection
         member this.GetOmniBlade world = this.GetModelGeneric<OmniBlade> world
         member this.SetOmniBlade value world = this.SetModelGeneric<OmniBlade> value world
         member this.OmniBlade = this.ModelGeneric<OmniBlade> ()
@@ -51,12 +63,19 @@ module OmniBladeExtensions =
 type OmniBladeDispatcher () =
     inherit GameDispatcher<OmniBlade, OmniBladeMessage, OmniBladeCommand> (Splash)
 
+    static member Properties =
+        [nonPersistent Game.Intent Intent.empty
+         nonPersistent Game.IntentOverrideOpt None
+         nonPersistent Game.IntentState IntentState.initial
+         nonPersistent Game.PickSelection 0]
+
     override this.Register (game, world) =
         base.Register (game, world)
         World.setMasterSongVolume Constants.Gameplay.SongVolumeDefault world
 
     override this.Definitions (omniBlade, _) =
         [Game.KeyboardKeyDownEvent =|> fun evt -> UpdateFullScreen evt.Data
+         Game.UpdateEvent => ProcessInput
          if omniBlade.IsSplash then Simulants.Splash.DeselectingEvent => ShowTitle
          Simulants.Pick.UpdateEvent => UpdatePicks
          Simulants.TitlePlay.ClickEvent => ShowPick
@@ -90,6 +109,7 @@ type OmniBladeDispatcher () =
             just Credits
 
         | ShowPick ->
+            Game.SetPickSelection 0 world
             just Pick
 
         | ShowIntro slot ->
@@ -136,6 +156,36 @@ type OmniBladeDispatcher () =
                 | Some fullScreen -> World.trySetWindowFullScreen (not fullScreen) world
                 | None -> ()
 
+        | ProcessInput ->
+
+            // read what the player means, or what a test gives in its place
+            let (intentRead, intentState) = Intent.read (Game.GetIntentState world) world
+            Game.SetIntentState intentState world
+            let intent =
+                match Game.GetIntentOverrideOpt world with
+                | Some intent -> intent
+                | None -> intentRead
+            Game.SetIntent intent world
+
+            // the pick screen's menu - a row for each save slot, then back
+            if Simulants.Pick.GetSelected world && Simulants.Pick.GetIdling world then
+                let selection = Game.GetPickSelection world
+                match intent.Step with
+                | Some direction -> Game.SetPickSelection (Selection.wrap (Selection.rowDelta direction) 4 selection) world
+                | None -> ()
+                if intent.Confirm then
+                    match selection with
+                    | 0 | 1 | 2 ->
+                        let slot = match selection with 0 -> Slot1 | 1 -> Slot2 | _ -> Slot3
+                        World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Gui.SlotSound world
+                        if File.Exists (pickSaveFilePath slot)
+                        then Game.Signal (TryLoad slot) world
+                        else Game.Signal (ShowIntro slot) world
+                    | _ -> Selection.playAffirm world; Game.Signal ShowTitle world
+                elif intent.Cancel then
+                    Selection.playAffirm world
+                    Game.Signal ShowTitle world
+
         | UpdatePicks ->
             if  Simulants.Pick.GetSelected world then
                 Simulants.PickNewGame1.SetVisible (not (File.Exists Assets.User.SaveFilePath1)) world
@@ -176,6 +226,20 @@ type OmniBladeDispatcher () =
         | Exit ->
             if world.Unaccompanied then
                 World.exit world
+
+    override this.Render (_, renderPass, _, world) =
+
+        // point at the pick screen's selection
+        match renderPass with
+        | NormalPass when Simulants.Pick.GetSelected world && Simulants.Pick.GetIdling world ->
+            let entity =
+                match Game.GetPickSelection world with
+                | 0 -> if File.Exists (pickSaveFilePath Slot1) then Simulants.PickLoadGame1 else Simulants.PickNewGame1
+                | 1 -> if File.Exists (pickSaveFilePath Slot2) then Simulants.PickLoadGame2 else Simulants.PickNewGame2
+                | 2 -> if File.Exists (pickSaveFilePath Slot3) then Simulants.PickLoadGame3 else Simulants.PickNewGame3
+                | _ -> Simulants.PickBack
+            Pointer.render entity world.UpdateTime world
+        | _ -> ()
 
     override this.Content (omniBlade, _) =
         [Content.screen<ScreenDispatcher> Simulants.Splash.Name omniBlade.IsSplash (Slide (Constants.Gui.Dissolve, Constants.Gui.Splash, None, Simulants.Title)) [] []

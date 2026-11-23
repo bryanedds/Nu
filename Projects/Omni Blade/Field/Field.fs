@@ -23,6 +23,7 @@ type FieldMessage =
     | TryCommencingBattle of BattleType * Advent Set
     | MenuTeamOpen
     | MenuTeamAlly of int
+    | MenuTeamAutoMapSelect of bool
     | MenuTeamEquip of EquipType
     | MenuTeamEquipMenuUseOpen
     | MenuTeamEquipMenuUseClose
@@ -54,6 +55,8 @@ type FieldMessage =
     | MenuOptionsQuitCancel
     | MenuOptionsSongVolumeDown
     | MenuOptionsSongVolumeUp
+    | MenuCloseSelect
+    | MenuCloseDeselect
     | MenuClose
     | PartyMenuOpen
     | PartyMenuSelect of int
@@ -86,6 +89,7 @@ type FieldCommand =
     | CommencingBattle of BattleData
     | CommenceBattle of BattleData * PrizePool
     | MenuOptionsToggleFullScreen
+    | ProcessMenuInput
     | Nop
     interface Command
 

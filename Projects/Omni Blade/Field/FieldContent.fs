@@ -69,7 +69,7 @@ module FieldContent =
             (pageUp, pageDown, itemsPaged)
 
         let pageItems pageSize (field : Field) =
-            match field.Menu.MenuState with
+            match field.Menu.MenuState.Shown with
             | MenuTeam menuTeam ->
                 match menuTeam.TeamEquipOpt with
                 | Some equip ->
@@ -136,13 +136,14 @@ module FieldContent =
                     [Entity.PositionLocal == position - v3 0.0f 405.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                      Entity.UpImage == asset "Field" "CloseButtonUp"
                      Entity.DownImage == asset "Field" "CloseButtonDown"
+                     Entity.EnabledLocal := match field.Menu.MenuState with MenuCloseSelected _ -> false | _ -> true
                      Entity.ClickEvent => menuClose ()]]
 
         let team (position : Vector3) rows (field : Field) filter fieldMsg =
             [for (index, teammateValue) in field.Team.Pairs do
                 let teammateName = "Teammate+" + string teammateValue.TeamIndex
                 let (w, upImage, downImage) =
-                    match field.Menu.MenuState with
+                    match field.Menu.MenuState.Shown with
                     | MenuTechs _ -> (336.0f, Assets.Gui.ButtonLongUpImage, Assets.Gui.ButtonLongDownImage)
                     | MenuTeam _ | _ -> (252.0f, Assets.Gui.ButtonBigUpImage, Assets.Gui.ButtonBigDownImage)
                 let h = 72.0f
@@ -178,7 +179,7 @@ module FieldContent =
 
         let techs (position : Vector3) (field : Field) fieldMsg =
             let techs =
-                match field.Menu.MenuState with
+                match field.Menu.MenuState.Shown with
                 | MenuTechs menuTech ->
                     match Map.tryFind menuTech.TeamIndex field.Team with
                     | Some teammate -> teammate.Techs |> Seq.indexed |> Map.ofSeq

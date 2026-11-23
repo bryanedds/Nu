@@ -16,6 +16,9 @@ module FieldExtensions =
         member this.QuitFieldEvent = Events.QuitFieldEvent --> this
         member this.CommencingBattleEvent = Events.CommencingBattleEvent --> this
         member this.CommenceBattleEvent = Events.CommenceBattleEvent --> this
+        member this.GetFieldCursor world : FieldCursor = this.Get (nameof this.FieldCursor) world
+        member this.SetFieldCursor (value : FieldCursor) world = this.Set (nameof this.FieldCursor) value world
+        member this.FieldCursor = lens (nameof this.FieldCursor) this this.GetFieldCursor this.SetFieldCursor
 
 type FieldDispatcher () =
     inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.empty)
@@ -74,13 +77,17 @@ type FieldDispatcher () =
             |> List.ofSeq
         else []
 
+    static member Properties =
+        [nonPersistent Screen.FieldCursor FieldCursor.initial]
+
     override this.GetFallbackModel (_, screen, world) =
         if screen.GetSelected world || Simulants.Battle.GetSelected world
         then Field.initial world.UpdateTime Slot1
         else Field.empty
 
     override this.Definitions (field, _) =
-        [Screen.UpdateEvent => Update
+        [Screen.UpdateEvent => ProcessMenuInput // before the update, as gui clicks are handled
+         Screen.UpdateEvent => Update
          Screen.UpdateEvent => ProcessKeyInput
          Screen.PostUpdateEvent => UpdateFieldTransition
          Screen.PostUpdateEvent => UpdateEye
@@ -104,6 +111,17 @@ type FieldDispatcher () =
          ]
 
     override this.Message (field, message, _, world) =
+
+        // any message but the frame's own takes the sidebar's selection off its close button, back to the menu under it
+        let field =
+            match (field.Menu.MenuState, message) with
+            | (MenuCloseSelected state, message) ->
+                match message with
+                | Update | UpdateFieldTransition | AdvanceTime | UpdateAvatarBodyTracking | AvatarBodyTransform _
+                | AvatarBodyPenetration _ | AvatarBodySeparationExplicit _ | AvatarBodySeparationImplicit _
+                | ScreenTransitioning _ | MenuCloseSelect -> field
+                | _ -> Field.mapMenu (fun menu -> { menu with MenuState = state }) field
+            | (_, _) -> field
 
         match message with
         | Update ->
@@ -254,7 +272,9 @@ type FieldDispatcher () =
             | None -> just field
 
         | MenuTeamOpen ->
-            let state = MenuTeam { TeamIndex = 0; TeamIndices = Map.toKeyList field.Team; TeamEquipOpt = None }
+            // back from the auto map, its button stays selected
+            let autoMapSelected = field.Menu.MenuState = MenuAutoMap
+            let state = MenuTeam { TeamIndex = 0; TeamIndices = Map.toKeyList field.Team; TeamEquipOpt = None; TeamAutoMapSelected = autoMapSelected }
             let field = Field.mapMenu (fun menu -> { menu with MenuState = state }) field
             just field
 
@@ -268,7 +288,18 @@ type FieldDispatcher () =
                 Field.mapMenu (fun menu ->
                     let state =
                         match menu.MenuState with
-                        | MenuTeam menuTeam -> MenuTeam { menuTeam with TeamIndex = index }
+                        | MenuTeam menuTeam -> MenuTeam { menuTeam with TeamIndex = index; TeamAutoMapSelected = false }
+                        | state -> state
+                    { menu with MenuState = state })
+                    field
+            just field
+
+        | MenuTeamAutoMapSelect selected ->
+            let field =
+                Field.mapMenu (fun menu ->
+                    let state =
+                        match menu.MenuState with
+                        | MenuTeam menuTeam -> MenuTeam { menuTeam with TeamAutoMapSelected = selected }
                         | state -> state
                     { menu with MenuState = state })
                     field
@@ -606,6 +637,18 @@ type FieldDispatcher () =
             let field = Field.quitCancel field
             just field
 
+        | MenuCloseSelect ->
+            let field =
+                Field.mapMenu (fun menu ->
+                    match menu.MenuState with
+                    | MenuCloseSelected _ | MenuClosed -> menu
+                    | state -> { menu with MenuState = MenuCloseSelected state })
+                    field
+            just field
+
+        | MenuCloseDeselect ->
+            just field // the selection's already been taken off the close button, as any message does
+
         | MenuClose ->
             let field = Field.mapMenu (fun menu -> { menu with MenuState = MenuClosed }) field
             just field
@@ -741,23 +784,21 @@ type FieldDispatcher () =
                 Option.isNone field.ShopOpt &&
                 Option.isNone field.FieldTransitionOpt &&
                 not (Simulants.FieldFeeler.GetTouched world) then
-                let velocity = v3Zero
-                let velocity = if World.isKeyboardKeyDown KeyboardKey.Right world || World.isKeyboardKeyDown KeyboardKey.D world then v3 Constants.Field.AvatarWalkSpeed 0.0f 0.0f + velocity else velocity
-                let velocity = if World.isKeyboardKeyDown KeyboardKey.Left world || World.isKeyboardKeyDown KeyboardKey.A world then v3 -Constants.Field.AvatarWalkSpeed 0.0f 0.0f + velocity else velocity
-                let velocity = if World.isKeyboardKeyDown KeyboardKey.Up world || World.isKeyboardKeyDown KeyboardKey.W world then v3 0.0f Constants.Field.AvatarWalkSpeed 0.0f + velocity else velocity
-                let velocity = if World.isKeyboardKeyDown KeyboardKey.Down world || World.isKeyboardKeyDown KeyboardKey.S world then v3 0.0f -Constants.Field.AvatarWalkSpeed 0.0f + velocity else velocity
+                // walk as the player means to - from the keyboard, a gamepad, or a test in their place
+                let intent = Game.GetIntent world
+                let velocity = intent.Move * Constants.Field.AvatarWalkSpeed
                 World.setBodyLinearVelocity velocity (Simulants.FieldAvatar.GetBodyId world) world
-                let directionOpt =
-                    if World.isKeyboardKeyDown KeyboardKey.Right world || World.isKeyboardKeyDown KeyboardKey.D world then Some Rightward
-                    elif World.isKeyboardKeyDown KeyboardKey.Left world || World.isKeyboardKeyDown KeyboardKey.A world then Some Leftward
-                    elif World.isKeyboardKeyDown KeyboardKey.Up world || World.isKeyboardKeyDown KeyboardKey.W world then Some Upward
-                    elif World.isKeyboardKeyDown KeyboardKey.Down world || World.isKeyboardKeyDown KeyboardKey.S world then Some Downward
-                    else None
-                match directionOpt with
+                match Intent.tryGetDirection intent.Move with
                 | Some direction ->
                     let field = Field.mapAvatar (Avatar.setDirection direction) field
                     screen.SetField field world
                 | None -> ()
+
+        | ProcessMenuInput ->
+            if screen.GetIdling world then
+                let (cursor, signals, _) = FieldInput.update (Game.GetIntent world) field (screen.GetFieldCursor world) world
+                screen.SetFieldCursor cursor world
+                for signal in signals do screen.Signal signal world
 
         | ProcessTouchInput position ->
             if  field.FieldState = Playing &&
@@ -768,10 +809,7 @@ type FieldDispatcher () =
                 Option.isNone field.DialogOpt &&
                 Option.isNone field.ShopOpt &&
                 Option.isNone field.FieldTransitionOpt &&
-                World.isKeyboardKeyUp KeyboardKey.Right world && World.isKeyboardKeyUp KeyboardKey.D world &&
-                World.isKeyboardKeyUp KeyboardKey.Left world && World.isKeyboardKeyUp KeyboardKey.A world &&
-                World.isKeyboardKeyUp KeyboardKey.Up world && World.isKeyboardKeyUp KeyboardKey.W world &&
-                World.isKeyboardKeyUp KeyboardKey.Down world && World.isKeyboardKeyUp KeyboardKey.S world then
+                (Game.GetIntent world).Move = v3Zero then
                 let lowerCenter = field.Avatar.Perimeter.LowerCenter
                 let viewport = World.getWindowViewport world
                 let eyeCenter = World.getEye2dCenter world
@@ -854,6 +892,14 @@ type FieldDispatcher () =
                 | None -> ()
 
         | Nop -> ()
+
+    override this.Render (field, renderPass, screen, world) =
+        match renderPass with
+        | NormalPass when screen.GetIdling world ->
+            match FieldInput.tryGetPointed field (screen.GetFieldCursor world) world with
+            | Some entity -> Pointer.render entity field.FieldTime world
+            | None -> ()
+        | _ -> ()
 
     override this.Content (field, _) =
 
@@ -1053,6 +1099,16 @@ type FieldDispatcher () =
 
              // menu
              match field.Menu.MenuState with
+             | MenuCloseSelected state ->
+
+                // an empty menu while the sidebar's close button is selected, named as the menu under it so the sidebar
+                // stays where it is
+                let name = match state with MenuTeam _ | MenuAutoMap -> "Team" | MenuInventory _ -> "Inventory" | MenuTechs _ -> "Techs" | MenuKeyItems _ -> "KeyItems" | _ -> "Options"
+                Content.panel name
+                    [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
+                     Entity.BackdropImageOpt == Some Assets.Gui.DialogXXLImage]
+                    [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)]
+
              | MenuTeam menuTeam ->
 
                 // team
@@ -1062,13 +1118,13 @@ type FieldDispatcher () =
                      Entity.Enabled := menuTeam.TeamEquipOpt.IsNone]
                     [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                      yield! Content.team (v3 138.0f 417.0f 0.0f) Int32.MaxValue field (fun teammate menu ->
-                        match menu.MenuState with
-                        | MenuTeam team -> team.TeamIndex <> teammate.TeamIndex
+                        match menu.MenuState.Shown with
+                        | MenuTeam team -> team.TeamIndex <> teammate.TeamIndex || team.TeamAutoMapSelected
                         | _ -> true)
                         MenuTeamAlly
                      Content.button "AutoMap"
                        [Entity.PositionLocal == v3 138.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 252.0f 72.0f 0.0f
-                        Entity.EnabledLocal := Field.hasAutoMap field
+                        Entity.EnabledLocal := Field.hasAutoMap field && not menuTeam.TeamAutoMapSelected
                         Entity.UpImage == Assets.Field.ButtonAutoMapUpImage
                         Entity.DownImage == Assets.Field.ButtonAutoMapDownImage
                         Entity.TextColor == Color 0x93544CFFu
@@ -1391,10 +1447,10 @@ type FieldDispatcher () =
                 Content.panel "Techs"
                     [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                      Entity.BackdropImageOpt == Some Assets.Gui.DialogXXLImage
-                     Entity.Enabled := match field.Menu.MenuState with MenuTechs techs -> techs.TechIndexOpt.IsNone | _ -> true]
+                     Entity.Enabled := match field.Menu.MenuState.Shown with MenuTechs techs -> techs.TechIndexOpt.IsNone | _ -> true]
                     [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                      yield! Content.team (v3 138.0f 417.0f 0.0f) Int32.MaxValue field (fun teammate menu ->
-                        match menu.MenuState with
+                        match menu.MenuState.Shown with
                         | MenuTechs techs -> techs.TeamIndex <> teammate.TeamIndex
                         | _ -> true)
                         MenuTechsAlly
@@ -1640,12 +1696,12 @@ type FieldDispatcher () =
              | None -> ()
 
              // tech
-             match field.Menu.MenuState with
+             match field.Menu.MenuState.Shown with
              | MenuTechs techs ->
                 match techs.TechIndexOpt with
                 | Some techIndex ->
                     let techs =
-                        match field.Menu.MenuState with
+                        match field.Menu.MenuState.Shown with
                         | MenuTechs menuTech ->
                             match Map.tryFind menuTech.TeamIndex field.Team with
                             | Some teammate -> teammate.Techs |> Seq.indexed |> Map.ofSeq
