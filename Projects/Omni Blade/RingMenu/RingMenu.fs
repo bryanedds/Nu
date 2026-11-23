@@ -56,7 +56,7 @@ type RingMenuDispatcher () =
     // the ring's turn is kept apart from its model, which the battle sets anew each frame
     static member Properties =
         [nonPersistent Entity.RingMenuFocusOpt None
-         nonPersistent Entity.RingMenuSpin 1.0f // which way the ring last turned, 1 clockwise, for a half turn either way
+         nonPersistent Entity.RingMenuSpin 1.0f // which way the ring last turned, 1 clockwise, for half turns
          nonPersistent Entity.RingMenuRotation 0.0f]
 
     override this.Definitions (_, _) =
@@ -79,7 +79,10 @@ type RingMenuDispatcher () =
                     let delta = target - rotation
                     let delta = delta - MathF.Round (delta / MathF.TWO_PI) * MathF.TWO_PI
                     // a half turn's as short either way, so it goes the way the ring was turned
-                    let delta = if abs (abs delta - MathF.PI) < 0.01f then MathF.Sign (entity.GetRingMenuSpin world) |> single |> (*) MathF.PI else delta
+                    let delta =
+                        if abs (abs delta - MathF.PI) < 0.01f
+                        then (if entity.GetRingMenuSpin world < 0.0f then -MathF.PI else MathF.PI)
+                        else delta
                     if abs delta < 0.01f then target else rotation + delta * TurnRate
                 | None -> rotation
             entity.SetRingMenuRotation rotation world

@@ -1118,7 +1118,7 @@ type FieldDispatcher () =
                      Entity.Enabled := menuTeam.TeamEquipOpt.IsNone]
                     [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                      yield! Content.team (v3 138.0f 417.0f 0.0f) Int32.MaxValue field (fun teammate menu ->
-                        match menu.MenuState.Shown with
+                        match menu.MenuState with
                         | MenuTeam team -> team.TeamIndex <> teammate.TeamIndex || team.TeamAutoMapSelected
                         | _ -> true)
                         MenuTeamAlly
@@ -1447,10 +1447,10 @@ type FieldDispatcher () =
                 Content.panel "Techs"
                     [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                      Entity.BackdropImageOpt == Some Assets.Gui.DialogXXLImage
-                     Entity.Enabled := match field.Menu.MenuState.Shown with MenuTechs techs -> techs.TechIndexOpt.IsNone | _ -> true]
+                     Entity.Enabled := match field.Menu.MenuState with MenuTechs techs -> techs.TechIndexOpt.IsNone | _ -> true]
                     [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                      yield! Content.team (v3 138.0f 417.0f 0.0f) Int32.MaxValue field (fun teammate menu ->
-                        match menu.MenuState.Shown with
+                        match menu.MenuState with
                         | MenuTechs techs -> techs.TeamIndex <> teammate.TeamIndex
                         | _ -> true)
                         MenuTechsAlly
@@ -1696,12 +1696,12 @@ type FieldDispatcher () =
              | None -> ()
 
              // tech
-             match field.Menu.MenuState.Shown with
+             match field.Menu.MenuState with
              | MenuTechs techs ->
                 match techs.TechIndexOpt with
                 | Some techIndex ->
                     let techs =
-                        match field.Menu.MenuState.Shown with
+                        match field.Menu.MenuState with
                         | MenuTechs menuTech ->
                             match Map.tryFind menuTech.TeamIndex field.Team with
                             | Some teammate -> teammate.Techs |> Seq.indexed |> Map.ofSeq

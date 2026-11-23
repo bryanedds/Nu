@@ -403,21 +403,23 @@ type BattleDispatcher () =
             match BattleInput.tryGetPointed battle (screen.GetBattleCursor world) world with
             | Some entity ->
 
-                // a ring's item has arrows either side, a character's pointed at its center offset, as its reticle would
-                // be, and other gui from its left
+                // a ring's item has arrows either side, a character's pointed at its center offset, as its reticle
+                // would be, and other gui from its left
                 let ringItem =
                     entity.Names.Length >= 2 &&
                     match entity.Names[entity.Names.Length - 2] with "RegularMenu" | "TechMenu" | "ConsumableMenu" -> true | _ -> false
-                let characterOpt =
-                    Battle.getCharacters battle |>
-                    Map.tryFindKey (fun index _ -> CharacterIndex.toEntityName index = entity.Name && entity = Simulants.BattleScene / entity.Name) |>
-                    Option.map (fun index -> (Battle.getCharacters battle)[index])
-                match characterOpt with
-                | _ when ringItem -> RingArrows.render entity battle.BattleTime world
-                | Some character ->
-                    let point = match character.Stature with BossStature -> character.Perimeter.CenterOffset2 | _ -> character.Perimeter.CenterOffset
-                    Pointer.renderAt point entity battle.BattleTime world
-                | None -> Pointer.render entity battle.BattleTime world
+                if ringItem then RingArrows.render entity battle.BattleTime world
+                else
+                    let characterOpt =
+                        Battle.getCharacters battle |>
+                        Map.toSeq |>
+                        Seq.tryFind (fun (index, _) -> Simulants.BattleScene / CharacterIndex.toEntityName index = entity) |>
+                        Option.map snd
+                    match characterOpt with
+                    | Some character ->
+                        let point = match character.Stature with BossStature -> character.Perimeter.CenterOffset2 | _ -> character.Perimeter.CenterOffset
+                        Pointer.renderAt point entity battle.BattleTime world
+                    | None -> Pointer.render entity battle.BattleTime world
             | None -> ()
         | _ -> ()
 

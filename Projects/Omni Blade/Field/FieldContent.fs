@@ -69,7 +69,7 @@ module FieldContent =
             (pageUp, pageDown, itemsPaged)
 
         let pageItems pageSize (field : Field) =
-            match field.Menu.MenuState.Shown with
+            match field.Menu.MenuState with
             | MenuTeam menuTeam ->
                 match menuTeam.TeamEquipOpt with
                 | Some equip ->
@@ -143,7 +143,7 @@ module FieldContent =
             [for (index, teammateValue) in field.Team.Pairs do
                 let teammateName = "Teammate+" + string teammateValue.TeamIndex
                 let (w, upImage, downImage) =
-                    match field.Menu.MenuState.Shown with
+                    match field.Menu.MenuState with
                     | MenuTechs _ -> (336.0f, Assets.Gui.ButtonLongUpImage, Assets.Gui.ButtonLongDownImage)
                     | MenuTeam _ | _ -> (252.0f, Assets.Gui.ButtonBigUpImage, Assets.Gui.ButtonBigDownImage)
                 let h = 72.0f
@@ -179,7 +179,7 @@ module FieldContent =
 
         let techs (position : Vector3) (field : Field) fieldMsg =
             let techs =
-                match field.Menu.MenuState.Shown with
+                match field.Menu.MenuState with
                 | MenuTechs menuTech ->
                     match Map.tryFind menuTech.TeamIndex field.Team with
                     | Some teammate -> teammate.Techs |> Seq.indexed |> Map.ofSeq

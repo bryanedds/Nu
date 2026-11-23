@@ -69,28 +69,24 @@ module BattleInput =
 
     /// The item a ring was left on, where it's been turned to one, else its first.
     let private getRingFocusIndex allyIndex menu (items : (string * bool) array) world =
-        let ring = Simulants.BattleScene / (CharacterIndex.toEntityName allyIndex + "+Input") / getRingEntityName menu
+        let ring = input allyIndex / getRingEntityName menu
         match (if ring.GetExists world then ring.GetRingMenuFocusOpt world else None) with
         | Some focus -> items |> Array.tryFindIndex (fun (name, _) -> name = focus) |> Option.defaultValue 0
         | None -> 0
 
-    let private TargetTie = 1.0f // how near two targets must be along a direction to tie for nearest that way
+    let private TargetTie = 1.0f // how near two targets' corners must be to count as in the same column or row
 
     /// The targets an aim can choose from in the order left steps through them - right to left across the
-    /// battlefield, top to bottom down each column - with where each is. Columns are by the corner a target's placed
-    /// by, which lines up targets placed in the same column whatever their sizes.
-    let private getTargetsAndCenters aimType (battle : Battle) =
+    /// battlefield, top to bottom down each column. Columns are by the corner a target's placed by, which lines up
+    /// targets placed in the same column whatever their sizes.
+    let private getTargets aimType (battle : Battle) =
         Battle.getTargets aimType battle |>
         Map.toArray |>
         Array.sortWith (fun (_, left : Character) (_, right : Character) ->
             let (leftCorner, rightCorner) = (left.Perimeter.Min, right.Perimeter.Min)
             if abs (leftCorner.X - rightCorner.X) >= TargetTie then compare rightCorner.X leftCorner.X
             else compare right.Perimeter.Center.Y left.Perimeter.Center.Y) |>
-        Array.map (fun (index, target) -> (index, target.Perimeter.Center))
-
-    /// The targets an aim can choose from, left to right across the battlefield.
-    let private getTargets aimType battle =
-        getTargetsAndCenters aimType battle |> Array.map fst
+        Array.map fst
 
     /// The ally whose input the cursor is in - one partway through choosing, else the one it was in while they can
     /// still choose, else the first that can.
@@ -151,7 +147,8 @@ module BattleInput =
                         | _ ->
                             let index =
                                 match menu with
-                                | "Reticles" -> 0 // the first in left's order, the top of the rightmost, allies and enemies alike
+                                // the first in left's order, the top of the rightmost, allies and enemies alike
+                                | "Reticles" -> 0
                                 | "Regular" | "Tech" | "Consumable" -> getRingFocusIndex allyIndex menu (getRingItems menu ally battle) world
                                 | _ -> 0
                             let submenu =
@@ -243,9 +240,10 @@ module BattleInput =
                         if intent.Confirm && targets.Length > 0 then Selection.playAffirm world; signal (ReticlesSelect (allyIndex, targets[index]))
                         elif intent.Cancel then Selection.playAffirm world; signal (ReticlesCancel allyIndex)
                         else []
+                    // the target itself, as its reticle hides
                     let pointedOpt =
                         if targets.Length > 0
-                        then Some (Simulants.BattleScene / CharacterIndex.toEntityName targets[index]) // the target, as its reticle hides
+                        then Some (Simulants.BattleScene / CharacterIndex.toEntityName targets[index])
                         else None
                     (cursor, signals, pointedOpt)
 

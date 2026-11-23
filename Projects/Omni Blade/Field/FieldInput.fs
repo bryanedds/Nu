@@ -102,7 +102,6 @@ module FieldInput =
                 | MenuOptions quitPrompt -> if quitPrompt then "Quit" else "Options"
                 | MenuCloseSelected _ | MenuClosed -> if promptShowing field then "Prompt" elif field.DialogOpt.IsSome then "Dialog" else ""
 
-    /// Where the cursor starts in a menu it hasn't been in.
     /// The sidebar row of a main menu.
     let private getSidebarRow menu =
         match menu with
@@ -112,12 +111,11 @@ module FieldInput =
         | "Options" -> 4
         | _ -> 0
 
-    /// Where the cursor starts in a menu - a main menu's sidebar when the menu opens from the field, or its first item
-    /// when a panel over it closes.
-    let private getStart menu fromField =
+    /// Where the cursor starts in a menu - on a main menu's sidebar or in its content, and elsewhere on the first item.
+    let private getStart menu onSidebar =
         match menu with
         | "Team" | "Inventory" | "Techs" | "KeyItems" | "Options" ->
-            let position = if fromField then FieldCursorPosition.sidebar else FieldCursorPosition.content
+            let position = if onSidebar then FieldCursorPosition.sidebar else FieldCursorPosition.content
             { position with SidebarRow = getSidebarRow menu }
         | "Equip" -> { FieldCursorPosition.content with Column = 1 }
         | "Quit" -> { FieldCursorPosition.content with Column = 1 }
@@ -210,7 +208,8 @@ module FieldInput =
             if invoke then
                 let (_, menu, message) = sidebarButtons[cursor.CursorPosition.SidebarRow]
                 if menu = "" then (cursor, affirm (opening @ signal MenuClose) world)
-                elif menu = cursor.CursorMenu && not opening.IsEmpty then (cursor, opening) // opened this frame, so its content's unknown
+                // a menu opened this frame, so its content's unknown yet
+                elif menu = cursor.CursorMenu && not opening.IsEmpty then (cursor, opening)
                 elif menu = panel then ((if hasContent then moveTo 0 0 cursor else cursor), affirm opening world)
                 else (enter menu, affirm (signal message) world)
             elif intent.Cancel || intent.Menu then (cursor, affirm (opening @ signal MenuClose) world)
@@ -482,7 +481,8 @@ module FieldInput =
                 | _ -> (index, 1, [])
             let page = items[index]
             let (column, signals) =
-                if column = 1 && intent.Confirm then (0, affirm (signal (MenuTeamEquipSelect page)) world) // the equip button's next
+                // choosing an item moves to the equip button
+                if column = 1 && intent.Confirm then (0, affirm (signal (MenuTeamEquipSelect page)) world)
                 elif intent.Cancel then (column, affirm (signal MenuTeamEquipCancel) world)
                 else (column, [])
             let cursor = moveTo column index cursor
@@ -629,7 +629,7 @@ module FieldInput =
             | MenuTeam menuTeam -> updateTeam intent menuTeam field cursor world
             | _ -> (cursor, [], None)
         | "Equip" ->
-            match field.Menu.MenuState.Shown with
+            match field.Menu.MenuState with
             | MenuTeam ({ TeamEquipOpt = Some equip } as menuTeam) when field.Team.ContainsKey menuTeam.TeamIndex ->
                 updateEquip intent menuTeam equip field cursor world
             | _ -> (cursor, [], None)
