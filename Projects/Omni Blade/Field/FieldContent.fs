@@ -13,90 +13,6 @@ module FieldContent =
     [<RequireQualifiedAccess>]
     module Content =
 
-        let private equipmentItems equipmentType archetypeType (inventory : Inventory) =
-            let filter (equipment, _) =
-                match (equipmentType, equipment) with
-                | (EquipWeapon _, Equipment (WeaponType weaponType)) ->
-                    match Map.tryFind weaponType Data.Value.Weapons with
-                    | Some weaponData ->
-                        match Map.tryFind archetypeType Data.Value.Archetypes with
-                        | Some archetypeData -> weaponData.WeaponSubtype = archetypeData.WeaponSubtype
-                        | None -> false
-                    | None -> false
-                | (EquipArmor _, Equipment (ArmorType armorType)) ->
-                    match Map.tryFind armorType Data.Value.Armors with
-                    | Some armorData ->
-                        match Map.tryFind archetypeType Data.Value.Archetypes with
-                        | Some archetypeData -> armorData.ArmorSubtype = archetypeData.ArmorSubtype
-                        | None -> false
-                    | None -> false
-                | (EquipAccessory _, Equipment (AccessoryType _)) -> true
-                | _ -> false
-            inventory.Items |>
-            Map.toArray |>
-            Array.filter filter |>
-            Array.map (function (Equipment _ as equipment, count) -> Some (equipment, count) | _ -> None) |>
-            Array.definitize |>
-            Map.ofArray
-
-        let private pageItems5 pageSize pageIndex filter sort (items : Map<ItemType, int>) =
-            let items =
-                items |>
-                Map.toSeq |>
-                (fun items -> if filter then ItemType.filterSellableItems items else items) |>
-                (fun items -> if sort then ItemType.sortItems items else items)
-            let itemsPaged =
-                items |>
-                Seq.indexed |>
-                Seq.chunkBySize pageSize |>
-                Seq.trySkip pageIndex |>
-                Seq.map List.ofArray |>
-                Seq.tryHead |>
-                Option.defaultValue [] |>
-                Seq.indexed |>
-                Map.ofSeq |>
-                Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
-            let pageUp =
-                if itemsPaged.Count <> 0 then
-                    let firstItemPaged = Seq.head itemsPaged
-                    fst (snd firstItemPaged.Value) <> fst (Seq.head items)
-                else false
-            let pageDown =
-                if itemsPaged.Count <> 0 then
-                    let lastItemPaged = Seq.last itemsPaged
-                    fst (snd lastItemPaged.Value) <> fst (Seq.last items)
-                else false
-            (pageUp, pageDown, itemsPaged)
-
-        let pageItems pageSize (field : Field) =
-            match field.Menu.MenuState with
-            | MenuTeam menuTeam ->
-                match menuTeam.TeamEquipOpt with
-                | Some equip ->
-                    match Map.tryFind menuTeam.TeamIndex field.Team with
-                    | Some teammate ->
-                        let items = equipmentItems equip.EquipType teammate.ArchetypeType field.Inventory
-                        pageItems5 pageSize equip.EquipPage false true items
-                    | None -> (false, false, Map.empty)
-                | None -> (false, false, Map.empty)
-            | MenuInventory inventory ->
-                let items = Inventory.getNonKeyItems field.Inventory
-                pageItems5 pageSize inventory.InventoryPage false true items
-            | MenuKeyItems keyItems ->
-                let items = Inventory.getKeyItems field.Inventory
-                pageItems5 pageSize keyItems.KeyItemsPage false true items
-            | _ ->
-                match field.ShopOpt with
-                | Some shop ->
-                    match shop.ShopState with
-                    | ShopBuying ->
-                        let shopItems = ShopType.getShopBuyItems field.Advents shop.ShopType
-                        pageItems5 pageSize shop.ShopPage false false (Map.ofListBy (flip Pair.make 1) shopItems)
-                    | ShopSelling ->
-                        let items = Inventory.getNonKeyItems field.Inventory
-                        pageItems5 pageSize shop.ShopPage true true items
-                | None -> (false, false, Map.empty)
-
         let teammate entityName initializers =
             Content.entity<TeammateDispatcher> entityName initializers
 
@@ -158,7 +74,7 @@ module FieldContent =
                      Entity.ClickEvent => fieldMsg index]]
 
         let items (position : Vector3) pageSize rows field fieldMsg =
-            let items = pageItems pageSize field |> __c // TOOD: consider memoizing.
+            let items = Field.pageItems pageSize field |> __c // TOOD: consider memoizing.
             [for entry in items do
                 let index = entry.Key
                 let (_, (itemType, itemCountOpt)) as page = entry.Value

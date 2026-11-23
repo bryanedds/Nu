@@ -9,11 +9,15 @@ open Nu
 
 type Credits =
     { ScrollPosition : Vector3
-      QuitVisible : bool }
+      QuitVisible : bool
+      CreditsPointerShown : bool
+      CreditsIntent : Intent }
 
     static member val empty =
         { ScrollPosition = v3Zero
-          QuitVisible = true }
+          QuitVisible = true
+          CreditsPointerShown = true
+          CreditsIntent = Intent.empty }
 
     static member make quitVisible =
         { Credits.empty with
@@ -73,8 +77,9 @@ type CreditsDispatcher () =
             else just credits
 
         | ProcessInput ->
-            // confirm or cancel quits once quitting's offered
-            let intent = Game.GetIntent world
+            // read input whenever selected, confirm or cancel quitting once it's offered and the screen's idling
+            let (pointerShown, intent) = Intent.read credits.CreditsPointerShown credits.CreditsIntent world
+            let credits = { credits with CreditsPointerShown = pointerShown; CreditsIntent = intent }
             if credits.QuitVisible && screen.GetIdling world && (intent.Confirm || intent.Cancel) then
                 Selection.playAffirm world
                 withSignal (signal StartQuitting) credits
@@ -87,7 +92,7 @@ type CreditsDispatcher () =
     override this.Render (credits, renderPass, screen, world) =
         match renderPass with
         | NormalPass when credits.QuitVisible && screen.GetIdling world ->
-            Pointer.render (Simulants.CreditsGui / "Quit") world.UpdateTime world
+            Pointer.render credits.CreditsPointerShown (Simulants.CreditsGui / "Quit") world.UpdateTime world
         | _ -> ()
 
     override this.Content (credits, _) =

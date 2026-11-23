@@ -23,6 +23,20 @@ module Constants =
               IdlingTime = 60L
               SlideImageOpt = Some Assets.Gui.NuSlide }
 
+        let PointerSize = v3 60.0f 39.0f 0.0f // three times the image's 20 by 13 pixels, as the game's pixel art is drawn
+        let PointerGap = 4.0f // how far left of what it points at the fingertip rests
+        let PointerInset = 16.0f // how far into a gui entity from its left the point the hand points at is
+        let PointerBobDistance = 3.0f
+        let PointerBobPeriod = 40L
+        let PointerElevation = 100.0f // above all of the field's and battle's gui, including the buttons around it
+
+    [<RequireQualifiedAccess>]
+    module Input =
+
+        let StickDeadZone = 0.25f // how far the left stick must lean before an axis counts
+        let StepRepeatDelay = 20L // frames a step is held before it repeats
+        let StepRepeatPeriod = 6L // frames between repeated steps
+
     [<RequireQualifiedAccess>]
     module Intro =
 
@@ -142,6 +156,14 @@ module Constants =
         let CharacterMaterializeDuration = 60L
         let CharacterDematerializeDuration = 60L
         let RingMenuRadius = 84.0f
+        let RingMenuButtonSize = v3 48.0f 48.0f 0.0f
+        let RingMenuTurnRate = 0.3f // how much of the way to its focused item a ring turns each frame
+        let RingArrowsSize = v3 27.0f 48.0f 0.0f // three times the image's pixels, as the ring's items are drawn
+        let RingArrowsGap = 3.0f // how far from the item each arrow rests
+        let RingArrowsBobDistance = 3.0f
+        let RingArrowsBobPeriod = 40L
+        let RingArrowsElevation = 100.0f // above all of the battle's gui, as the pointing hand is
+        let TargetTieDistance = 1.0f // how near two targets' corners must be to count as in the same column or row
         let BackgroundElevation = -30.0f
         let EffectElevationUnder = -2.5f
         let GuiBackgroundElevation = -5.0f

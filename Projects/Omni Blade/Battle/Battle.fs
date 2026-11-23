@@ -8,19 +8,42 @@ open Prime
 open Nu
 open BattleInteractionSystem
 
+/// The battle menu the cursor is in.
+type BattleCursorMenu =
+    | NoBattleMenu
+    | RegularRing
+    | TechRing
+    | ConsumableRing
+    | TargetAim
+    | ResultChoice
+
 /// Where the battle's cursor is, for the gamepad and keyboard - whose input it's in, which of their menus, and what
 /// it's on.
 type BattleCursor =
     { CursorAllyOpt : CharacterIndex option
-      CursorMenu : string // "Regular", "Tech", "Consumable", "Reticles" or "Result"
+      CursorMenu : BattleCursorMenu
       CursorIndex : int
-      CursorParents : (string * int) list } // the menus under this one and what the cursor was on in each
+      CursorParents : (BattleCursorMenu * int) list } // the menus under this one and what the cursor was on in each
 
     static member initial =
         { CursorAllyOpt = None
-          CursorMenu = ""
+          CursorMenu = NoBattleMenu
           CursorIndex = 0
           CursorParents = [] }
+
+/// How an ally's ring menu is turned - the item it turns to bring to the top, which way it last turned, for breaking
+/// the tie of a half turn, and how far it's turned now.
+type BattleRing =
+    { RingFocus : string
+      RingSpin : single // 1 clockwise, -1 counterclockwise
+      RingRotation : single }
+
+/// What the battle's pointer points at.
+type BattlePointed =
+    | RingItemPointed of CharacterIndex * BattleCursorMenu * string
+    | TargetPointed of CharacterIndex
+    | RetryPointed
+    | DialogPointed
 
 type BattleMessage =
     | Update
@@ -36,6 +59,8 @@ type BattleMessage =
     | TechItemCancel of CharacterIndex
     | ReticlesSelect of CharacterIndex * CharacterIndex
     | ReticlesCancel of CharacterIndex
+    | ProcessInput
+    | FollowInput
 #if DEV
     | Win
 #endif
@@ -44,7 +69,6 @@ type BattleMessage =
 
 type BattleCommand =
     | UpdateEye
-    | ProcessInput
     | Concluding
     | Conclude
     | ScheduleSound of int64 * single * Sound AssetTag
@@ -145,7 +169,9 @@ module Battle =
               DialogOpt_ : Dialog option
               BattleSpeed_ : BattleSpeed
               BattleCursor_ : BattleCursor
-              InputAllyOpt_ : CharacterIndex option } // whose ring menus are in use while the pointing hand shows
+              BattleRings_ : Map<CharacterIndex * BattleCursorMenu, BattleRing> // each shown ring menu's turn
+              BattlePointerShown_ : bool
+              BattleIntent_ : Intent }
 
         (* Local Properties *)
         member this.BattleTime = this.BattleTime_
@@ -165,7 +191,9 @@ module Battle =
         member this.DialogOpt = this.DialogOpt_
         member this.BattleSpeed = this.BattleSpeed_
         member this.BattleCursor = this.BattleCursor_
-        member this.InputAllyOpt = this.InputAllyOpt_
+        member this.BattleRings = this.BattleRings_
+        member this.BattlePointerShown = this.BattlePointerShown_
+        member this.BattleIntent = this.BattleIntent_
 
     (* Low-Level Operations *)
 
@@ -184,10 +212,14 @@ module Battle =
     let setBattleCursor cursor battle =
         { battle with BattleCursor_ = cursor }
 
-    /// Set the ally whose ring menus are in use while the pointing hand shows, the others' showing disabled - none
-    /// while it doesn't show.
-    let setInputAllyOpt inputAllyOpt battle =
-        { battle with InputAllyOpt_ = inputAllyOpt }
+    let setBattleRings rings battle =
+        { battle with BattleRings_ = rings }
+
+    let setBattlePointerShown pointerShown battle =
+        { battle with BattlePointerShown_ = pointerShown }
+
+    let setBattleIntent intent battle =
+        { battle with BattleIntent_ = intent }
 
     let setCurrentCommandOpt currentCommandOpt battle =
         { battle with CurrentCommandOpt_ = currentCommandOpt }
@@ -1112,6 +1144,304 @@ module Battle =
     let win battle =
         setBattleState (BattleState.BattleResult (battle.BattleTime_, WinBattle)) battle
 #endif
+
+    (* Input *)
+
+    let private isRing menu =
+        match menu with
+        | RegularRing | TechRing | ConsumableRing -> true
+        | NoBattleMenu | TargetAim | ResultChoice -> false
+
+    /// The menu an ally's input is in.
+    let private getAllyMenu (ally : Character) =
+        match ally.CharacterInputState with
+        | RegularMenu -> RegularRing
+        | TechMenu -> TechRing
+        | ItemMenu -> ConsumableRing
+        | AimReticles _ -> TargetAim
+        | NoInput -> NoBattleMenu
+
+    /// A ring menu's items as the ring lays them out, clockwise from the top, and whether each can be chosen.
+    let private getRingItems menu (ally : Character) (battle : Battle) =
+        let items =
+            match menu with
+            | RegularRing -> [("Attack", (0, true)); ("Tech", (1, true)); ("Consumable", (2, true)); ("Defend", (3, true))]
+            | ConsumableRing ->
+                battle.Inventory |> Inventory.getConsumables |> Seq.map (fun kvp -> (getCaseName kvp.Key, (getCaseTag kvp.Key, true))) |> List.ofSeq
+            | TechRing ->
+                [for tech in ally.Techs do
+                    let affordable =
+                        match Map.tryFind tech Data.Value.Techs with
+                        | Some techData -> techData.TechCost <= ally.TechPoints && not (Map.containsKey Silence ally.Statuses)
+                        | None -> false
+                    let castable =
+                        if tech.ConjureTech then
+                            match ally.ConjureChargeOpt with
+                            | Some conjureCharge -> conjureCharge >= Constants.Battle.ChargeMax
+                            | None -> true
+                        else true
+                    (getCaseName tech, (getCaseTag tech, affordable && castable))]
+            | NoBattleMenu | TargetAim | ResultChoice -> []
+        items |> List.sortBy (fun (_, (tag, _)) -> tag) |> List.map (fun (name, (_, enabled)) -> (name, enabled)) |> Array.ofList
+
+    /// The item a ring was left on, where it's been turned to one, else its first.
+    let private getRingFocusIndex allyIndex menu (items : (string * bool) array) (battle : Battle) =
+        match battle.BattleRings.TryFind (allyIndex, menu) with
+        | Some ring -> items |> Array.tryFindIndex (fun (name, _) -> name = ring.RingFocus) |> Option.defaultValue 0
+        | None -> 0
+
+    /// The targets an aim can choose from in the order left steps through them - right to left across the
+    /// battlefield, top to bottom down each column. Columns are by the corner a target's placed by, which lines up
+    /// targets placed in the same column whatever their sizes.
+    let private getInputTargets aimType (battle : Battle) =
+        getTargets aimType battle |>
+        Map.toArray |>
+        Array.sortWith (fun (_, left : Character) (_, right : Character) ->
+            let (leftCorner, rightCorner) = (left.Perimeter.Min, right.Perimeter.Min)
+            if abs (leftCorner.X - rightCorner.X) >= Constants.Battle.TargetTieDistance then compare rightCorner.X leftCorner.X
+            else compare right.Perimeter.Center.Y left.Perimeter.Center.Y) |>
+        Array.map fst
+
+    /// The ally whose input the cursor is in - one partway through choosing, else the one it was in while they can
+    /// still choose, else the first that can.
+    let private tryGetInputAlly (cursor : BattleCursor) (battle : Battle) =
+        let allies = getCharactersHealthy battle |> Map.filter (fun index _ -> index.Ally)
+        match allies |> Map.tryFindKey (fun _ ally -> match ally.CharacterInputState with TechMenu | ItemMenu | AimReticles _ -> true | _ -> false) with
+        | Some allyIndex -> Some allyIndex
+        | None ->
+            let regular = allies |> Map.filter (fun _ ally -> ally.CharacterInputState = RegularMenu)
+            match cursor.CursorAllyOpt with
+            | Some allyIndex when regular.ContainsKey allyIndex -> Some allyIndex
+            | _ -> regular |> Map.tryFindKey (fun _ _ -> true)
+
+    /// Whether the battle's end offers retrying as well as quitting.
+    let private isRetryable (battle : Battle) =
+        not battle.HardcoreMode && match battle.BattleState with BattleResult (_, LoseBattle) -> true | _ -> false
+
+    /// Move the cursor to the input the battle's in - back to what it was on when a menu opened over that one closes,
+    /// otherwise each ring on the item it was left on, else its first, and the targets where aiming starts - or to the
+    /// choice at the battle's end.
+    let followInput (battle : Battle) (cursor : BattleCursor) =
+        match battle.BattleState with
+        | BattleRunning when battle.DialogOpt.IsNone ->
+            match tryGetInputAlly cursor battle with
+            | Some allyIndex ->
+                let ally = (getAllies battle)[allyIndex]
+                let menu = getAllyMenu ally
+                if cursor.CursorAllyOpt <> Some allyIndex || cursor.CursorMenu <> menu then
+                    let sameAlly = cursor.CursorAllyOpt = Some allyIndex
+                    match cursor.CursorParents with
+                    | (parent, index) :: parents when sameAlly && parent = menu ->
+                        { cursor with CursorMenu = menu; CursorIndex = index; CursorParents = parents }
+                    | _ ->
+                        // the first in left's order, the top of the rightmost, allies and enemies alike
+                        let index = if isRing menu then getRingFocusIndex allyIndex menu (getRingItems menu ally battle) battle else 0
+                        let submenu =
+                            match (cursor.CursorMenu, menu) with
+                            | (RegularRing, (TechRing | ConsumableRing | TargetAim)) | ((TechRing | ConsumableRing), TargetAim) -> true
+                            | (_, _) -> false
+                        let parents = if sameAlly && submenu then (cursor.CursorMenu, cursor.CursorIndex) :: cursor.CursorParents else []
+                        { cursor with CursorAllyOpt = Some allyIndex; CursorMenu = menu; CursorIndex = index; CursorParents = parents }
+                else cursor
+            | None -> cursor
+        | _ ->
+            match battle.DialogOpt with
+            | Some dialog when Dialog.canAdvance id dialog ->
+                let cursor =
+                    if cursor.CursorMenu <> ResultChoice
+                    then { cursor with CursorMenu = ResultChoice; CursorIndex = 0; CursorAllyOpt = None; CursorParents = [] }
+                    else cursor
+                { cursor with CursorIndex = if isRetryable battle then cursor.CursorIndex else 1 }
+            | _ -> { cursor with CursorMenu = NoBattleMenu }
+
+    /// The choice at the battle's end - retry or quit on a loss, otherwise just turning the page.
+    let private updateInputResult (intent : Intent) (cursor : BattleCursor) (battle : Battle) world =
+        if cursor.CursorMenu = ResultChoice then
+            let index =
+                match intent.Step with
+                | Some (Leftward | Rightward) when isRetryable battle -> 1 - cursor.CursorIndex
+                | _ -> cursor.CursorIndex
+            let cursor = { cursor with CursorIndex = index }
+            let signals =
+                if intent.Confirm then
+                    Selection.playAffirm world
+                    [signal (if index = 0 then Retry else InteractDialog)]
+                else []
+            let pointed = if index = 0 then RetryPointed else DialogPointed
+            (cursor, signals, Some pointed)
+        else (cursor, [], None)
+
+    /// Advance the cursor and act on what the player means this frame, returning the cursor, the signals for the
+    /// battle, and what the pointer should point at.
+    let updateInput (intent : Intent) (battle : Battle) (cursor : BattleCursor) world : BattleCursor * Signal list * BattlePointed option =
+        let cursor = followInput battle cursor
+        match battle.BattleState with
+        | BattleRunning when battle.DialogOpt.IsNone ->
+            match tryGetInputAlly cursor battle with
+            | Some allyIndex ->
+                let ally = (getAllies battle)[allyIndex]
+                let menu = cursor.CursorMenu
+                match ally.CharacterInputState with
+                | RegularMenu | TechMenu | ItemMenu ->
+
+                    // a turning ring menu
+                    let items = getRingItems menu ally battle
+                    let index = if items.Length = 0 then 0 else min cursor.CursorIndex (dec items.Length)
+                    // right to the item clockwise of the top, so the ring turns counterclockwise to bring it up, left the
+                    // other way, and down or up to the item at the bottom - of two nearest the bottom of an odd ring,
+                    // down the one clockwise of it and up the one counterclockwise
+                    let count = items.Length
+                    let index =
+                        match intent.Step with
+                        | Some Rightward -> Selection.wrap 1 count index
+                        | Some Leftward -> Selection.wrap -1 count index
+                        | Some Downward -> Selection.wrap (count / 2) count index
+                        | Some Upward -> Selection.wrap -(count / 2) count index
+                        | None -> index
+                    let cursor = { cursor with CursorIndex = index }
+
+                    // switching between allies waiting on the regular menu, tab or start going to the next
+                    let previous = intent.PageUp
+                    let next = intent.PageDown || intent.Menu
+                    let cursor =
+                        if menu = RegularRing && (previous || next) then
+                            let waiting = getCharactersHealthy battle |> Map.filter (fun i a -> i.Ally && a.CharacterInputState = RegularMenu) |> Map.toKeyArray
+                            match Array.tryFindIndex ((=) allyIndex) waiting with
+                            | Some i ->
+                                // the next ally's menu picks up at the item its own ring was left on, else its first
+                                let allyIndex' = waiting[Selection.wrap (if previous then -1 else 1) waiting.Length i]
+                                if allyIndex' <> allyIndex then
+                                    let index = getRingFocusIndex allyIndex' menu items battle
+                                    { cursor with CursorAllyOpt = Some allyIndex'; CursorIndex = index; CursorParents = [] }
+                                else cursor
+                            | None -> cursor
+                        else cursor
+                    let signals =
+                        if intent.Confirm && items.Length > 0 then
+                            let (name, enabled) = items[index]
+                            if enabled then
+                                Selection.playAffirm world
+                                match menu with
+                                | RegularRing -> [signal (RegularItemSelect (allyIndex, name))]
+                                | TechRing -> [signal (TechItemSelect (allyIndex, name))]
+                                | _ -> [signal (ConsumableItemSelect (allyIndex, name))]
+                            else Selection.playMistake world; []
+                        elif intent.Cancel then
+                            match menu with
+                            | TechRing -> Selection.playAffirm world; [signal (TechItemCancel allyIndex)]
+                            | ConsumableRing -> Selection.playAffirm world; [signal (ConsumableItemCancel allyIndex)]
+                            | _ -> []
+                        else []
+                    let pointedOpt =
+                        if items.Length > 0 && cursor.CursorAllyOpt = Some allyIndex
+                        then Some (RingItemPointed (allyIndex, menu, fst items[index]))
+                        else None
+                    (cursor, signals, pointedOpt)
+
+                | AimReticles (_, aimType) ->
+
+                    // choosing a target
+                    let targets = getInputTargets aimType battle
+                    let index = if targets.Length = 0 then 0 else min cursor.CursorIndex (dec targets.Length)
+                    let cursor =
+                        match intent.Step with
+                        | Some direction when targets.Length > 0 ->
+                            // allies or enemies left through their order and right back, and down through rows top to
+                            // bottom, each left to right, and up back, each wrapping round at the ends - rows by the
+                            // corner a target's placed by, as columns are
+                            let index =
+                                match direction with
+                                | Leftward -> Selection.wrap 1 targets.Length index
+                                | Rightward -> Selection.wrap -1 targets.Length index
+                                | Upward | Downward ->
+                                    let corners =
+                                        let characters = getCharacters battle
+                                        targets |> Array.map (fun target -> characters[target].Perimeter.Min)
+                                    let rows =
+                                        [|0 .. dec corners.Length|] |>
+                                        Array.sortWith (fun i j ->
+                                            if abs (corners[i].Y - corners[j].Y) >= Constants.Battle.TargetTieDistance then compare corners[j].Y corners[i].Y
+                                            else compare corners[i].X corners[j].X)
+                                    let place = Array.findIndex ((=) index) rows
+                                    let place = Selection.wrap (if direction = Downward then 1 else -1) rows.Length place
+                                    rows[place]
+                            { cursor with CursorIndex = index }
+                        | _ -> { cursor with CursorIndex = index }
+                    let index = cursor.CursorIndex
+                    let signals =
+                        if intent.Confirm && targets.Length > 0 then Selection.playAffirm world; [signal (ReticlesSelect (allyIndex, targets[index]))]
+                        elif intent.Cancel then Selection.playAffirm world; [signal (ReticlesCancel allyIndex)]
+                        else []
+                    // the target itself, as its reticle hides
+                    let pointedOpt = if targets.Length > 0 then Some (TargetPointed targets[index]) else None
+                    (cursor, signals, pointedOpt)
+
+                | NoInput -> (cursor, [], None)
+            | None -> (cursor, [], None)
+        | _ -> updateInputResult intent cursor battle world
+
+    /// Turn the battle's ring menus. The one the cursor's in focuses the item the cursor's on - right turning it
+    /// counterclockwise, left clockwise, down or up the way it last turned, and otherwise, as when it's shown again on
+    /// coming back from a menu opened over it, being there at once. Then each turns a little further the short way
+    /// round toward its focused item being at the top. Rings no longer shown are forgotten, starting over when shown.
+    let updateRings (step : Direction option) (battle : Battle) =
+        let allies = getAllies battle
+        let shown (allyIndex, menu) =
+            match allies.TryFind allyIndex with
+            | Some ally -> getAllyMenu ally = menu
+            | None -> false
+        let tryGetFocusRotation (allyIndex, menu) focus =
+            let items = getRingItems menu allies[allyIndex] battle
+            match Array.tryFindIndex (fun (name, _) -> name = focus) items with
+            | Some index -> Some (-(single index / single items.Length) * MathF.TWO_PI)
+            | None -> None
+        let rings = battle.BattleRings |> Map.filter (fun key _ -> shown key)
+        let rings =
+            let cursor = battle.BattleCursor
+            match cursor.CursorAllyOpt with
+            | Some allyIndex when isRing cursor.CursorMenu && shown (allyIndex, cursor.CursorMenu) ->
+                let key = (allyIndex, cursor.CursorMenu)
+                let items = getRingItems cursor.CursorMenu allies[allyIndex] battle
+                if items.Length > 0 then
+                    let focus = fst items[min cursor.CursorIndex (dec items.Length)]
+                    match rings.TryFind key with
+                    | Some ring when ring.RingFocus = focus -> rings
+                    | ringOpt ->
+                        let spin =
+                            match (step, ringOpt) with
+                            | (Some Rightward, _) -> -1.0f
+                            | (Some Leftward, _) -> 1.0f
+                            | (_, Some ring) -> ring.RingSpin
+                            | (_, None) -> 1.0f
+                        let rotation =
+                            match (step, ringOpt) with
+                            | (Some _, Some ring) -> ring.RingRotation
+                            | (_, _) -> Option.defaultValue 0.0f (tryGetFocusRotation key focus)
+                        Map.add key { RingFocus = focus; RingSpin = spin; RingRotation = rotation } rings
+                else rings
+            | _ -> rings
+        let rings =
+            rings |>
+            Map.map (fun key ring ->
+                match tryGetFocusRotation key ring.RingFocus with
+                | Some target ->
+                    let delta = target - ring.RingRotation
+                    let delta = delta - MathF.Round (delta / MathF.TWO_PI) * MathF.TWO_PI
+                    // a half turn's as short either way, so it goes the way the ring was turned
+                    let delta =
+                        if abs (abs delta - MathF.PI) < 0.01f
+                        then (if ring.RingSpin < 0.0f then -MathF.PI else MathF.PI)
+                        else delta
+                    let rotation = if abs delta < 0.01f then target else ring.RingRotation + delta * Constants.Battle.RingMenuTurnRate
+                    { ring with RingRotation = rotation }
+                | None -> ring)
+        setBattleRings rings battle
+
+    /// How far an ally's ring menu is turned.
+    let getRingRotation allyIndex menu (battle : Battle) =
+        match battle.BattleRings.TryFind (allyIndex, menu) with
+        | Some ring -> ring.RingRotation
+        | None -> 0.0f
 
     (* High-Level Operations (signal-producing) *)
 
@@ -2255,7 +2585,9 @@ module Battle =
           DialogOpt_ = None
           BattleSpeed_ = battleSpeed
           BattleCursor_ = BattleCursor.initial
-          InputAllyOpt_ = None }
+          BattleRings_ = Map.empty
+          BattlePointerShown_ = true
+          BattleIntent_ = Intent.empty }
 
     let empty =
         match Map.tryFind EmptyBattle Data.Value.Battles with
@@ -2277,7 +2609,9 @@ module Battle =
               DialogOpt_ = None
               BattleSpeed_ = WaitSpeed
               BattleCursor_ = BattleCursor.initial
-              InputAllyOpt_ = None }
+              BattleRings_ = Map.empty
+              BattlePointerShown_ = true
+              BattleIntent_ = Intent.empty }
         | None -> failwith "Expected data for DebugBattle to be available."
 
 type Battle = Battle.Battle

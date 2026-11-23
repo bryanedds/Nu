@@ -7,12 +7,14 @@ open System.IO
 open Prime
 open Nu
 
+/// What the game shows. The screens without models of their own - the splash, the pick and the intro - keep the
+/// whether the pointer's shown and the player's intent here, the others in their own models.
 type OmniBlade =
-    | Splash
+    | Splash of bool * Intent
     | Title
     | Credits
-    | Pick of int // the row selected - a save slot's, or back after them
-    | Intro of SaveSlot
+    | Pick of int * SaveSlot Set * bool * Intent
+    | Intro of SaveSlot * bool * Intent
     | Field
     | Battle
 
@@ -27,13 +29,14 @@ type OmniBladeMessage =
     | CommenceBattle of BattleData * PrizePool
     | ConcludingBattle of BattleOutcome
     | ConcludeBattle
+    | ProcessInput
     interface Message
 
 type OmniBladeCommand =
     | UpdateFullScreen of KeyboardKeyData
-    | ProcessInput
     | UpdatePicks
     | SetField of Field
+    | SetIntent of Screen * bool * Intent
     | FromFieldToBattle of BattleData * PrizePool
     | FromBattleToField of PrizePool
     | ConcludeCredits
@@ -52,18 +55,45 @@ module OmniBladeExtensions =
         | Slot2 -> Assets.User.SaveFilePath2
         | Slot3 -> Assets.User.SaveFilePath3
 
+    /// The save slots saved in.
+    let getPickSaves () =
+        Set.ofList [for slot in [Slot1; Slot2; Slot3] do if File.Exists (pickSaveFilePath slot) then slot]
+
     type Game with
         member this.GetOmniBlade world = this.GetModelGeneric<OmniBlade> world
         member this.SetOmniBlade value world = this.SetModelGeneric<OmniBlade> value world
         member this.OmniBlade = this.ModelGeneric<OmniBlade> ()
 
 type OmniBladeDispatcher () =
-    inherit GameDispatcher<OmniBlade, OmniBladeMessage, OmniBladeCommand> (Splash)
+    inherit GameDispatcher<OmniBlade, OmniBladeMessage, OmniBladeCommand> (Splash (true, Intent.empty))
+
+    static let IntroScreens =
+        [Simulants.Intro; Simulants.Intro2; Simulants.Intro3; Simulants.Intro4; Simulants.Intro5]
+
+    /// Whether the pointer's shown as whatever holds it for the game's model keeps it - the case itself, or the screen
+    /// with a model of its own.
+    static let getPointerShown omniBlade world =
+        match omniBlade with
+        | Splash (pointerShown, _) | Pick (_, _, pointerShown, _) | Intro (_, pointerShown, _) -> pointerShown
+        | Title -> (Simulants.Title.GetTitle world).TitlePointerShown
+        | Credits -> (Simulants.Credits.GetCredits world).CreditsPointerShown
+        | Field -> (Simulants.Field.GetField world).FieldPointerShown
+        | Battle -> (Simulants.Battle.GetBattle world).BattlePointerShown
+
+    /// Hand whether the pointer's shown over to whatever holds it for the game's model, its intent starting anew - the
+    /// case itself, or a command to give it to the screen with a model of its own.
+    static let handover omniBlade pointerShown : OmniBlade * Signal list =
+        match omniBlade with
+        | Splash _ -> (Splash (pointerShown, Intent.empty), [])
+        | Pick (selection, saves, _, _) -> (Pick (selection, saves, pointerShown, Intent.empty), [])
+        | Intro (slot, _, _) -> (Intro (slot, pointerShown, Intent.empty), [])
+        | Title -> (omniBlade, [SetIntent (Simulants.Title, pointerShown, Intent.empty) :> Signal])
+        | Credits -> (omniBlade, [SetIntent (Simulants.Credits, pointerShown, Intent.empty) :> Signal])
+        | Field -> (omniBlade, [SetIntent (Simulants.Field, pointerShown, Intent.empty) :> Signal])
+        | Battle -> (omniBlade, [SetIntent (Simulants.Battle, pointerShown, Intent.empty) :> Signal])
 
     static member Properties =
-        [nonPersistent Game.Intent Intent.empty
-         nonPersistent Game.IntentOverrideOpt None
-         nonPersistent Game.IntentState IntentState.initial]
+        [nonPersistent Game.IntentOverrideOpt None]
 
     override this.Register (game, world) =
         base.Register (game, world)
@@ -72,6 +102,9 @@ type OmniBladeDispatcher () =
     override this.Definitions (omniBlade, _) =
         [Game.KeyboardKeyDownEvent =|> fun evt -> UpdateFullScreen evt.Data
          Game.UpdateEvent => ProcessInput
+         Simulants.Title.TitlePlayEvent => ShowPick
+         Simulants.Title.TitleCreditsEvent => ShowCredits
+         Simulants.Title.TitleExitEvent => Exit
          if omniBlade.IsSplash then Simulants.Splash.DeselectingEvent => ShowTitle
          Simulants.Pick.UpdateEvent => UpdatePicks
          Simulants.TitlePlay.ClickEvent => ShowPick
@@ -97,6 +130,21 @@ type OmniBladeDispatcher () =
 
     override this.Message (omniBlade, message, _, world) =
 
+        // when the game shows something else, whatever holds the input for it takes whether the pointer's shown from
+        // what held it before
+        let (signals, omniBlade') = this.HandleMessage (omniBlade, message, world)
+        let switched =
+            match (omniBlade, omniBlade') with
+            | (Splash _, Splash _) | (Title, Title) | (Credits, Credits) | (Pick _, Pick _)
+            | (Intro _, Intro _) | (Field, Field) | (Battle, Battle) -> false
+            | (_, _) -> true
+        if switched then
+            let (omniBlade', handing) = handover omniBlade' (getPointerShown omniBlade world)
+            (signals @ handing, omniBlade')
+        else (signals, omniBlade')
+
+    member private this.HandleMessage (omniBlade, message, world) : Signal list * OmniBlade =
+
         match message with
         | ShowTitle ->
             just Title
@@ -105,13 +153,13 @@ type OmniBladeDispatcher () =
             just Credits
 
         | ShowPick ->
-            just (Pick 0)
+            just (Pick (0, getPickSaves (), getPointerShown omniBlade world, Intent.empty))
 
         | ShowIntro slot ->
-            just (Intro slot)
+            just (Intro (slot, getPointerShown omniBlade world, Intent.empty))
 
         | ShowFieldInitial ->
-            let slot = match omniBlade with Intro slot -> slot | _ -> Slot1
+            let slot = match omniBlade with Intro (slot, _, _) -> slot | _ -> Slot1
             let field = Field.initial world.UpdateTime slot
             withSignals [SetField field; SynchronizeSongVolume] Field
 
@@ -142,7 +190,41 @@ type OmniBladeDispatcher () =
                 | RetryBattle (_, _) -> just Battle
             | _ -> just omniBlade
 
-    override this.Command (_, command, _, world) =
+        | ProcessInput ->
+            // a screen without a model of its own reads input into its case of the game's model while it's in it, its
+            // input being ignored as it goes once the game's moved on
+            match (World.getSelectedScreenOpt world, omniBlade) with
+            | (Some screen, Splash (pointerShown, intent)) when screen = Simulants.Splash ->
+                just (Splash (Intent.read pointerShown intent world))
+            | (Some screen, Intro (slot, pointerShown, intent)) when List.contains screen IntroScreens ->
+                let (pointerShown, intent) = Intent.read pointerShown intent world
+                just (Intro (slot, pointerShown, intent))
+            | (Some screen, Pick (selection, saves, pointerShown, intent)) when screen = Simulants.Pick ->
+                let (pointerShown, intent) = Intent.read pointerShown intent world
+                let omniBlade = Pick (selection, saves, pointerShown, intent)
+
+                // the pick screen's menu - a row for each save slot, then back
+                if screen.GetIdling world then
+                    let selection =
+                        match intent.Step with
+                        | Some direction -> Selection.wrap (Selection.rowDelta direction) 4 selection
+                        | None -> selection
+                    let omniBlade = Pick (selection, saves, pointerShown, intent)
+                    if intent.Confirm then
+                        match selection with
+                        | 0 | 1 | 2 ->
+                            let slot = match selection with 0 -> Slot1 | 1 -> Slot2 | _ -> Slot3
+                            World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Gui.SlotSound world
+                            withSignal (if saves.Contains slot then TryLoad slot else ShowIntro slot) omniBlade
+                        | _ -> Selection.playAffirm world; withSignal ShowTitle omniBlade
+                    elif intent.Cancel then
+                        Selection.playAffirm world
+                        withSignal ShowTitle omniBlade
+                    else just omniBlade
+                else just omniBlade
+            | (_, _) -> just omniBlade
+
+    override this.Command (omniBlade, command, _, world) =
 
         match command with
         | UpdateFullScreen keyboardKeyData ->
@@ -151,54 +233,44 @@ type OmniBladeDispatcher () =
                 | Some fullScreen -> World.trySetWindowFullScreen (not fullScreen) world
                 | None -> ()
 
-        | ProcessInput ->
-
-            // read what the player means, or what a test gives in its place
-            let (intentRead, intentState) = Intent.read (Game.GetIntentState world) world
-            Game.SetIntentState intentState world
-            let intent =
-                match Game.GetIntentOverrideOpt world with
-                | Some intent -> intent
-                | None -> intentRead
-            Game.SetIntent intent world
-
-            // the pick screen's menu - a row for each save slot, then back
-            match Game.GetOmniBlade world with
-            | Pick selection when Simulants.Pick.GetSelected world && Simulants.Pick.GetIdling world ->
-                match intent.Step with
-                | Some direction -> Game.SetOmniBlade (Pick (Selection.wrap (Selection.rowDelta direction) 4 selection)) world
-                | None -> ()
-                if intent.Confirm then
-                    match selection with
-                    | 0 | 1 | 2 ->
-                        let slot = match selection with 0 -> Slot1 | 1 -> Slot2 | _ -> Slot3
-                        World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Gui.SlotSound world
-                        if File.Exists (pickSaveFilePath slot)
-                        then Game.Signal (TryLoad slot) world
-                        else Game.Signal (ShowIntro slot) world
-                    | _ -> Selection.playAffirm world; Game.Signal ShowTitle world
-                elif intent.Cancel then
-                    Selection.playAffirm world
-                    Game.Signal ShowTitle world
-            | _ -> ()
-
         | UpdatePicks ->
-            if  Simulants.Pick.GetSelected world then
-                Simulants.PickNewGame1.SetVisible (not (File.Exists Assets.User.SaveFilePath1)) world
-                Simulants.PickNewGame2.SetVisible (not (File.Exists Assets.User.SaveFilePath2)) world
-                Simulants.PickNewGame3.SetVisible (not (File.Exists Assets.User.SaveFilePath3)) world
-                Simulants.PickLoadGame1.SetVisible (File.Exists Assets.User.SaveFilePath1) world
-                Simulants.PickLoadGame2.SetVisible (File.Exists Assets.User.SaveFilePath2) world
-                Simulants.PickLoadGame3.SetVisible (File.Exists Assets.User.SaveFilePath3) world
+            match omniBlade with
+            | Pick (_, saves, _, _) when Simulants.Pick.GetSelected world ->
+                Simulants.PickNewGame1.SetVisible (not (saves.Contains Slot1)) world
+                Simulants.PickNewGame2.SetVisible (not (saves.Contains Slot2)) world
+                Simulants.PickNewGame3.SetVisible (not (saves.Contains Slot3)) world
+                Simulants.PickLoadGame1.SetVisible (saves.Contains Slot1) world
+                Simulants.PickLoadGame2.SetVisible (saves.Contains Slot2) world
+                Simulants.PickLoadGame3.SetVisible (saves.Contains Slot3) world
+            | _ -> ()
 
         | SetField field ->
             Simulants.Field.SetField field world
+
+        | SetIntent (screen, pointerShown, intent) ->
+            if screen = Simulants.Title then
+                let title = Simulants.Title.GetTitle world
+                Simulants.Title.SetTitle { title with TitlePointerShown = pointerShown; TitleIntent = intent } world
+            elif screen = Simulants.Credits then
+                let credits = Simulants.Credits.GetCredits world
+                Simulants.Credits.SetCredits { credits with CreditsPointerShown = pointerShown; CreditsIntent = intent } world
+            elif screen = Simulants.Field then
+                let field = Simulants.Field.GetField world
+                Simulants.Field.SetField (field |> Field.setFieldPointerShown pointerShown |> Field.setFieldIntent intent) world
+            elif screen = Simulants.Battle then
+                let battle = Simulants.Battle.GetBattle world
+                Simulants.Battle.SetBattle (battle |> Battle.setBattlePointerShown pointerShown |> Battle.setBattleIntent intent) world
 
         | FromFieldToBattle (battleData, prizePool) ->
             let field = Simulants.Field.GetField world
             let playTime = Option.defaultValue field.FieldTime field.FieldSongTimeOpt
             let songTime = field.FieldTime - playTime
             let (battle, field) = Field.commenceBattle songTime battleData prizePool field
+
+            // the battle takes whether the pointer's shown and the intent from the one it replaces, which took them from
+            // the field when the game moved on to it, or on a retry kept its own
+            let battleOld = Simulants.Battle.GetBattle world
+            let battle = battle |> Battle.setBattlePointerShown battleOld.BattlePointerShown |> Battle.setBattleIntent battleOld.BattleIntent
             Simulants.Battle.SetBattle battle world
             Simulants.Field.SetField field world
 
@@ -227,14 +299,14 @@ type OmniBladeDispatcher () =
 
         // point at the pick screen's selection
         match (omniBlade, renderPass) with
-        | (Pick selection, NormalPass) when Simulants.Pick.GetSelected world && Simulants.Pick.GetIdling world ->
+        | (Pick (selection, saves, pointerShown, _), NormalPass) when Simulants.Pick.GetSelected world && Simulants.Pick.GetIdling world ->
             let entity =
                 match selection with
-                | 0 -> if File.Exists (pickSaveFilePath Slot1) then Simulants.PickLoadGame1 else Simulants.PickNewGame1
-                | 1 -> if File.Exists (pickSaveFilePath Slot2) then Simulants.PickLoadGame2 else Simulants.PickNewGame2
-                | 2 -> if File.Exists (pickSaveFilePath Slot3) then Simulants.PickLoadGame3 else Simulants.PickNewGame3
+                | 0 -> if saves.Contains Slot1 then Simulants.PickLoadGame1 else Simulants.PickNewGame1
+                | 1 -> if saves.Contains Slot2 then Simulants.PickLoadGame2 else Simulants.PickNewGame2
+                | 2 -> if saves.Contains Slot3 then Simulants.PickLoadGame3 else Simulants.PickNewGame3
                 | _ -> Simulants.PickBack
-            Pointer.render entity world.UpdateTime world
+            Pointer.render pointerShown entity world.UpdateTime world
         | _ -> ()
 
     override this.Content (omniBlade, _) =

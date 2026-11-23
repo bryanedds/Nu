@@ -22,19 +22,74 @@ type FieldCursorPosition =
     static member content =
         { InSidebar = false; SidebarRow = 0; Column = 0; Row = 0 }
 
+/// What the field shows that the cursor can be in - walking about, the dialog or its prompt, or a menu or panel.
+type FieldCursorMenu =
+    | NoFieldMenu
+    | DialogPanel
+    | PromptPanel
+    | TeamPanel
+    | EquipPanel
+    | EquipInfoPanel
+    | AutoMapPanel
+    | InventoryPanel
+    | KeyItemsPanel
+    | UsePanel
+    | TechsPanel
+    | TechPanel
+    | OptionsPanel
+    | QuitPanel
+    | PartyPanel
+    | ShopPanel
+    | ShopConfirmPanel
+
 /// Where the field's menu cursor is, for the gamepad and keyboard. It starts over whenever the field shows another
 /// menu, except when coming back out of a menu opened over the one it was in, where it returns to where it was.
 type FieldCursor =
-    { CursorMenu : string // the menu the cursor is in, such as "Team" or "Shop"
+    { CursorMenu : FieldCursorMenu
       CursorPosition : FieldCursorPosition
-      CursorParents : (string * FieldCursorPosition) list } // the menus under this one and where the cursor was in each
+      CursorParents : (FieldCursorMenu * FieldCursorPosition) list } // the menus under this one and the cursor in each
 
     static member initial =
-        { CursorMenu = ""
+        { CursorMenu = NoFieldMenu
           CursorPosition = FieldCursorPosition.sidebar
           CursorParents = [] }
 
+/// What the field's pointer points at.
+type FieldPointed =
+    | TeamSidebarPointed of int // the sidebar's row
+    | InventorySidebarPointed of int
+    | TechsSidebarPointed of int
+    | KeyItemsSidebarPointed of int
+    | OptionsSidebarPointed of int
+    | TeamTeammatePointed of int // the teammate's team index
+    | TechsTeammatePointed of int
+    | UseTeammatePointed of int
+    | PartyTeammatePointed of int
+    | EquipmentPointed of int // weapon, armor or accessory
+    | AutoMapPointed
+    | TechPointed of TechType
+    | InventoryItemPointed of ItemType
+    | KeyItemPointed of ItemType
+    | EquipItemPointed of ItemType
+    | ShopItemPointed of ItemType
+    | OptionPointed of int // the options menu's button
+    | EquipButtonPointed
+    | EquipInfoPointed
+    | EquipCancelPointed
+    | InfoClosePointed
+    | UseClosePointed
+    | TechClosePointed
+    | PromptChoicePointed of int // of two side by side, left or right
+    | AutoMapChoicePointed of int
+    | QuitChoicePointed of int
+    | ShopConfirmChoicePointed of int
+    | PartySelectedPointed of int
+    | PartyConfirmPointed
+    | ShopTradePointed
+    | ShopLeavePointed
+
 type FieldMessage =
+    | ProcessMenuInput
     | Update
     | UpdateFieldTransition
     | AdvanceTime
@@ -114,7 +169,6 @@ type FieldCommand =
     | CommencingBattle of BattleData
     | CommenceBattle of BattleData * PrizePool
     | MenuOptionsToggleFullScreen
-    | ProcessMenuInput
     | Nop
     interface Command
 
@@ -173,7 +227,9 @@ module Field =
               FieldSongTimeOpt_ : int64 option
               AutoMaps_ : Map<FieldType, Vector2i Set>
               FieldType_ : FieldType
-              FieldCursor_ : FieldCursor } // never saved, starting over when loaded
+              FieldCursor_ : FieldCursor // never saved, starting over when loaded
+              FieldPointerShown_ : bool // never saved, as with the intent
+              FieldIntent_ : Intent }
 
         (* Local Properties *)
         member this.FieldTime = this.FieldTime_
@@ -204,10 +260,21 @@ module Field =
         member this.AutoMaps = this.AutoMaps_
         member this.FieldType = this.FieldType_
         member this.FieldCursor = this.FieldCursor_
+        member this.FieldPointerShown = this.FieldPointerShown_
+        member this.FieldIntent = this.FieldIntent_
 
     (* Low-Level Operations *)
 
-    let private checksumToken = "\n[H3CK$UM:"
+    let private ChecksumToken =
+        "\n[H3CK$UM:"
+
+    let private SidebarButtons =
+        [|(Some TeamPanel, MenuTeamOpen)
+          (Some InventoryPanel, MenuInventoryOpen)
+          (Some TechsPanel, MenuTechsOpen)
+          (Some KeyItemsPanel, MenuKeyItemsOpen)
+          (Some OptionsPanel, MenuOptionsOpen)
+          (None, MenuClose)|]
 
     let private makePropState time propDescriptor =
         match propDescriptor.PropData with
@@ -533,6 +600,12 @@ module Field =
     let setFieldCursor cursor field =
         { field with FieldCursor_ = cursor }
 
+    let setFieldPointerShown pointerShown field =
+        { field with FieldPointerShown_ = pointerShown }
+
+    let setFieldIntent intent field =
+        { field with FieldIntent_ = intent }
+
     let mapMenu mapper field =
         { field with Menu_ = mapper field.Menu_ }
 
@@ -633,7 +706,9 @@ module Field =
             AvatarIntersectedPropIds_ = []
             Props_ = Map.empty
             FieldSongTimeOpt_ = None
-            FieldCursor_ = FieldCursor.initial }
+            FieldCursor_ = FieldCursor.initial
+            FieldPointerShown_ = true
+            FieldIntent_ = Intent.empty }
 
     let private computeChecksum (str : string) =
         let mutable checksum = 13L
@@ -650,13 +725,769 @@ module Field =
         let fieldSymbol = valueToSymbol fieldSavable
         let fieldStr = PrettyPrinter.prettyPrintSymbol fieldSymbol PrettyPrinter.defaultPrinter
         let checksumStr = string (computeChecksum fieldStr)
-        try File.WriteAllText (saveFilePath, fieldStr + checksumToken + checksumStr) with _ -> ()
+        try File.WriteAllText (saveFilePath, fieldStr + ChecksumToken + checksumStr) with _ -> ()
 
     let truncate field =
         { field with Spirits_ = [||] }
 
     let untruncate current incoming =
         { incoming with Spirits_ = current.Spirits_ }
+
+    (* Input *)
+
+    let private equipmentItems equipmentType archetypeType (inventory : Inventory) =
+        let filter (equipment, _) =
+            match (equipmentType, equipment) with
+            | (EquipWeapon _, Equipment (WeaponType weaponType)) ->
+                match Map.tryFind weaponType Data.Value.Weapons with
+                | Some weaponData ->
+                    match Map.tryFind archetypeType Data.Value.Archetypes with
+                    | Some archetypeData -> weaponData.WeaponSubtype = archetypeData.WeaponSubtype
+                    | None -> false
+                | None -> false
+            | (EquipArmor _, Equipment (ArmorType armorType)) ->
+                match Map.tryFind armorType Data.Value.Armors with
+                | Some armorData ->
+                    match Map.tryFind archetypeType Data.Value.Archetypes with
+                    | Some archetypeData -> armorData.ArmorSubtype = archetypeData.ArmorSubtype
+                    | None -> false
+                | None -> false
+            | (EquipAccessory _, Equipment (AccessoryType _)) -> true
+            | _ -> false
+        inventory.Items |>
+        Map.toArray |>
+        Array.filter filter |>
+        Array.map (function (Equipment _ as equipment, count) -> Some (equipment, count) | _ -> None) |>
+        Array.definitize |>
+        Map.ofArray
+
+    let private pageItems5 pageSize pageIndex filter sort (items : Map<ItemType, int>) =
+        let items =
+            items |>
+            Map.toSeq |>
+            (fun items -> if filter then ItemType.filterSellableItems items else items) |>
+            (fun items -> if sort then ItemType.sortItems items else items)
+        let itemsPaged =
+            items |>
+            Seq.indexed |>
+            Seq.chunkBySize pageSize |>
+            Seq.trySkip pageIndex |>
+            Seq.map List.ofArray |>
+            Seq.tryHead |>
+            Option.defaultValue [] |>
+            Seq.indexed |>
+            Map.ofSeq |>
+            Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
+        let pageUp =
+            if itemsPaged.Count <> 0 then
+                let firstItemPaged = Seq.head itemsPaged
+                fst (snd firstItemPaged.Value) <> fst (Seq.head items)
+            else false
+        let pageDown =
+            if itemsPaged.Count <> 0 then
+                let lastItemPaged = Seq.last itemsPaged
+                fst (snd lastItemPaged.Value) <> fst (Seq.last items)
+            else false
+        (pageUp, pageDown, itemsPaged)
+
+    let pageItems pageSize (field : Field) =
+        match field.Menu.MenuState with
+        | MenuTeam menuTeam ->
+            match menuTeam.TeamEquipOpt with
+            | Some equip ->
+                match Map.tryFind menuTeam.TeamIndex field.Team with
+                | Some teammate ->
+                    let items = equipmentItems equip.EquipType teammate.ArchetypeType field.Inventory
+                    pageItems5 pageSize equip.EquipPage false true items
+                | None -> (false, false, Map.empty)
+            | None -> (false, false, Map.empty)
+        | MenuInventory inventory ->
+            let items = Inventory.getNonKeyItems field.Inventory
+            pageItems5 pageSize inventory.InventoryPage false true items
+        | MenuKeyItems keyItems ->
+            let items = Inventory.getKeyItems field.Inventory
+            pageItems5 pageSize keyItems.KeyItemsPage false true items
+        | _ ->
+            match field.ShopOpt with
+            | Some shop ->
+                match shop.ShopState with
+                | ShopBuying ->
+                    let shopItems = ShopType.getShopBuyItems field.Advents shop.ShopType
+                    pageItems5 pageSize shop.ShopPage false false (Map.ofListBy (flip Pair.make 1) shopItems)
+                | ShopSelling ->
+                    let items = Inventory.getNonKeyItems field.Inventory
+                    pageItems5 pageSize shop.ShopPage true true items
+            | None -> (false, false, Map.empty)
+
+
+    let private exploring (field : Field) =
+        field.FieldState = Playing &&
+        field.Menu.MenuState = MenuClosed &&
+        field.PartyMenu.PartyMenuState = PartyMenuClosed &&
+        not field.ScreenTransitioning &&
+        Option.isNone field.ShopOpt &&
+        Option.isNone field.FieldTransitionOpt
+
+    let private canInteract (field : Field) =
+        exploring field &&
+        (CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue || Option.isSome field.DialogOpt) &&
+        Option.isSome (tryGetInteraction field)
+
+    let private canOpenMenu (field : Field) =
+        exploring field &&
+        CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue &&
+        Option.isNone field.DialogOpt
+
+    let private canOpenParty (field : Field) =
+        exploring field &&
+        Option.isNone field.DialogOpt &&
+        touchingSavePoint field &&
+        field.Team.Count >= 3
+
+    let private canSkip (field : Field) =
+        match field.DialogOpt with
+        | Some dialog ->
+            not (Dialog.canAdvance (detokenize field) dialog) &&
+            dialog.DialogSkippableWhenNotTombSealed &&
+            not (field.Advents.Contains TombSealed)
+        | None -> false
+
+    let private promptShowing (field : Field) =
+        match field.DialogOpt with
+        | Some dialog -> Option.isSome dialog.DialogPromptOpt && Dialog.isExhausted (detokenize field) dialog
+        | None -> false
+
+    /// The menu the field shows now, so the cursor knows when it's moved to another.
+    let getCursorMenu (field : Field) =
+        match field.ShopOpt with
+        | Some shop -> if shop.ShopConfirmOpt.IsSome then ShopConfirmPanel else ShopPanel
+        | None ->
+            if field.PartyMenu.PartyMenuState = PartyMenuOpened then PartyPanel
+            else
+                match field.Menu.MenuState.Shown with
+                | MenuTeam menuTeam ->
+                    match menuTeam.TeamEquipOpt with
+                    | Some equip -> if equip.EquipMenuUseOpt.IsSome then EquipInfoPanel else EquipPanel
+                    | None -> TeamPanel
+                | MenuAutoMap -> AutoMapPanel
+                | MenuInventory _ -> if field.Menu.MenuUseOpt.IsSome then UsePanel else InventoryPanel
+                | MenuTechs techs -> if techs.TechIndexOpt.IsSome then TechPanel else TechsPanel
+                | MenuKeyItems _ -> if field.Menu.MenuUseOpt.IsSome then UsePanel else KeyItemsPanel
+                | MenuOptions quitPrompt -> if quitPrompt then QuitPanel else OptionsPanel
+                | MenuCloseSelected _ | MenuClosed -> if promptShowing field then PromptPanel elif field.DialogOpt.IsSome then DialogPanel else NoFieldMenu
+
+    /// The sidebar row of a main menu.
+    let private getSidebarRow menu =
+        match menu with
+        | InventoryPanel -> 1
+        | TechsPanel -> 2
+        | KeyItemsPanel -> 3
+        | OptionsPanel -> 4
+        | _ -> 0
+
+    /// Whether a menu's one of the main menus, which the sidebar chooses between.
+    let private isMain menu =
+        match menu with
+        | TeamPanel | InventoryPanel | TechsPanel | KeyItemsPanel | OptionsPanel -> true
+        | _ -> false
+
+    /// Where the cursor starts in a menu - on a main menu's sidebar or in its content, and elsewhere on the first item.
+    let private getStart menu onSidebar =
+        match menu with
+        | TeamPanel | InventoryPanel | TechsPanel | KeyItemsPanel | OptionsPanel ->
+            let position = if onSidebar then FieldCursorPosition.sidebar else FieldCursorPosition.content
+            { position with SidebarRow = getSidebarRow menu }
+        | EquipPanel -> { FieldCursorPosition.content with Column = 1 }
+        | QuitPanel -> { FieldCursorPosition.content with Column = 1 }
+        | _ -> FieldCursorPosition.content
+
+    /// Whether a menu opens over another, so that closing it goes back to where the cursor was in the other.
+    let private isSubmenu parent menu =
+        match (parent, menu) with
+        | (TeamPanel, (EquipPanel | AutoMapPanel))
+        | (EquipPanel, EquipInfoPanel)
+        | ((InventoryPanel | KeyItemsPanel), UsePanel)
+        | (TechsPanel, TechPanel)
+        | (OptionsPanel, QuitPanel)
+        | (ShopPanel, ShopConfirmPanel) -> true
+        | (_, _) -> false
+
+    /// Move the cursor to the menu the field shows - back to where it was when a menu opened over that one closes,
+    /// otherwise starting over there.
+    let private followInput (field : Field) (cursor : FieldCursor) =
+        let menu = getCursorMenu field
+        if menu = cursor.CursorMenu then cursor
+        else
+            match menu with
+            | NoFieldMenu | DialogPanel | PromptPanel -> { FieldCursor.initial with CursorMenu = menu }
+            | _ ->
+                match cursor.CursorParents with
+                | (parent, position) :: parents when parent = menu -> { CursorMenu = menu; CursorPosition = position; CursorParents = parents }
+                | _ ->
+                    if isSubmenu cursor.CursorMenu menu then
+                        let parents = (cursor.CursorMenu, cursor.CursorPosition) :: cursor.CursorParents
+                        { CursorMenu = menu; CursorPosition = getStart menu false; CursorParents = parents }
+                    else
+                        // a main menu opened from the field or from another's sidebar, as by the mouse, starts on the
+                        // sidebar
+                        let fromSidebar =
+                            match cursor.CursorMenu with
+                            | NoFieldMenu | DialogPanel | PromptPanel -> true
+                            | parent -> isMain parent
+                        { CursorMenu = menu; CursorPosition = getStart menu fromSidebar; CursorParents = [] }
+
+    /// Enter a menu chosen from the sidebar, with the cursor on its first item rather than the sidebar.
+    let private enter menu =
+        { CursorMenu = menu; CursorPosition = getStart menu false; CursorParents = [] }
+
+    let private moveTo column row (cursor : FieldCursor) =
+        { cursor with CursorPosition = { cursor.CursorPosition with InSidebar = false; Column = column; Row = row } }
+
+    /// Back to the sidebar, the menu's own cursor starting over for when it comes back.
+    let private toSidebar (cursor : FieldCursor) =
+        { cursor with CursorPosition = { cursor.CursorPosition with InSidebar = true; Column = 0; Row = 0 } }
+
+
+
+    /// The sidebar down the left of the main menus - the button pointed at is the one selected, so stepping onto a
+    /// menu's opens it and stepping onto close selects that, with the cursor staying in the sidebar. Confirm moves into
+    /// the open menu, confirm on close closes it, and cancel or the menu button closes it too.
+    let private updateSidebar (intent : Intent) panel sidebarPointed hasContent (field : Field) (cursor : FieldCursor) world =
+        let invoke = intent.Confirm || intent.Step = Some Rightward // right invokes as confirm does
+        let cursor = toSidebar cursor
+        let position = cursor.CursorPosition
+        let closeRow = dec SidebarButtons.Length
+        // follow the selection, however it was made
+        let row = match field.Menu.MenuState with MenuCloseSelected _ -> closeRow | _ -> getSidebarRow panel
+        let cursor = { cursor with CursorPosition = { position with SidebarRow = row } }
+        let (cursor, opening) =
+            match intent.Step with
+            | Some (Upward | Downward as direction) ->
+                let row' = Selection.wrap (Selection.rowDelta direction) SidebarButtons.Length row
+                let (menu, message) = SidebarButtons[row']
+                let cursor = { cursor with CursorPosition = { cursor.CursorPosition with SidebarRow = row' } }
+                match menu with
+                | None -> (cursor, [signal MenuCloseSelect])
+                | Some menu when menu <> panel -> ({ cursor with CursorMenu = menu }, [signal message])
+                | Some _ when row = closeRow -> (cursor, [signal MenuCloseDeselect])
+                | Some _ -> (cursor, [])
+            | _ -> (cursor, [])
+        let (cursor, signals) =
+            if invoke then
+                let (menuOpt, message) = SidebarButtons[cursor.CursorPosition.SidebarRow]
+                match menuOpt with
+                | None -> (cursor, (Selection.playAffirm world; opening @ [signal MenuClose]))
+                // a menu opened this frame, so its content's unknown yet
+                | Some menu when menu = cursor.CursorMenu && not opening.IsEmpty -> (cursor, opening)
+                | Some menu when menu = panel -> ((if hasContent then moveTo 0 0 cursor else cursor), (Selection.playAffirm world; opening))
+                | Some menu -> (enter menu, (Selection.playAffirm world; [signal message]))
+            elif intent.Cancel || intent.Menu then (cursor, (Selection.playAffirm world; opening @ [signal MenuClose]))
+            else (cursor, opening)
+        let pointedOpt = if cursor.CursorPosition.InSidebar then Some (sidebarPointed cursor.CursorPosition.SidebarRow) else None
+        (cursor, signals, pointedOpt)
+
+    /// The team menu, in three levels - the sidebar, then the teammates with the auto map beneath them, then the
+    /// selected teammate's weapon, armor and accessory. The teammate pointed at is the one selected, confirming goes
+    /// down a level, and cancel comes back up one.
+    let private updateTeam (intent : Intent) (menuTeam : MenuTeam) (field : Field) (cursor : FieldCursor) world =
+        let position = cursor.CursorPosition
+        let teamCount = field.Team.Count
+        if position.InSidebar then updateSidebar intent TeamPanel TeamSidebarPointed true field cursor world
+        elif position.Column = 0 then
+            // the teammates and the auto map where the field has one, the pointer following the selection, however it
+            // was made, right invoking as confirm does, and left backing out as cancel does
+            let invoke = intent.Confirm || intent.Step = Some Rightward
+            let rowCount = if hasAutoMap field then inc teamCount else teamCount
+            let selected = if menuTeam.TeamAutoMapSelected then teamCount else menuTeam.TeamIndex
+            let row = match intent.Step with Some (Upward | Downward as direction) -> Selection.wrap (Selection.rowDelta direction) rowCount selected | _ -> selected
+            let selecting =
+                if row = selected then []
+                elif row = teamCount then [signal (MenuTeamAutoMapSelect true)]
+                elif row <> menuTeam.TeamIndex then [signal (MenuTeamAlly row)]
+                else [signal (MenuTeamAutoMapSelect false)]
+            // leaving the teammates leaves the map button unselected
+            let deselecting = if menuTeam.TeamAutoMapSelected || row = teamCount then [signal (MenuTeamAutoMapSelect false)] else []
+            let (cursor, signals) =
+                if invoke && row < teamCount then
+                    match MenuTeam.tryGetTeammate field.Team menuTeam with
+                    | Some _ -> (moveTo 1 0 cursor, (Selection.playAffirm world; selecting))
+                    | None -> (moveTo 0 row cursor, selecting)
+                elif invoke then
+                    (moveTo 0 row cursor, (World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.AutoMapSound world; [signal MenuAutoMapOpen]))
+                elif intent.Cancel || intent.Step = Some Leftward then (toSidebar cursor, (Selection.playAffirm world; deselecting))
+                elif intent.Menu then (moveTo 0 row cursor, selecting @ (Selection.playAffirm world; [signal MenuClose]))
+                else (moveTo 0 row cursor, selecting)
+            let pointedOpt =
+                if cursor.CursorPosition.InSidebar then Some (TeamSidebarPointed cursor.CursorPosition.SidebarRow)
+                elif cursor.CursorPosition.Column = 1 then Some (EquipmentPointed 0)
+                elif row < teamCount then Some (TeamTeammatePointed (Seq.item row field.Team.Values).TeamIndex)
+                else Some AutoMapPointed
+            (cursor, signals, pointedOpt)
+        else
+            // the selected teammate's equipment, top to bottom, left backing out as cancel does
+            match MenuTeam.tryGetTeammate field.Team menuTeam with
+            | Some teammate ->
+                let row = match intent.Step with Some (Upward | Downward as direction) -> Selection.wrap (Selection.rowDelta direction) 3 position.Row | _ -> position.Row
+                let (cursor, signals) =
+                    if intent.Confirm then
+                        let message =
+                            match row with
+                            | 0 -> MenuTeamEquip (EquipWeapon teammate.WeaponOpt)
+                            | 1 -> MenuTeamEquip (EquipArmor teammate.ArmorOpt)
+                            | _ -> MenuTeamEquip (EquipAccessory (List.tryHead teammate.Accessories))
+                        (moveTo 1 row cursor, (Selection.playAffirm world; [signal message]))
+                    elif intent.Cancel || intent.Step = Some Leftward then (moveTo 0 menuTeam.TeamIndex cursor, (Selection.playAffirm world; []))
+                    elif intent.Menu then (moveTo 1 row cursor, (Selection.playAffirm world; [signal MenuClose]))
+                    else (moveTo 1 row cursor, [])
+                let pointedOpt =
+                    if cursor.CursorPosition.Column = 0 then Some (TeamTeammatePointed (Seq.item menuTeam.TeamIndex field.Team.Values).TeamIndex)
+                    else Some (EquipmentPointed row)
+                (cursor, signals, pointedOpt)
+            | None -> (moveTo 0 0 cursor, [], None)
+
+    /// The techs menu, in three levels - the sidebar, then the teammates, then the selected teammate's techs. The
+    /// teammate pointed at is the one selected, confirming goes down a level, and cancel comes back up one.
+    let private updateTechs (intent : Intent) (menuTechs : MenuTechs) (field : Field) (cursor : FieldCursor) world =
+        let position = cursor.CursorPosition
+        let teamCount = field.Team.Count
+        let techs = match Map.tryFind menuTechs.TeamIndex field.Team with Some teammate -> Array.ofSeq teammate.Techs | None -> [||]
+        if position.InSidebar then updateSidebar intent TechsPanel TechsSidebarPointed true field cursor world
+        elif position.Column = 0 || techs.Length = 0 then
+            // the teammates, the pointer following a teammate selected otherwise, as by the mouse, right invoking as
+            // confirm does, and left backing out as cancel does
+            let invoke = intent.Confirm || intent.Step = Some Rightward
+            let row = menuTechs.TeamIndex
+            let row = match intent.Step with Some (Upward | Downward as direction) -> Selection.wrap (Selection.rowDelta direction) teamCount row | _ -> row
+            let selecting = if row <> menuTechs.TeamIndex then [signal (MenuTechsAlly row)] else []
+            let (cursor, signals) =
+                if invoke && techs.Length > 0 then (moveTo 1 0 cursor, (Selection.playAffirm world; selecting))
+                elif invoke then (moveTo 0 row cursor, (Selection.playMistake world; selecting))
+                elif intent.Cancel || intent.Step = Some Leftward then (toSidebar cursor, (Selection.playAffirm world; selecting))
+                elif intent.Menu then (moveTo 0 row cursor, selecting @ (Selection.playAffirm world; [signal MenuClose]))
+                else (moveTo 0 row cursor, selecting)
+            let pointedOpt =
+                if cursor.CursorPosition.InSidebar then Some (TechsSidebarPointed cursor.CursorPosition.SidebarRow)
+                elif cursor.CursorPosition.Column = 1 then Some (TechPointed techs[0])
+                else Some (TechsTeammatePointed (Seq.item row field.Team.Values).TeamIndex)
+            (cursor, signals, pointedOpt)
+        else
+            // the selected teammate's techs, top to bottom, left backing out as cancel does
+            let row = min position.Row (dec techs.Length)
+            let row = match intent.Step with Some (Upward | Downward as direction) -> Selection.wrap (Selection.rowDelta direction) techs.Length row | _ -> row
+            let (cursor, signals) =
+                if intent.Confirm then (moveTo 1 row cursor, (Selection.playAffirm world; [signal (MenuTechsSelect row)]))
+                elif intent.Cancel || intent.Step = Some Leftward then (moveTo 0 menuTechs.TeamIndex cursor, (Selection.playAffirm world; []))
+                elif intent.Menu then (moveTo 1 row cursor, (Selection.playAffirm world; [signal MenuClose]))
+                else (moveTo 1 row cursor, [])
+            let pointedOpt =
+                if cursor.CursorPosition.Column = 0 then Some (TechsTeammatePointed (Seq.item menuTechs.TeamIndex field.Team.Values).TeamIndex)
+                else Some (TechPointed techs[row])
+            (cursor, signals, pointedOpt)
+
+    /// The inventory and key items menus, which lay out a page of ten items alike - two columns of five, left of
+    /// whose first is the sidebar. Right past the second column turns to the next page and left past the first to the
+    /// previous, as do the page buttons, left past the first going to the sidebar from the first page.
+    let private updateItemPage (intent : Intent) panel sidebarPointed itemPointed enabled (select : _ -> Signal) pageUpMessage pageDownMessage (field : Field) (cursor : FieldCursor) world =
+        let (pageUp, pageDown, items) = pageItems 10 field
+        let count = items.Count
+        let position = cursor.CursorPosition
+        if position.InSidebar || count = 0 then updateSidebar intent panel sidebarPointed (count > 0) field cursor world
+        else
+            let paging = (if intent.PageUp && pageUp then [pageUpMessage] else []) @ (if intent.PageDown && pageDown then [pageDownMessage] else [])
+            let index = min position.Row (dec count)
+            let column = index / 5
+            let row = index % 5
+            let columnCount column = max 0 (min 5 (count - column * 5))
+            let (indexOpt, stepping) =
+                match intent.Step with
+                | Some (Upward | Downward as direction) -> (Some (column * 5 + Selection.wrap (Selection.rowDelta direction) (columnCount column) row), [])
+                | Some Leftward when column = 1 -> (Some (index - 5), [])
+                | Some Leftward when pageUp -> (Some index, [pageUpMessage])
+                | Some Leftward -> (None, [])
+                | Some Rightward ->
+                    if column = 0 && columnCount 1 > 0 then (Some (5 + min row (dec (columnCount 1))), [])
+                    elif pageDown then (Some index, [pageDownMessage])
+                    else (Some index, [])
+                | None -> (Some index, [])
+            match indexOpt with
+            | Some index ->
+                let (_, (itemType : ItemType, _)) as page = items[index]
+                let signals =
+                    paging @ stepping @
+                    (if intent.Confirm then
+                        if enabled itemType then (Selection.playAffirm world; [signal (select page)]) else (Selection.playMistake world; [])
+                     elif intent.Menu then (Selection.playAffirm world; [signal MenuClose])
+                     else [])
+                let cursor = if intent.Cancel then (Selection.playAffirm world; toSidebar cursor) else moveTo 0 index cursor
+                let pointedOpt = if cursor.CursorPosition.InSidebar then Some (sidebarPointed cursor.CursorPosition.SidebarRow) else Some (itemPointed itemType)
+                (cursor, signals, pointedOpt)
+            | None ->
+                let cursor = toSidebar cursor
+                (cursor, paging, Some (sidebarPointed cursor.CursorPosition.SidebarRow))
+
+    /// The options menu - each button pressed by confirming it. Coming into the menu lands on its top left button,
+    /// the cursor being placed in column 1 once it's in.
+    let private updateOptions (intent : Intent) (field : Field) (cursor : FieldCursor) world =
+        if cursor.CursorPosition.InSidebar then updateSidebar intent OptionsPanel OptionsSidebarPointed true field cursor world
+        else
+            let index = if cursor.CursorPosition.Column = 0 then 0 else cursor.CursorPosition.Row
+            // where each button goes for each direction, as they're laid out - the battle speeds wait, paced and swift
+            // across the top, the song volume's down and up beneath, then full screen, play mode and quit down the
+            // middle, -1 being the sidebar, and moving up or down into a row landing on its leftmost button
+            let index =
+                match intent.Step with
+                | Some direction ->
+                    match (index, direction) with
+                    | (0, Upward) -> 7 | (0, Downward) -> 3 | (0, Leftward) -> -1 | (0, Rightward) -> 1
+                    | (1, Upward) -> 7 | (1, Downward) -> 3 | (1, Leftward) -> 0 | (1, Rightward) -> 2
+                    | (2, Upward) -> 7 | (2, Downward) -> 3 | (2, Leftward) -> 1 | (2, Rightward) -> 2
+                    | (3, Upward) -> 0 | (3, Downward) -> 5 | (3, Leftward) -> -1 | (3, Rightward) -> 4
+                    | (4, Upward) -> 0 | (4, Downward) -> 5 | (4, Leftward) -> 3 | (4, Rightward) -> 4
+                    | (5, Upward) -> 3 | (5, Downward) -> 6 | (5, Leftward) -> -1 | (5, Rightward) -> 5
+                    | (6, Upward) -> 5 | (6, Downward) -> 7 | (6, Leftward) -> -1 | (6, Rightward) -> 6
+                    | (_, Upward) -> 6 | (_, Downward) -> 0 | (_, Leftward) -> -1 | (_, Rightward) -> 7
+                | None -> index
+            let (cursor, signals) =
+                if index < 0 then (toSidebar cursor, [])
+                elif intent.Cancel then (toSidebar cursor, (Selection.playAffirm world; []))
+                elif intent.Confirm then
+                    let message =
+                        match index with
+                        | 0 -> signal (MenuOptionsSelectBattleSpeed WaitSpeed)
+                        | 1 -> signal (MenuOptionsSelectBattleSpeed PacedSpeed)
+                        | 2 -> signal (MenuOptionsSelectBattleSpeed SwiftSpeed)
+                        | 3 -> signal MenuOptionsSongVolumeDown
+                        | 4 -> signal MenuOptionsSongVolumeUp
+                        | 5 -> signal MenuOptionsToggleFullScreen
+                        | 6 -> signal MenuOptionsHardcoreModeToggle
+                        | _ -> signal MenuOptionsQuitPrompt
+                    (moveTo 1 index cursor, (Selection.playAffirm world; [message]))
+                elif intent.Menu then (moveTo 1 index cursor, (Selection.playAffirm world; [signal MenuClose]))
+                else (moveTo 1 index cursor, [])
+            let pointedOpt = if cursor.CursorPosition.InSidebar then Some (OptionsSidebarPointed cursor.CursorPosition.SidebarRow) else Some (OptionPointed index)
+            (cursor, signals, pointedOpt)
+
+    /// A panel with one thing to do - confirm or cancel both close it.
+    let private updateClose (intent : Intent) closePointed message (cursor : FieldCursor) world =
+        let signals = if intent.Confirm || intent.Cancel || intent.Menu then (Selection.playAffirm world; [signal message]) else []
+        (cursor, signals, Some closePointed)
+
+    /// Which of two buttons side by side a step lands on - left the first, right the second.
+    let private stepPair (intent : Intent) column =
+        match intent.Step with
+        | Some Leftward -> 0
+        | Some Rightward -> 1
+        | _ -> column
+
+    /// Using a consumable - the teammates in columns of three, up and down cycling through each, confirm using it on
+    /// the one pointed at, and the close button above and right of them, reached right from the last column.
+    let private updateUse (intent : Intent) itemType (field : Field) (cursor : FieldCursor) world =
+        let count = field.Team.Count
+        let lastColumn = dec count / 3
+        let columnCount column = max 0 (min 3 (count - column * 3))
+        if cursor.CursorPosition.Column = 1 then
+
+            // the close button, left going back to the top of the last column
+            let cursor =
+                match intent.Step with
+                | Some Leftward -> moveTo 0 (lastColumn * 3) cursor
+                | _ -> cursor
+            let signals =
+                if cursor.CursorPosition.Column = 1 && (intent.Confirm || intent.Cancel)
+                then (Selection.playAffirm world; [signal MenuInventoryCancel])
+                else []
+            let pointedOpt =
+                if cursor.CursorPosition.Column = 1 then Some UseClosePointed
+                else Some (UseTeammatePointed (Seq.item cursor.CursorPosition.Row field.Team.Values).TeamIndex)
+            (cursor, signals, pointedOpt)
+        else
+            let index = min cursor.CursorPosition.Row (dec count)
+            let column = index / 3
+            let row = index % 3
+            let indexOpt =
+                match intent.Step with
+                | Some (Upward | Downward as direction) -> Some (column * 3 + Selection.wrap (Selection.rowDelta direction) (columnCount column) row)
+                | Some Rightward when column = lastColumn -> None
+                | Some (Leftward | Rightward as direction) ->
+                    let column' = column + Selection.columnDelta direction
+                    Some (if column' >= 0 && columnCount column' > 0 then column' * 3 + min row (dec (columnCount column')) else index)
+                | None -> Some index
+            match indexOpt with
+            | Some index ->
+                let teammate = Seq.item index field.Team.Values
+                let signals =
+                    if intent.Confirm then
+                        if Teammate.canUseItem itemType teammate
+                        then (Selection.playAffirm world; [signal (MenuInventoryUse index)])
+                        else Selection.playMistake world; []
+                    elif intent.Cancel then (Selection.playAffirm world; [signal MenuInventoryCancel])
+                    else []
+                (moveTo 0 index cursor, signals, Some (UseTeammatePointed (Seq.item index field.Team.Values).TeamIndex))
+            | None ->
+                let signals = if intent.Cancel then (Selection.playAffirm world; [signal MenuInventoryCancel]) else []
+                (moveTo 1 0 cursor, signals, Some UseClosePointed)
+
+    /// The equip panel - a page of items down the middle, the close button right of the first, and on the left the
+    /// current equipment's info or, once an item's chosen, the equip button. Choosing an item moves to the equip
+    /// button; choosing that equips it.
+    let private updateEquip (intent : Intent) (menuTeam : MenuTeam) (equip : Equip) (field : Field) (cursor : FieldCursor) world =
+        let teammate = field.Team[menuTeam.TeamIndex]
+        let (changing, currentName) =
+            match equip.EquipType with
+            | EquipWeapon weaponTypeOpt -> (teammate.WeaponOpt <> weaponTypeOpt, teammate.WeaponOpt |> Option.map _.Name |> Option.defaultValue "None")
+            | EquipArmor armorTypeOpt -> (teammate.ArmorOpt <> armorTypeOpt, teammate.ArmorOpt |> Option.map _.Name |> Option.defaultValue "None")
+            | EquipAccessory accessoryTypeOpt -> (teammate.Accessories <> Option.toList accessoryTypeOpt, teammate.Accessories |> List.map _.Name |> Seq.headOrDefault "None")
+        let leftOpt = if changing then Some EquipButtonPointed elif currentName <> "None" then Some EquipInfoPointed else None
+        let (pageUp, pageDown, items) = pageItems 3 field
+        let count = items.Count
+        let paging = (if intent.PageUp && pageUp then [MenuTeamEquipPageUp] else []) @ (if intent.PageDown && pageDown then [MenuTeamEquipPageDown] else [])
+        let paging = List.map (fun message -> message :> Signal) paging
+        let onClose = cursor.CursorPosition.Column = 2 || (count = 0 && leftOpt.IsNone)
+        let onLeft = not onClose && (cursor.CursorPosition.Column = 0 || count = 0) && leftOpt.IsSome
+        if onClose then
+
+            // the close button, top right, right of the first item, left going back to it
+            let (cursor, signals) =
+                match intent.Step with
+                | Some Leftward when count > 0 -> (moveTo 1 0 cursor, [])
+                | Some Leftward when leftOpt.IsSome -> (moveTo 0 0 cursor, [])
+                | _ ->
+                    let cursor = moveTo 2 0 cursor
+                    if intent.Confirm || intent.Cancel then (cursor, (Selection.playAffirm world; [signal MenuTeamEquipCancel])) else (cursor, [])
+            let pointedOpt =
+                match (cursor.CursorPosition.Column, leftOpt) with
+                | (1, _) -> Some (EquipItemPointed (fst (snd items[0])))
+                | (0, Some left) -> Some left
+                | (_, _) -> Some EquipCancelPointed
+            (cursor, paging @ signals, pointedOpt)
+        elif onLeft then
+            let left = leftOpt.Value
+            let (cursor, signals) =
+                match intent.Step with
+                | Some Rightward when count > 0 -> (moveTo 1 0 cursor, [])
+                | Some Rightward -> (moveTo 2 0 cursor, [])
+                | _ ->
+                    let cursor = moveTo 0 0 cursor
+                    if intent.Confirm then
+                        // equipping goes back to the items, where the panel starts
+                        if left = EquipButtonPointed
+                        then (moveTo 1 0 cursor, (World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.EquipSound world; [signal MenuTeamEquipConfirm]))
+                        else (cursor, (Selection.playAffirm world; [signal MenuTeamEquipMenuUseOpen]))
+                    elif intent.Cancel then (cursor, (Selection.playAffirm world; [signal MenuTeamEquipCancel]))
+                    else (cursor, [])
+            let pointedOpt =
+                match cursor.CursorPosition.Column with
+                | 1 when count > 0 -> Some (EquipItemPointed (fst (snd items[0])))
+                | 2 -> Some EquipCancelPointed
+                | _ -> Some left
+            (cursor, paging @ signals, pointedOpt)
+        elif count > 0 then
+            let index = min cursor.CursorPosition.Row (dec count)
+            let (index, column, stepping) =
+                match intent.Step with
+                | Some (Upward | Downward as direction) -> (Selection.wrap (Selection.rowDelta direction) count index, 1, [])
+                | Some Leftward when leftOpt.IsSome -> (index, 0, [])
+                | Some Leftward when pageUp -> (index, 1, [MenuTeamEquipPageUp :> Signal])
+                // right from the first item goes to the close button, from the others to the next page if any
+                | Some Rightward when index > 0 && pageDown -> (index, 1, [MenuTeamEquipPageDown :> Signal])
+                | Some Rightward -> (0, 2, [])
+                | _ -> (index, 1, [])
+            let page = items[index]
+            let (column, signals) =
+                // choosing an item moves to the equip button
+                if column = 1 && intent.Confirm then (0, (Selection.playAffirm world; [signal (MenuTeamEquipSelect page)]))
+                elif intent.Cancel then (column, (Selection.playAffirm world; [signal MenuTeamEquipCancel]))
+                else (column, [])
+            let cursor = moveTo column index cursor
+            let pointedOpt =
+                match (column, leftOpt) with
+                | (0, Some left) when not intent.Confirm -> Some left
+                | (2, _) -> Some EquipCancelPointed
+                | (_, _) -> Some (EquipItemPointed (fst (snd page)))
+            (cursor, paging @ stepping @ signals, pointedOpt)
+        else (cursor, paging, None)
+
+    /// The party menu - the team to choose from on the left, those chosen in the middle, and the confirm button on the
+    /// right, which the cursor moves to once three are chosen. Cancel takes back the last one chosen.
+    let private updateParty (intent : Intent) (field : Field) (cursor : FieldCursor) world =
+        let selections = field.PartyMenu.PartyMenuSelections
+        let teamIndices = Map.toKeyArray field.Team
+        let position = cursor.CursorPosition
+        let (column, row) =
+            match position.Column with
+            | 1 when selections.IsEmpty -> (0, 0)
+            | 1 -> (1, min position.Row (dec selections.Length))
+            | 2 -> (2, 0)
+            | _ -> (0, min position.Row (dec teamIndices.Length))
+        let (column, row) =
+            match (intent.Step, column) with
+            | (Some (Upward | Downward as direction), 0) -> (0, Selection.wrap (Selection.rowDelta direction) teamIndices.Length row)
+            | (Some (Upward | Downward as direction), 1) -> (1, Selection.wrap (Selection.rowDelta direction) selections.Length row)
+            | (Some Rightward, 0) -> if selections.IsEmpty then (2, 0) else (1, min row (dec selections.Length))
+            | (Some Rightward, 1) -> (2, 0)
+            | (Some Leftward, 1) -> (0, min row (dec teamIndices.Length))
+            | (Some Leftward, 2) -> if selections.IsEmpty then (0, 0) else (1, 0)
+            | (_, _) -> (column, row)
+        let (column, row, signals) =
+            if intent.Confirm then
+                match column with
+                | 0 ->
+                    let teamIndex = teamIndices[row]
+                    if selections.Length < 3 && not (List.contains teamIndex selections) then
+                        let (column, row) = if selections.Length = 2 then (2, 0) else (column, row)
+                        (column, row, (Selection.playAffirm world; [signal (PartyMenuSelect teamIndex)]))
+                    else (column, row, (Selection.playMistake world; []))
+                | 1 -> (column, row, (Selection.playAffirm world; [signal (PartyMenuDeselect selections[row])]))
+                | _ ->
+                    if selections.Length >= 3
+                    then (column, row, (Selection.playAffirm world; [signal PartyMenuClose]))
+                    else (column, row, (Selection.playMistake world; []))
+            elif intent.Cancel then
+                match List.tryLast selections with
+                | Some teamIndex -> (column, row, (Selection.playAffirm world; [signal (PartyMenuDeselect teamIndex)]))
+                | None -> (column, row, [])
+            else (column, row, [])
+        let pointedOpt =
+            match column with
+            | 0 -> Some (PartyTeammatePointed teamIndices[row])
+            | 1 when row < selections.Length -> Some (PartySelectedPointed selections[row])
+            | 1 -> None
+            | _ -> Some PartyConfirmPointed
+        (moveTo column row cursor, signals, pointedOpt)
+
+    /// The shop - Buy or Sell and Leave along the top, the wares beneath in two columns, turning the page left and
+    /// right past them as well as by the page buttons. Cancel leaves.
+    let private updateShop (intent : Intent) (shop : Shop) (field : Field) (cursor : FieldCursor) world =
+        let (pageSize, rows) = match (shop.ShopType, shop.ShopState) with (Chemist, ShopBuying) -> (6, 3) | _ -> (8, 4)
+        let (pageUp, pageDown, items) = pageItems pageSize field
+        let count = items.Count
+        let columnCount column = max 0 (min rows (count - column * rows))
+        let paging = (if intent.PageUp && pageUp then [ShopPageUp] else []) @ (if intent.PageDown && pageDown then [ShopPageDown] else [])
+        let paging = List.map (fun message -> message :> Signal) paging
+        let position = cursor.CursorPosition
+        // the header is row -1, its trade button column 0 and leave column 1; the wares are by index from row 0
+        let (column, row) = if position.Row < 0 || count = 0 then (min 1 position.Column, -1) else (0, min position.Row (dec count))
+        let (column, row, stepping) =
+            if row < 0 then
+                match intent.Step with
+                | Some (Leftward | Rightward) -> (stepPair intent column, -1, [])
+                | Some Downward when columnCount column > 0 -> (0, column * rows, [])
+                | Some Downward when count > 0 -> (0, 0, [])
+                | Some Upward when columnCount column > 0 -> (0, column * rows + dec (columnCount column), [])
+                | Some Upward when count > 0 -> (0, dec count, [])
+                | _ -> (column, -1, [])
+            else
+                let itemColumn = row / rows
+                let itemRow = row % rows
+                match intent.Step with
+                | Some Upward when itemRow = 0 -> (0, -1, []) // up to the top row's leftmost button, buy or sell
+                | Some Upward -> (0, dec row, [])
+                | Some Downward when itemRow = dec (columnCount itemColumn) -> (itemColumn, -1, [])
+                | Some Downward -> (0, inc row, [])
+                | Some Leftward when itemColumn = 1 -> (0, row - rows, [])
+                | Some Leftward when pageUp -> (0, row, [ShopPageUp :> Signal])
+                | Some Rightward when itemColumn = 0 && columnCount 1 > 0 -> (0, rows + min itemRow (dec (columnCount 1)), [])
+                | Some Rightward when pageDown -> (0, row, [ShopPageDown :> Signal])
+                | _ -> (0, row, [])
+        let signals =
+            if intent.Confirm then
+                if row >= 0 then (Selection.playAffirm world; [signal (ShopSelect items[row])])
+                elif column = 1 then (Selection.playAffirm world; [signal ShopLeave])
+                else (Selection.playAffirm world; [signal (match shop.ShopState with ShopBuying -> ShopSell | ShopSelling -> ShopBuy)])
+            elif intent.Cancel then (Selection.playAffirm world; [signal ShopLeave])
+            else []
+        let pointedOpt =
+            if row >= 0 then Some (ShopItemPointed (fst (snd items[row])))
+            else Some (if column = 1 then ShopLeavePointed else ShopTradePointed)
+        (moveTo column row cursor, paging @ stepping @ signals, pointedOpt)
+
+    /// Exploring - confirm interacts, the menu button opens the menu, and the party button the party menu at a save
+    /// point. Walking reads the intent itself (see ProcessKeyInput).
+    let private updateExploring (intent : Intent) (field : Field) (cursor : FieldCursor) world =
+        let signals =
+            if intent.Confirm && canInteract field then [signal Interact]
+            elif intent.Menu && canOpenMenu field then (Selection.playAffirm world; [signal MenuTeamOpen])
+            elif intent.Party && canOpenParty field then (Selection.playAffirm world; [signal PartyMenuOpen])
+            else []
+        (cursor, signals, None)
+
+    /// The dialog - confirm or cancel presses the skip button where it shows, and otherwise confirm turns the page.
+    let private updateDialog (intent : Intent) (field : Field) (cursor : FieldCursor) world =
+        let signals =
+            if (intent.Confirm || intent.Cancel) && canSkip field then (Selection.playAffirm world; [signal SkipDialog])
+            elif intent.Confirm && canInteract field then [signal Interact]
+            else []
+        (cursor, signals, None)
+
+    /// Advance the cursor and act on what the player means this frame, returning the cursor, the signals for the
+    /// field, and what the pointer should point at.
+    let updateInput (intent : Intent) (field : Field) (cursor : FieldCursor) world : FieldCursor * Signal list * FieldPointed option =
+        let cursor = followInput field cursor
+        match cursor.CursorMenu with
+        | NoFieldMenu -> updateExploring intent field cursor world
+        | DialogPanel -> updateDialog intent field cursor world
+        | PromptPanel ->
+            // the dialog's two answers, side by side
+            let column = stepPair intent cursor.CursorPosition.Column
+            let signals = if intent.Confirm then (Selection.playAffirm world; [signal (if column = 0 then PromptLeft else PromptRight)]) else []
+            (moveTo column 0 cursor, signals, Some (PromptChoicePointed column))
+        | TeamPanel ->
+            match field.Menu.MenuState.Shown with
+            | MenuTeam menuTeam -> updateTeam intent menuTeam field cursor world
+            | _ -> (cursor, [], None)
+        | EquipPanel ->
+            match field.Menu.MenuState with
+            | MenuTeam ({ TeamEquipOpt = Some equip } as menuTeam) when field.Team.ContainsKey menuTeam.TeamIndex ->
+                updateEquip intent menuTeam equip field cursor world
+            | _ -> (cursor, [], None)
+        | EquipInfoPanel -> updateClose intent InfoClosePointed MenuTeamEquipMenuUseClose cursor world
+        | AutoMapPanel ->
+            // back to the team menu or closing the menu, side by side
+            let column = stepPair intent cursor.CursorPosition.Column
+            let signals =
+                if intent.Confirm then World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.AutoMapSound world; [signal (if column = 0 then MenuTeamOpen else MenuClose)]
+                elif intent.Cancel then World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.AutoMapSound world; [signal MenuTeamOpen]
+                elif intent.Menu then (Selection.playAffirm world; [signal MenuClose])
+                else []
+            (moveTo column 0 cursor, signals, Some (AutoMapChoicePointed column))
+        | InventoryPanel ->
+            updateItemPage intent InventoryPanel InventorySidebarPointed InventoryItemPointed (function Stash _ -> false | _ -> true) (fun page -> MenuInventorySelect page)
+                MenuInventoryPageUp MenuInventoryPageDown field cursor world
+        | KeyItemsPanel ->
+            updateItemPage intent KeyItemsPanel KeyItemsSidebarPointed KeyItemPointed (constant true) (fun page -> MenuKeyItemsSelect page)
+                MenuKeyItemsPageUp MenuKeyItemsPageDown field cursor world
+        | UsePanel ->
+            match field.Menu.MenuUseOpt with
+            | Some ({ MenuUseSelection = (_, (Consumable _ as itemType)) }) -> updateUse intent itemType field cursor world
+            | Some _ -> updateClose intent UseClosePointed MenuInventoryCancel cursor world
+            | None -> (cursor, [], None)
+        | TechsPanel ->
+            match field.Menu.MenuState.Shown with
+            | MenuTechs menuTechs -> updateTechs intent menuTechs field cursor world
+            | _ -> (cursor, [], None)
+        | TechPanel -> updateClose intent TechClosePointed MenuTechClose cursor world
+        | OptionsPanel -> updateOptions intent field cursor world
+        | QuitPanel ->
+            // quitting or not, side by side
+            let column = stepPair intent cursor.CursorPosition.Column
+            let signals =
+                if intent.Confirm then (Selection.playAffirm world; [signal (if column = 0 then MenuOptionsQuitConfirm else MenuOptionsQuitCancel)])
+                elif intent.Cancel then (Selection.playAffirm world; [signal MenuOptionsQuitCancel])
+                else []
+            (moveTo column 0 cursor, signals, Some (QuitChoicePointed column))
+        | PartyPanel -> updateParty intent field cursor world
+        | ShopPanel ->
+            match field.ShopOpt with
+            | Some shop -> updateShop intent shop field cursor world
+            | None -> (cursor, [], None)
+        | ShopConfirmPanel ->
+            // buying or selling or not, side by side
+            let column = stepPair intent cursor.CursorPosition.Column
+            let signals =
+                if intent.Confirm then (Selection.playAffirm world; [signal (if column = 0 then ShopConfirmAccept else ShopConfirmDecline)])
+                elif intent.Cancel then (Selection.playAffirm world; [signal ShopConfirmDecline])
+                else []
+            (moveTo column 0 cursor, signals, Some (ShopConfirmChoicePointed column))
 
 #if DEV
     let reloadProps field =
@@ -1401,7 +2232,9 @@ module Field =
           FieldSongTimeOpt_ = None
           AutoMaps_ = Map.empty
           FieldType_ = fieldType
-          FieldCursor_ = FieldCursor.initial }
+          FieldCursor_ = FieldCursor.initial
+          FieldPointerShown_ = true
+          FieldIntent_ = Intent.empty }
 
     let empty =
         { FieldTime_ = 0L
@@ -1433,7 +2266,9 @@ module Field =
           FieldSongTimeOpt_ = None
           AutoMaps_ = Map.empty
           FieldType_ = EmptyField
-          FieldCursor_ = FieldCursor.initial }
+          FieldCursor_ = FieldCursor.initial
+          FieldPointerShown_ = true
+          FieldIntent_ = Intent.empty }
 
     let initial time saveSlot =
         make time TombOuter saveSlot (max 1UL Gen.randomul) Avatar.initial (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial
@@ -1448,7 +2283,7 @@ module Field =
                 | Slot2 -> Assets.User.SaveFilePath2
                 | Slot3 -> Assets.User.SaveFilePath3
             let fileStr = File.ReadAllText saveFilePath
-            match fileStr.Split checksumToken with
+            match fileStr.Split ChecksumToken with
             | [|fieldStr; checksumStr|] ->
                 let checksumExpected = computeChecksum fieldStr
                 let mutable checksumFound = 0L
@@ -1462,7 +2297,7 @@ module Field =
                     if saveValidated then
                         let field = scvalue<Field> fieldStr
                         let props = makeProps time field.FieldType_ field.OmniSeedState_
-                        Some { field with Props_ = props; FieldCursor_ = FieldCursor.initial }
+                        Some { field with Props_ = props; FieldCursor_ = FieldCursor.initial; FieldPointerShown_ = true; FieldIntent_ = Intent.empty }
                     else Log.error "Failed to load save file due to invalid checksum."; None
                 else Log.error "Failed to load save file due to unparsable checksum."; None
             | _ -> Log.error "Failed to load save file due to missing checksum or invalid format."; None

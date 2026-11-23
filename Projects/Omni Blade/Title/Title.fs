@@ -9,13 +9,15 @@ open Nu
 
 type Title =
     { TitleTime : int64
-      TitleSelection : int } // play, credits or exit, as chosen with a gamepad or the keyboard
+      TitleSelection : int // play, credits or exit, as chosen with a gamepad or the keyboard
+      TitlePointerShown : bool
+      TitleIntent : Intent }
 
     static member val empty =
-        { TitleTime = 0L; TitleSelection = 0 }
+        { TitleTime = 0L; TitleSelection = 0; TitlePointerShown = true; TitleIntent = Intent.empty }
 
     static member val initial =
-        { TitleTime = 0L; TitleSelection = 0 }
+        { TitleTime = 0L; TitleSelection = 0; TitlePointerShown = true; TitleIntent = Intent.empty }
 
 type TitleMessage =
     | Scroll
@@ -24,7 +26,7 @@ type TitleMessage =
     interface Message
 
 type TitleCommand =
-    | Choose of Entity
+    | Choose of int
     interface Command
 
 [<AutoOpen>]
@@ -33,6 +35,9 @@ module TitleExtensions =
         member this.GetTitle world = this.GetModelGeneric<Title> world
         member this.SetTitle value world = this.SetModelGeneric<Title> value world
         member this.Title = this.ModelGeneric<Title> ()
+        member this.TitlePlayEvent = Events.TitlePlayEvent --> this
+        member this.TitleCreditsEvent = Events.TitleCreditsEvent --> this
+        member this.TitleExitEvent = Events.TitleExitEvent --> this
 
 type TitleDispatcher () =
     inherit ScreenDispatcher<Title, TitleMessage, TitleCommand> (Title.empty)
@@ -65,29 +70,34 @@ type TitleDispatcher () =
         | ResetSelection ->
             just { title with TitleSelection = 0 }
         | ProcessInput ->
+            // read input whenever selected, acting on it only once the screen's idling
+            let (pointerShown, intent) = Intent.read title.TitlePointerShown title.TitleIntent world
+            let title = { title with TitlePointerShown = pointerShown; TitleIntent = intent }
             if screen.GetIdling world then
-                let intent = Game.GetIntent world
                 let choices = getChoices ()
                 let title =
                     match intent.Step with
                     | Some direction -> { title with TitleSelection = Selection.wrap (Selection.rowDelta direction) choices.Length title.TitleSelection }
                     | None -> title
                 if intent.Confirm
-                then withSignal (Choose choices[title.TitleSelection]) title
+                then withSignal (Choose title.TitleSelection) title
                 else just title
             else just title
 
-    override this.Command (_, command, _, world) =
+    override this.Command (_, command, screen, world) =
         match command with
-        | Choose button ->
+        | Choose selection ->
             Selection.playAffirm world
-            World.publish () button.ClickEvent button world
+            match selection with
+            | 0 -> World.publish () screen.TitlePlayEvent screen world
+            | 1 -> World.publish () screen.TitleCreditsEvent screen world
+            | _ -> World.publish () screen.TitleExitEvent screen world
 
     override this.Render (title, renderPass, screen, world) =
         match renderPass with
         | NormalPass when screen.GetIdling world ->
             let choices = getChoices ()
-            Pointer.render choices[title.TitleSelection] title.TitleTime world
+            Pointer.render title.TitlePointerShown choices[title.TitleSelection] title.TitleTime world
         | _ -> ()
 
     override this.Content (title, _) =

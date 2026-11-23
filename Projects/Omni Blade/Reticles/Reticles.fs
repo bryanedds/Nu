@@ -8,12 +8,12 @@ open Prime
 open Nu
 
 type Reticles =
-    Map<CharacterIndex, Vector3>
+    { Targets : Map<CharacterIndex, Vector3> // where each target's reticle centers
+      Shown : bool } // whether the reticles show, as only for the mouse, the pointing hand showing the target otherwise
 
 type ReticlesCommand =
     | TargetCancel
     | TargetSelect of CharacterIndex
-    | ShowReticles
     interface Command
 
 [<AutoOpen>]
@@ -25,22 +25,12 @@ module ReticlesExtensions =
         member this.TargetSelectEvent = Events.TargetSelectEvent --> this
 
 type ReticlesDispatcher () =
-    inherit GuiDispatcher<Reticles, Message, ReticlesCommand> (Map.empty)
+    inherit GuiDispatcher<Reticles, Message, ReticlesCommand> ({ Targets = Map.empty; Shown = false })
 
-    override this.Definitions (_, _) =
-        [Entity.UpdateEvent => ShowReticles]
-
-    override this.Command (reticles, command, entity, world) =
+    override this.Command (_, command, entity, world) =
         match command with
         | TargetCancel -> World.publish () entity.CancelEvent entity world
         | TargetSelect index -> World.publish index entity.TargetSelectEvent entity world
-        | ShowReticles ->
-
-            // the reticles show only for the mouse, the pointing hand showing the target otherwise
-            let visible = (Game.GetIntentState world).PointerHidden
-            for index in reticles.Keys do
-                let reticle = entity / CharacterIndex.toEntityName index
-                if reticle.GetExists world && reticle.GetVisible world <> visible then reticle.SetVisible visible world
 
     override this.Content (reticles, _) =
         [Content.button "Cancel"
@@ -49,12 +39,12 @@ type ReticlesDispatcher () =
              Entity.UpImage == asset Assets.Battle.PackageName "CancelUp"
              Entity.DownImage == asset Assets.Battle.PackageName "CancelDown"
              Entity.ClickEvent => TargetCancel]
-         for (index, center) in reticles.Pairs do
+         for (index, center) in reticles.Targets.Pairs do
             Content.button (CharacterIndex.toEntityName index)
                 [Entity.MountOpt == None
                  Entity.Size == v3 96.0f 96.0f 0.0f
                  Entity.PerimeterCenter := center
-                 Entity.Visible == false // shown only for the mouse (see ShowReticles)
+                 Entity.Visible := reticles.Shown
                  Entity.UpImage == asset Assets.Battle.PackageName "ReticleUp"
                  Entity.DownImage == asset Assets.Battle.PackageName "ReticleDown"
                  Entity.ClickEvent => TargetSelect index]]

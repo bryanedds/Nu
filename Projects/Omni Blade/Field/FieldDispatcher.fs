@@ -79,6 +79,47 @@ type FieldDispatcher () =
         then Field.initial world.UpdateTime Slot1
         else Field.empty
 
+    /// The entity the field's pointer points at.
+    static member getPointedEntity (field : Field) pointed =
+        let scene name = Simulants.FieldScene / name
+        let sidebarButtonNames = [|"TeamButton"; "InventoryButton"; "TechButton"; "KeyItemsButton"; "OptionsButton"; "CloseButton"|]
+        match pointed with
+        | TeamSidebarPointed row -> scene "Team" / "Sidebar" / sidebarButtonNames[row]
+        | InventorySidebarPointed row -> scene "Inventory" / "Sidebar" / sidebarButtonNames[row]
+        | TechsSidebarPointed row -> scene "Techs" / "Sidebar" / sidebarButtonNames[row]
+        | KeyItemsSidebarPointed row -> scene "KeyItems" / "Sidebar" / sidebarButtonNames[row]
+        | OptionsSidebarPointed row -> scene "Options" / "Sidebar" / sidebarButtonNames[row]
+        | TeamTeammatePointed teamIndex -> scene "Team" / ("Teammate+" + string teamIndex)
+        | TechsTeammatePointed teamIndex -> scene "Techs" / ("Teammate+" + string teamIndex)
+        | UseTeammatePointed teamIndex -> scene "Use" / ("Teammate+" + string teamIndex)
+        | PartyTeammatePointed teamIndex -> scene "PartyMenu" / ("Teammate+" + string teamIndex)
+        | EquipmentPointed slot -> scene "Team" / (match slot with 0 -> "Weapon" | 1 -> "Armor" | _ -> "Accessory")
+        | AutoMapPointed -> scene "Team" / "AutoMap"
+        | TechPointed techType -> scene "Techs" / scstringMemo techType
+        | InventoryItemPointed itemType -> scene "Inventory" / itemType.Name
+        | KeyItemPointed itemType -> scene "KeyItems" / itemType.Name
+        | EquipItemPointed itemType -> scene "Equip" / itemType.Name
+        | ShopItemPointed itemType -> scene "Shop" / itemType.Name
+        | OptionPointed index ->
+            let optionName = [|"Wait"; "Paced"; "Swift"; "SongVolumeDown"; "SongVolumeUp"; "ToggleFullScreen"; "PlayModeSelection"; "Quit"|][index]
+            scene "Options" / optionName
+        | EquipButtonPointed -> scene "Equip" / "EquipButton"
+        | EquipInfoPointed -> scene "Equip" / "Info"
+        | EquipCancelPointed -> scene "Equip" / "EquipCancel"
+        | InfoClosePointed -> scene "Info" / "Close"
+        | UseClosePointed -> scene "Use" / "Close"
+        | TechClosePointed -> scene "Tech" / "Close"
+        | PromptChoicePointed column -> scene (if column = 0 then "Left" else "Right")
+        | AutoMapChoicePointed column -> scene (if column = 0 then "AutoBack" else "AutoClose")
+        | QuitChoicePointed column -> scene "Options" / (if column = 0 then "QuitConfirm" else "QuitCancel")
+        | ShopConfirmChoicePointed column -> scene "Dialog" / (if column = 0 then "Accept" else "Decline")
+        | PartySelectedPointed teamIndex -> scene "PartyMenu" / ("Selected+" + string teamIndex)
+        | PartyConfirmPointed -> scene "PartyMenu" / "Confirm"
+        | ShopTradePointed ->
+            let trade = match field.ShopOpt with Some shop when shop.ShopState = ShopBuying -> "Sell" | _ -> "Buy"
+            scene "Shop" / trade
+        | ShopLeavePointed -> scene "Shop" / "Leave"
+
     override this.Definitions (field, _) =
         [Screen.UpdateEvent => ProcessMenuInput // before the update, as gui clicks are handled
          Screen.UpdateEvent => Update
@@ -104,20 +145,18 @@ type FieldDispatcher () =
 #endif
          ]
 
-    override this.Message (field, message, _, world) =
-
-        // any message but the frame's own takes the sidebar's selection off its close button, back to the menu under it
-        let field =
-            match (field.Menu.MenuState, message) with
-            | (MenuCloseSelected state, message) ->
-                match message with
-                | Update | UpdateFieldTransition | AdvanceTime | UpdateAvatarBodyTracking | AvatarBodyTransform _
-                | AvatarBodyPenetration _ | AvatarBodySeparationExplicit _ | AvatarBodySeparationImplicit _
-                | ScreenTransitioning _ | MenuCloseSelect -> field
-                | _ -> Field.mapMenu (fun menu -> { menu with MenuState = state }) field
-            | (_, _) -> field
+    override this.Message (field, message, screen, world) =
 
         match message with
+        | ProcessMenuInput ->
+            // read input whenever selected, acting on it only once the screen's idling
+            let (pointerShown, intent) = Intent.read field.FieldPointerShown field.FieldIntent world
+            let field = field |> Field.setFieldPointerShown pointerShown |> Field.setFieldIntent intent
+            if screen.GetIdling world then
+                let (cursor, signals, _) = Field.updateInput intent field field.FieldCursor world
+                withSignals signals (Field.setFieldCursor cursor field)
+            else just field
+
         | Update ->
 
             // update field, synchronizing the avatar intersected prop ids with what physics says intersects it now
@@ -641,7 +680,14 @@ type FieldDispatcher () =
             just field
 
         | MenuCloseDeselect ->
-            just field // the selection's already been taken off the close button, as any message does
+            // back to the menu under the close button
+            let field =
+                Field.mapMenu (fun menu ->
+                    match menu.MenuState with
+                    | MenuCloseSelected state -> { menu with MenuState = state }
+                    | _ -> menu)
+                    field
+            just field
 
         | MenuClose ->
             let field = Field.mapMenu (fun menu -> { menu with MenuState = MenuClosed }) field
@@ -779,7 +825,7 @@ type FieldDispatcher () =
                 Option.isNone field.FieldTransitionOpt &&
                 not (Simulants.FieldFeeler.GetTouched world) then
                 // walk as the player means to - from the keyboard, a gamepad, or a test in their place
-                let intent = Game.GetIntent world
+                let intent = field.FieldIntent
                 let velocity = intent.Move * Constants.Field.AvatarWalkSpeed
                 World.setBodyLinearVelocity velocity (Simulants.FieldAvatar.GetBodyId world) world
                 match Intent.tryGetDirection intent.Move with
@@ -787,12 +833,6 @@ type FieldDispatcher () =
                     let field = Field.mapAvatar (Avatar.setDirection direction) field
                     screen.SetField field world
                 | None -> ()
-
-        | ProcessMenuInput ->
-            if screen.GetIdling world then
-                let (cursor, signals, _) = FieldInput.update (Game.GetIntent world) field field.FieldCursor world
-                screen.SetField (Field.setFieldCursor cursor (screen.GetField world)) world
-                for signal in signals do screen.Signal signal world
 
         | ProcessTouchInput position ->
             if  field.FieldState = Playing &&
@@ -803,7 +843,7 @@ type FieldDispatcher () =
                 Option.isNone field.DialogOpt &&
                 Option.isNone field.ShopOpt &&
                 Option.isNone field.FieldTransitionOpt &&
-                (Game.GetIntent world).Move = v3Zero then
+                field.FieldIntent.Move = v3Zero then
                 let lowerCenter = field.Avatar.Perimeter.LowerCenter
                 let viewport = World.getWindowViewport world
                 let eyeCenter = World.getEye2dCenter world
@@ -890,8 +930,9 @@ type FieldDispatcher () =
     override this.Render (field, renderPass, screen, world) =
         match renderPass with
         | NormalPass when screen.GetIdling world ->
-            match FieldInput.tryGetPointed field field.FieldCursor world with
-            | Some entity -> Pointer.render entity field.FieldTime world
+            let (_, _, pointedOpt) = Field.updateInput Intent.empty field field.FieldCursor world
+            match pointedOpt with
+            | Some pointed -> Pointer.render field.FieldPointerShown (FieldDispatcher.getPointedEntity field pointed) field.FieldTime world
             | None -> ()
         | _ -> ()
 
@@ -1047,7 +1088,7 @@ type FieldDispatcher () =
                     Option.isNone field.FieldTransitionOpt &&
                     Field.touchingSavePoint field &&
                     field.Team.Count >= 3
-                 Entity.Text == "Party"
+                 Entity.Text == "(P)arty"
                  Entity.ClickEvent => PartyMenuOpen]
 
              // interact button
@@ -1291,14 +1332,14 @@ type FieldDispatcher () =
                          Content.button "PageUp"
                             [Entity.PositionLocal == v3 462.0f 15.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.Text == "<"
-                             Entity.VisibleLocal := Content.pageItems 3 field |> a__
+                             Entity.VisibleLocal := Field.pageItems 3 field |> a__
                              Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                              Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                              Entity.ClickEvent => MenuTeamEquipPageUp]
                          Content.button "PageDown"
                             [Entity.PositionLocal == v3 726.0f 15.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.Text == ">"
-                             Entity.VisibleLocal := Content.pageItems 3 field |> _b_
+                             Entity.VisibleLocal := Field.pageItems 3 field |> _b_
                              Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                              Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                              Entity.ClickEvent => MenuTeamEquipPageDown]]
@@ -1424,14 +1465,14 @@ type FieldDispatcher () =
                      Content.button "PageUp"
                         [Entity.PositionLocal == v3 138.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                          Entity.Text == "<"
-                         Entity.VisibleLocal := Content.pageItems 10 field |> a__
+                         Entity.VisibleLocal := Field.pageItems 10 field |> a__
                          Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                          Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                          Entity.ClickEvent => MenuInventoryPageUp]
                      Content.button "PageDown"
                         [Entity.PositionLocal == v3 777.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                          Entity.Text == ">"
-                         Entity.VisibleLocal := Content.pageItems 10 field |> _b_
+                         Entity.VisibleLocal := Field.pageItems 10 field |> _b_
                          Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                          Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                          Entity.ClickEvent => MenuInventoryPageDown]]
@@ -1461,14 +1502,14 @@ type FieldDispatcher () =
                      Content.button "PageUp"
                         [Entity.PositionLocal == v3 138.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                          Entity.Text == "<"
-                         Entity.VisibleLocal := Content.pageItems 10 field |> a__
+                         Entity.VisibleLocal := Field.pageItems 10 field |> a__
                          Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                          Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                          Entity.ClickEvent => MenuKeyItemsPageUp]
                      Content.button "PageDown"
                         [Entity.PositionLocal == v3 777.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                          Entity.Text == ">"
-                         Entity.VisibleLocal := Content.pageItems 10 field |> _b_
+                         Entity.VisibleLocal := Field.pageItems 10 field |> _b_
                          Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                          Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                          Entity.ClickEvent => MenuKeyItemsPageDown]]
@@ -1510,7 +1551,7 @@ type FieldDispatcher () =
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Song Volume"]
                         Content.button "SongVolumeDown"
-                            [Entity.PositionLocal == v3 300.0f 303.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 180.0f 303.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UpImage == Assets.Gui.ButtonShortUpImage
                              Entity.DownImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "-"
@@ -1521,7 +1562,7 @@ type FieldDispatcher () =
                              Entity.DownImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text := field.Options.SongVolume * 20.0f |> int |> string]
                         Content.button "SongVolumeUp"
-                            [Entity.PositionLocal == v3 516.0f 303.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 636.0f 303.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UpImage == Assets.Gui.ButtonShortUpImage
                              Entity.DownImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "+"
@@ -1737,7 +1778,7 @@ type FieldDispatcher () =
                     match (shop.ShopType, shop.ShopState) with
                     | (Chemist, ShopBuying) -> (6, 3)
                     | _ -> (8, 4)
-                let items = Content.pageItems 8 field
+                let items = Field.pageItems 8 field
                 Content.panel "Shop"
                     [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                      Entity.BackdropImageOpt == Some Assets.Gui.DialogXXLImage
