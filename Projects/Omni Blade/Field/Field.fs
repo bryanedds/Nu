@@ -1316,7 +1316,8 @@ module Field =
         else (cursor, paging, None)
 
     /// The party menu - the team to choose from on the left, those chosen in the middle, and the confirm button on the
-    /// right, which the cursor moves to once three are chosen. Cancel takes back the last one chosen.
+    /// right, which the cursor moves to once three are chosen, else to the next teammate yet to be chosen. Cancel takes
+    /// back the last one chosen.
     let private updateParty (intent : Intent) (field : Field) (cursor : FieldCursor) world =
         let selections = field.PartyMenu.PartyMenuSelections
         let teamIndices = Map.toKeyArray field.Team
@@ -1342,7 +1343,15 @@ module Field =
                 | 0 ->
                     let teamIndex = teamIndices[row]
                     if selections.Length < 3 && not (List.contains teamIndex selections) then
-                        let (column, row) = if selections.Length = 2 then (2, 0) else (column, row)
+                        let (column, row) =
+                            if selections.Length = 2 then (2, 0)
+                            else
+                                let chosen = teamIndex :: selections
+                                [1 .. dec teamIndices.Length]
+                                |> List.map (fun offset -> (row + offset) % teamIndices.Length)
+                                |> List.tryFind (fun row' -> not (List.contains teamIndices[row'] chosen))
+                                |> Option.map (fun row' -> (column, row'))
+                                |> Option.defaultValue (column, row)
                         (column, row, (Selection.playAffirm world; [signal (PartyMenuSelect teamIndex)]))
                     else (column, row, (Selection.playMistake world; []))
                 | 1 -> (column, row, (Selection.playAffirm world; [signal (PartyMenuDeselect selections[row])]))
