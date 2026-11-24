@@ -25,3 +25,4 @@ Bolt,7,Magical,1.8,FALSE,FALSE,FALSE,[Some Lightning],[],[],None,[SingleTarget [
 Slow,4,Magical,0.75,FALSE,FALSE,FALSE,None,[[Time False]],[],None,[SingleTarget [EnemyAim True]],Slows down an enemy.
 ConjureRamuh,8,Magical,2.2,TRUE,FALSE,FALSE,[Some Lightning],[],[],None,[AllTarget [EnemyAim True]],"Conjures the lord of thunder, Ramuh, to blast all enemies with lightning bolts. A full Orb is required for use. Lightning-based."
 Inferno,10,Magical,1.8,TRUE,FALSE,FALSE,[Some Fire],[],[],None,[AllTarget [EnemyAim True]],Attacks all enemies with flames.
+Silk,6,Magical,1.1,FALSE,FALSE,FALSE,None,[[Time False]],[],None,[SingleTarget [EnemyAim True]],
