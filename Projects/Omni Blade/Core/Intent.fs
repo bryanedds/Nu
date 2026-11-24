@@ -126,7 +126,7 @@ module Intent =
                 let repeat = held >= delay && (held - delay) % Constants.Input.StepRepeatPeriod = 0L
                 ((if repeat then Some direction else None), intentLast.StepTime)
             | Some direction -> (Some direction, time)
-            | None -> (None, time)
+            | None -> (None, intentLast.StepTime)
         let intentRead =
             { Move = move
               Step = step
