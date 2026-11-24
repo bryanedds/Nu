@@ -3,6 +3,7 @@
 
 namespace OmniBlade
 open System
+open System.IO
 open Prime
 open Nu
 
@@ -226,3 +227,16 @@ module Algorithms =
             elif level <= 18 then Some (Consumable RedHerb)
             else Some (Consumable GoldHerb)
         else None
+
+    let getPickSaves () =
+        let saves =
+            seq {
+                for slot in [Slot1; Slot2; Slot3] do
+                    let filePath =
+                        match slot with
+                        | Slot1 -> Assets.User.SaveFilePath1
+                        | Slot2 -> Assets.User.SaveFilePath2
+                        | Slot3 -> Assets.User.SaveFilePath3
+                    if File.Exists filePath then
+                        slot }
+        Set.ofSeq saves

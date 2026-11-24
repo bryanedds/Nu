@@ -47,18 +47,6 @@ type OmniBladeCommand =
 
 [<AutoOpen>]
 module OmniBladeExtensions =
-
-    /// The file a save slot is kept in.
-    let pickSaveFilePath slot =
-        match slot with
-        | Slot1 -> Assets.User.SaveFilePath1
-        | Slot2 -> Assets.User.SaveFilePath2
-        | Slot3 -> Assets.User.SaveFilePath3
-
-    /// The save slots saved in.
-    let getPickSaves () =
-        Set.ofList [for slot in [Slot1; Slot2; Slot3] do if File.Exists (pickSaveFilePath slot) then slot]
-
     type Game with
         member this.GetOmniBlade world = this.GetModelGeneric<OmniBlade> world
         member this.SetOmniBlade value world = this.SetModelGeneric<OmniBlade> value world
@@ -129,100 +117,89 @@ type OmniBladeDispatcher () =
          Simulants.Battle.ConcludeBattleEvent => ConcludeBattle]
 
     override this.Message (omniBlade, message, _, world) =
+        
+        // handle message
+        let (signals, omniBlade') =
+            match message with
+            | ShowTitle ->
+                just Title
 
-        // when the game shows something else, whatever holds the input for it takes whether the pointer's shown from
-        // what held it before
-        let (signals, omniBlade') = this.HandleMessage (omniBlade, message, world)
-        let switched =
-            match (omniBlade, omniBlade') with
-            | (Splash _, Splash _) | (Title, Title) | (Credits, Credits) | (Pick _, Pick _)
-            | (Intro _, Intro _) | (Field, Field) | (Battle, Battle) -> false
-            | (_, _) -> true
-        if switched then
+            | ShowCredits ->
+                just Credits
+
+            | ShowPick ->
+                just (Pick (0, Algorithms.getPickSaves (), getPointerShown omniBlade world, Intent.empty))
+
+            | ShowIntro slot ->
+                just (Intro (slot, getPointerShown omniBlade world, Intent.empty))
+
+            | ShowFieldInitial ->
+                let slot = match omniBlade with Intro (slot, _, _) -> slot | _ -> Slot1
+                let field = Field.initial world.UpdateTime slot
+                withSignals [SetField field; SynchronizeSongVolume] Field
+
+            | TryLoad saveSlot ->
+                match Field.tryLoad world.UpdateTime saveSlot with
+                | Some field -> withSignals [SetField field; SynchronizeSongVolume] Field
+                | None -> just omniBlade
+
+            | CommencingBattle ->
+                just Battle
+
+            | CommenceBattle (battleData, prizePool) ->
+                withSignal (FromFieldToBattle (battleData, prizePool)) Battle
+
+            | ConcludingBattle outcome ->
+                match outcome with
+                | WinBattle -> just Field
+                | LoseBattle -> just Title
+                | RetryBattle (battleData, prizePool) -> withSignal (FromFieldToBattle (battleData, prizePool)) Battle
+
+            | ConcludeBattle ->
+                let battle = Simulants.Battle.GetBattle world
+                match battle.BattleState with
+                | BattleConcluding (_, outcome) ->
+                    match outcome with
+                    | WinBattle -> withSignal (FromBattleToField battle.PrizePool) Field
+                    | LoseBattle -> just Title
+                    | RetryBattle (_, _) -> just Battle
+                | _ -> just omniBlade
+
+            | ProcessInput ->
+                match (World.getSelectedScreenOpt world, omniBlade) with
+                | (Some screen, Splash (pointerShown, intent)) when screen = Simulants.Splash ->
+                    just (Splash (Intent.read pointerShown intent world))
+                | (Some screen, Intro (slot, pointerShown, intent)) when List.contains screen IntroScreens ->
+                    let (pointerShown, intent) = Intent.read pointerShown intent world
+                    just (Intro (slot, pointerShown, intent))
+                | (Some screen, Pick (selection, saves, pointerShown, intent)) when screen = Simulants.Pick ->
+                    let (pointerShown, intent) = Intent.read pointerShown intent world
+                    let omniBlade = Pick (selection, saves, pointerShown, intent)
+                    if screen.GetIdling world then
+                        let selection =
+                            match intent.Step with
+                            | Some direction -> Selection.wrap (Selection.rowDelta direction) 4 selection
+                            | None -> selection
+                        let omniBlade = Pick (selection, saves, pointerShown, intent)
+                        if intent.Confirm then
+                            match selection with
+                            | 0 | 1 | 2 ->
+                                let slot = match selection with 0 -> Slot1 | 1 -> Slot2 | _ -> Slot3
+                                World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Gui.SlotSound world
+                                withSignal (if saves.Contains slot then TryLoad slot else ShowIntro slot) omniBlade
+                            | _ -> Selection.playAffirm world; withSignal ShowTitle omniBlade
+                        elif intent.Cancel then
+                            Selection.playAffirm world
+                            withSignal ShowTitle omniBlade
+                        else just omniBlade
+                    else just omniBlade
+                | (_, _) -> just omniBlade
+
+        // handle handovers
+        if getCaseTag omniBlade <> getCaseTag omniBlade' then
             let (omniBlade', handing) = handover omniBlade' (getPointerShown omniBlade world)
             (signals @ handing, omniBlade')
         else (signals, omniBlade')
-
-    member private this.HandleMessage (omniBlade, message, world) : Signal list * OmniBlade =
-
-        match message with
-        | ShowTitle ->
-            just Title
-
-        | ShowCredits ->
-            just Credits
-
-        | ShowPick ->
-            just (Pick (0, getPickSaves (), getPointerShown omniBlade world, Intent.empty))
-
-        | ShowIntro slot ->
-            just (Intro (slot, getPointerShown omniBlade world, Intent.empty))
-
-        | ShowFieldInitial ->
-            let slot = match omniBlade with Intro (slot, _, _) -> slot | _ -> Slot1
-            let field = Field.initial world.UpdateTime slot
-            withSignals [SetField field; SynchronizeSongVolume] Field
-
-        | TryLoad saveSlot ->
-            match Field.tryLoad world.UpdateTime saveSlot with
-            | Some field -> withSignals [SetField field; SynchronizeSongVolume] Field
-            | None -> just omniBlade
-
-        | CommencingBattle ->
-            just Battle
-
-        | CommenceBattle (battleData, prizePool) ->
-            withSignal (FromFieldToBattle (battleData, prizePool)) Battle
-
-        | ConcludingBattle outcome ->
-            match outcome with
-            | WinBattle -> just Field
-            | LoseBattle -> just Title
-            | RetryBattle (battleData, prizePool) -> withSignal (FromFieldToBattle (battleData, prizePool)) Battle
-
-        | ConcludeBattle ->
-            let battle = Simulants.Battle.GetBattle world
-            match battle.BattleState with
-            | BattleConcluding (_, outcome) ->
-                match outcome with
-                | WinBattle -> withSignal (FromBattleToField battle.PrizePool) Field
-                | LoseBattle -> just Title
-                | RetryBattle (_, _) -> just Battle
-            | _ -> just omniBlade
-
-        | ProcessInput ->
-            // a screen without a model of its own reads input into its case of the game's model while it's in it, its
-            // input being ignored as it goes once the game's moved on
-            match (World.getSelectedScreenOpt world, omniBlade) with
-            | (Some screen, Splash (pointerShown, intent)) when screen = Simulants.Splash ->
-                just (Splash (Intent.read pointerShown intent world))
-            | (Some screen, Intro (slot, pointerShown, intent)) when List.contains screen IntroScreens ->
-                let (pointerShown, intent) = Intent.read pointerShown intent world
-                just (Intro (slot, pointerShown, intent))
-            | (Some screen, Pick (selection, saves, pointerShown, intent)) when screen = Simulants.Pick ->
-                let (pointerShown, intent) = Intent.read pointerShown intent world
-                let omniBlade = Pick (selection, saves, pointerShown, intent)
-
-                // the pick screen's menu - a row for each save slot, then back
-                if screen.GetIdling world then
-                    let selection =
-                        match intent.Step with
-                        | Some direction -> Selection.wrap (Selection.rowDelta direction) 4 selection
-                        | None -> selection
-                    let omniBlade = Pick (selection, saves, pointerShown, intent)
-                    if intent.Confirm then
-                        match selection with
-                        | 0 | 1 | 2 ->
-                            let slot = match selection with 0 -> Slot1 | 1 -> Slot2 | _ -> Slot3
-                            World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Gui.SlotSound world
-                            withSignal (if saves.Contains slot then TryLoad slot else ShowIntro slot) omniBlade
-                        | _ -> Selection.playAffirm world; withSignal ShowTitle omniBlade
-                    elif intent.Cancel then
-                        Selection.playAffirm world
-                        withSignal ShowTitle omniBlade
-                    else just omniBlade
-                else just omniBlade
-            | (_, _) -> just omniBlade
 
     override this.Command (omniBlade, command, _, world) =
 

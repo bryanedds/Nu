@@ -172,11 +172,6 @@ type FieldCommand =
     | Nop
     interface Command
 
-type SaveSlot =
-    | Slot1
-    | Slot2
-    | Slot3
-
 type [<SymbolicExpansion>] Options =
     { BattleSpeed : BattleSpeed
       HardcoreMode : bool

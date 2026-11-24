@@ -405,6 +405,11 @@ type ShopkeepAppearanceType =
     | Female
     | Fancy
 
+type SaveSlot =
+    | Slot1
+    | Slot2
+    | Slot3
+
 type FieldType =
     | EmptyField
     | DebugField
