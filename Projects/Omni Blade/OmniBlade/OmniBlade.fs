@@ -239,16 +239,13 @@ type OmniBladeDispatcher () =
                 Simulants.Battle.SetBattle (battle |> Battle.setBattlePointerShown pointerShown |> Battle.setBattleIntent intent) world
 
         | FromFieldToBattle (battleData, prizePool) ->
+            let battle = Simulants.Battle.GetBattle world
             let field = Simulants.Field.GetField world
             let playTime = Option.defaultValue field.FieldTime field.FieldSongTimeOpt
             let songTime = field.FieldTime - playTime
-            let (battle, field) = Field.commenceBattle songTime battleData prizePool field
-
-            // the battle takes whether the pointer's shown and the intent from the one it replaces, which took them from
-            // the field when the game moved on to it, or on a retry kept its own
-            let battleOld = Simulants.Battle.GetBattle world
-            let battle = battle |> Battle.setBattlePointerShown battleOld.BattlePointerShown |> Battle.setBattleIntent battleOld.BattleIntent
-            Simulants.Battle.SetBattle battle world
+            let (battle', field) = Field.commenceBattle songTime battleData prizePool field
+            let battle' = battle' |> Battle.setBattlePointerShown battle.BattlePointerShown |> Battle.setBattleIntent battle.BattleIntent
+            Simulants.Battle.SetBattle battle' world
             Simulants.Field.SetField field world
 
         | FromBattleToField prizePool ->
