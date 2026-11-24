@@ -458,6 +458,22 @@ type FieldDispatcher () =
                     field
             just field
 
+        | MenuTeamEquipDeselect ->
+            match field.Menu.MenuState with
+            | MenuTeam menuTeam ->
+                match (menuTeam.TeamEquipOpt, field.Team.TryGetValue menuTeam.TeamIndex) with
+                | (Some equip, (true, teammate)) ->
+                    let equipType =
+                        match equip.EquipType with
+                        | EquipWeapon _ -> EquipWeapon teammate.WeaponOpt
+                        | EquipArmor _ -> EquipArmor teammate.ArmorOpt
+                        | EquipAccessory _ -> EquipAccessory (List.tryHead teammate.Accessories)
+                    let menuTeam = { menuTeam with TeamEquipOpt = Some { equip with EquipType = equipType }}
+                    let field = Field.mapMenu (fun menu -> { menu with MenuState = MenuTeam menuTeam }) field
+                    just field
+                | (_, _) -> just field
+            | _ -> just field
+
         | MenuTeamEquipConfirm ->
             match field.Menu.MenuState with
             | MenuTeam menuTeam ->
@@ -1325,9 +1341,9 @@ type FieldDispatcher () =
                                  Entity.ClickEvent => MenuTeamEquipConfirm]
                          Content.button "EquipCancel"
                             [Entity.PositionLocal == v3 810.0f 258.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
-                             Entity.UpImage == asset "Field" "CloseButtonUp"
-                             Entity.DownImage == asset "Field" "CloseButtonDown"
-                             Entity.ClickEvent => MenuTeamEquipCancel]
+                             Entity.UpImage := if changing then asset "Field" "CancelButtonUp" else asset "Field" "CloseButtonUp"
+                             Entity.DownImage := if changing then asset "Field" "CancelButtonDown" else asset "Field" "CloseButtonDown"
+                             Entity.ClickEvent => if changing then MenuTeamEquipDeselect else MenuTeamEquipCancel]
                          yield! Content.items (v3 462.0f 258.0f 0.0f) 3 3 field MenuTeamEquipSelect
                          Content.button "PageUp"
                             [Entity.PositionLocal == v3 462.0f 15.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
@@ -1551,7 +1567,7 @@ type FieldDispatcher () =
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Song Volume"]
                         Content.button "SongVolumeDown"
-                            [Entity.PositionLocal == v3 180.0f 303.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 282.0f 303.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UpImage == Assets.Gui.ButtonShortUpImage
                              Entity.DownImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "-"
@@ -1562,7 +1578,7 @@ type FieldDispatcher () =
                              Entity.DownImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text := field.Options.SongVolume * 20.0f |> int |> string]
                         Content.button "SongVolumeUp"
-                            [Entity.PositionLocal == v3 636.0f 303.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 538.0f 303.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UpImage == Assets.Gui.ButtonShortUpImage
                              Entity.DownImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "+"

@@ -110,6 +110,7 @@ type FieldMessage =
     | MenuTeamEquipPageUp
     | MenuTeamEquipPageDown
     | MenuTeamEquipSelect of int * (ItemType * int Option)
+    | MenuTeamEquipDeselect
     | MenuTeamEquipConfirm
     | MenuTeamEquipCancel
     | MenuAutoMapOpen
@@ -948,7 +949,7 @@ module Field =
     /// menu's opens it and stepping onto close selects that, with the cursor staying in the sidebar. Confirm moves into
     /// the open menu, confirm on close closes it, and cancel or the menu button closes it too.
     let private updateSidebar (intent : Intent) panel sidebarPointed hasContent (field : Field) (cursor : FieldCursor) world =
-        let invoke = intent.Confirm || intent.Step = Some Rightward // right invokes as confirm does
+        let invoke = intent.Confirm || intent.Step = Some Rightward // right invokes as confirm does, though silently
         let cursor = toSidebar cursor
         let position = cursor.CursorPosition
         let closeRow = dec SidebarButtons.Length
@@ -971,11 +972,11 @@ module Field =
             if invoke then
                 let (menuOpt, message) = SidebarButtons[cursor.CursorPosition.SidebarRow]
                 match menuOpt with
-                | None -> (cursor, (Selection.playAffirm world; opening @ [signal MenuClose]))
+                | None -> (cursor, ((if intent.Confirm then Selection.playAffirm world); opening @ [signal MenuClose]))
                 // a menu opened this frame, so its content's unknown yet
                 | Some menu when menu = cursor.CursorMenu && not opening.IsEmpty -> (cursor, opening)
-                | Some menu when menu = panel -> ((if hasContent then moveTo 0 0 cursor else cursor), (Selection.playAffirm world; opening))
-                | Some menu -> (enter menu, (Selection.playAffirm world; [signal message]))
+                | Some menu when menu = panel -> ((if hasContent then moveTo 0 0 cursor else cursor), ((if intent.Confirm then Selection.playAffirm world); opening))
+                | Some menu -> (enter menu, ((if intent.Confirm then Selection.playAffirm world); [signal message]))
             elif intent.Cancel || intent.Menu then (cursor, (Selection.playAffirm world; opening @ [signal MenuClose]))
             else (cursor, opening)
         let pointedOpt = if cursor.CursorPosition.InSidebar then Some (sidebarPointed cursor.CursorPosition.SidebarRow) else None
@@ -990,7 +991,7 @@ module Field =
         if position.InSidebar then updateSidebar intent TeamPanel TeamSidebarPointed true field cursor world
         elif position.Column = 0 then
             // the teammates and the auto map where the field has one, the pointer following the selection, however it
-            // was made, right invoking as confirm does, and left backing out as cancel does
+            // was made, right invoking as confirm does and left backing out as cancel does, though silently
             let invoke = intent.Confirm || intent.Step = Some Rightward
             let rowCount = if hasAutoMap field then inc teamCount else teamCount
             let selected = if menuTeam.TeamAutoMapSelected then teamCount else menuTeam.TeamIndex
@@ -1005,11 +1006,12 @@ module Field =
             let (cursor, signals) =
                 if invoke && row < teamCount then
                     match MenuTeam.tryGetTeammate field.Team menuTeam with
-                    | Some _ -> (moveTo 1 0 cursor, (Selection.playAffirm world; selecting))
+                    | Some _ -> (moveTo 1 0 cursor, ((if intent.Confirm then Selection.playAffirm world); selecting))
                     | None -> (moveTo 0 row cursor, selecting)
                 elif invoke then
-                    (moveTo 0 row cursor, (World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.AutoMapSound world; [signal MenuAutoMapOpen]))
-                elif intent.Cancel || intent.Step = Some Leftward then (toSidebar cursor, (Selection.playAffirm world; deselecting))
+                    if intent.Confirm then World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.AutoMapSound world
+                    (moveTo 0 row cursor, [signal MenuAutoMapOpen])
+                elif intent.Cancel || intent.Step = Some Leftward then (toSidebar cursor, ((if intent.Cancel then Selection.playAffirm world); deselecting))
                 elif intent.Menu then (moveTo 0 row cursor, selecting @ (Selection.playAffirm world; [signal MenuClose]))
                 else (moveTo 0 row cursor, selecting)
             let pointedOpt =
@@ -1019,7 +1021,7 @@ module Field =
                 else Some AutoMapPointed
             (cursor, signals, pointedOpt)
         else
-            // the selected teammate's equipment, top to bottom, left backing out as cancel does
+            // the selected teammate's equipment, top to bottom, left backing out as cancel does, though silently
             match MenuTeam.tryGetTeammate field.Team menuTeam with
             | Some teammate ->
                 let row = match intent.Step with Some (Upward | Downward as direction) -> Selection.wrap (Selection.rowDelta direction) 3 position.Row | _ -> position.Row
@@ -1031,7 +1033,7 @@ module Field =
                             | 1 -> MenuTeamEquip (EquipArmor teammate.ArmorOpt)
                             | _ -> MenuTeamEquip (EquipAccessory (List.tryHead teammate.Accessories))
                         (moveTo 1 row cursor, (Selection.playAffirm world; [signal message]))
-                    elif intent.Cancel || intent.Step = Some Leftward then (moveTo 0 menuTeam.TeamIndex cursor, (Selection.playAffirm world; []))
+                    elif intent.Cancel || intent.Step = Some Leftward then (moveTo 0 menuTeam.TeamIndex cursor, ((if intent.Cancel then Selection.playAffirm world); []))
                     elif intent.Menu then (moveTo 1 row cursor, (Selection.playAffirm world; [signal MenuClose]))
                     else (moveTo 1 row cursor, [])
                 let pointedOpt =
@@ -1049,15 +1051,15 @@ module Field =
         if position.InSidebar then updateSidebar intent TechsPanel TechsSidebarPointed true field cursor world
         elif position.Column = 0 || techs.Length = 0 then
             // the teammates, the pointer following a teammate selected otherwise, as by the mouse, right invoking as
-            // confirm does, and left backing out as cancel does
+            // confirm does and left backing out as cancel does, though silently
             let invoke = intent.Confirm || intent.Step = Some Rightward
             let row = menuTechs.TeamIndex
             let row = match intent.Step with Some (Upward | Downward as direction) -> Selection.wrap (Selection.rowDelta direction) teamCount row | _ -> row
             let selecting = if row <> menuTechs.TeamIndex then [signal (MenuTechsAlly row)] else []
             let (cursor, signals) =
-                if invoke && techs.Length > 0 then (moveTo 1 0 cursor, (Selection.playAffirm world; selecting))
-                elif invoke then (moveTo 0 row cursor, (Selection.playMistake world; selecting))
-                elif intent.Cancel || intent.Step = Some Leftward then (toSidebar cursor, (Selection.playAffirm world; selecting))
+                if invoke && techs.Length > 0 then (moveTo 1 0 cursor, ((if intent.Confirm then Selection.playAffirm world); selecting))
+                elif invoke then (moveTo 0 row cursor, ((if intent.Confirm then Selection.playMistake world); selecting))
+                elif intent.Cancel || intent.Step = Some Leftward then (toSidebar cursor, ((if intent.Cancel then Selection.playAffirm world); selecting))
                 elif intent.Menu then (moveTo 0 row cursor, selecting @ (Selection.playAffirm world; [signal MenuClose]))
                 else (moveTo 0 row cursor, selecting)
             let pointedOpt =
@@ -1066,12 +1068,12 @@ module Field =
                 else Some (TechsTeammatePointed (Seq.item row field.Team.Values).TeamIndex)
             (cursor, signals, pointedOpt)
         else
-            // the selected teammate's techs, top to bottom, left backing out as cancel does
+            // the selected teammate's techs, top to bottom, left backing out as cancel does, though silently
             let row = min position.Row (dec techs.Length)
             let row = match intent.Step with Some (Upward | Downward as direction) -> Selection.wrap (Selection.rowDelta direction) techs.Length row | _ -> row
             let (cursor, signals) =
                 if intent.Confirm then (moveTo 1 row cursor, (Selection.playAffirm world; [signal (MenuTechsSelect row)]))
-                elif intent.Cancel || intent.Step = Some Leftward then (moveTo 0 menuTechs.TeamIndex cursor, (Selection.playAffirm world; []))
+                elif intent.Cancel || intent.Step = Some Leftward then (moveTo 0 menuTechs.TeamIndex cursor, ((if intent.Cancel then Selection.playAffirm world); []))
                 elif intent.Menu then (moveTo 1 row cursor, (Selection.playAffirm world; [signal MenuClose]))
                 else (moveTo 1 row cursor, [])
             let pointedOpt =
@@ -1224,7 +1226,8 @@ module Field =
 
     /// The equip panel - a page of items down the middle, the close button right of the first, and on the left the
     /// current equipment's info or, once an item's chosen, the equip button. Choosing an item moves to the equip
-    /// button; choosing that equips it.
+    /// button; choosing that equips it. Once an item's chosen, the close button shows as a back button, and backing
+    /// out unchooses the item, returning to it, rather than closing the panel.
     let private updateEquip (intent : Intent) (menuTeam : MenuTeam) (equip : Equip) (field : Field) (cursor : FieldCursor) world =
         let teammate = field.Team[menuTeam.TeamIndex]
         let (changing, currentName) =
@@ -1237,10 +1240,21 @@ module Field =
         let count = items.Count
         let paging = (if intent.PageUp && pageUp then [MenuTeamEquipPageUp] else []) @ (if intent.PageDown && pageDown then [MenuTeamEquipPageDown] else [])
         let paging = List.map (fun message -> message :> Signal) paging
+        let selectedRow =
+            let selectedOpt =
+                match equip.EquipType with
+                | EquipWeapon weaponTypeOpt -> Option.map (WeaponType >> Equipment) weaponTypeOpt
+                | EquipArmor armorTypeOpt -> Option.map (ArmorType >> Equipment) armorTypeOpt
+                | EquipAccessory accessoryTypeOpt -> Option.map (AccessoryType >> Equipment) accessoryTypeOpt
+            items |> Map.tryFindKey (fun _ (_, (itemType, _)) -> Some itemType = selectedOpt) |> Option.defaultValue 0
+        let backOut cursor =
+            Selection.playAffirm world
+            if changing
+            then ((if count > 0 then moveTo 1 selectedRow cursor else cursor), [signal MenuTeamEquipDeselect])
+            else (cursor, [signal MenuTeamEquipCancel])
         let onClose = cursor.CursorPosition.Column = 2 || (count = 0 && leftOpt.IsNone)
         let onLeft = not onClose && (cursor.CursorPosition.Column = 0 || count = 0) && leftOpt.IsSome
         if onClose then
-
             // the close button, top right, right of the first item, left going back to it
             let (cursor, signals) =
                 match intent.Step with
@@ -1248,10 +1262,10 @@ module Field =
                 | Some Leftward when leftOpt.IsSome -> (moveTo 0 0 cursor, [])
                 | _ ->
                     let cursor = moveTo 2 0 cursor
-                    if intent.Confirm || intent.Cancel then (cursor, (Selection.playAffirm world; [signal MenuTeamEquipCancel])) else (cursor, [])
+                    if intent.Confirm || intent.Cancel then backOut cursor else (cursor, [])
             let pointedOpt =
                 match (cursor.CursorPosition.Column, leftOpt) with
-                | (1, _) -> Some (EquipItemPointed (fst (snd items[0])))
+                | (1, _) -> Some (EquipItemPointed (fst (snd items[min cursor.CursorPosition.Row (dec count)])))
                 | (0, Some left) -> Some left
                 | (_, _) -> Some EquipCancelPointed
             (cursor, paging @ signals, pointedOpt)
@@ -1268,11 +1282,11 @@ module Field =
                         if left = EquipButtonPointed
                         then (moveTo 1 0 cursor, (World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.EquipSound world; [signal MenuTeamEquipConfirm]))
                         else (cursor, (Selection.playAffirm world; [signal MenuTeamEquipMenuUseOpen]))
-                    elif intent.Cancel then (cursor, (Selection.playAffirm world; [signal MenuTeamEquipCancel]))
+                    elif intent.Cancel then backOut cursor
                     else (cursor, [])
             let pointedOpt =
                 match cursor.CursorPosition.Column with
-                | 1 when count > 0 -> Some (EquipItemPointed (fst (snd items[0])))
+                | 1 when count > 0 -> Some (EquipItemPointed (fst (snd items[min cursor.CursorPosition.Row (dec count)])))
                 | 2 -> Some EquipCancelPointed
                 | _ -> Some left
             (cursor, paging @ signals, pointedOpt)
@@ -1287,13 +1301,12 @@ module Field =
                 | Some Rightward when index > 0 && pageDown -> (index, 1, [MenuTeamEquipPageDown :> Signal])
                 | Some Rightward -> (0, 2, [])
                 | _ -> (index, 1, [])
-            let page = items[index]
-            let (column, signals) =
+            let (cursor, signals) =
                 // choosing an item moves to the equip button
-                if column = 1 && intent.Confirm then (0, (Selection.playAffirm world; [signal (MenuTeamEquipSelect page)]))
-                elif intent.Cancel then (column, (Selection.playAffirm world; [signal MenuTeamEquipCancel]))
-                else (column, [])
-            let cursor = moveTo column index cursor
+                if column = 1 && intent.Confirm then (moveTo 0 index cursor, (Selection.playAffirm world; [signal (MenuTeamEquipSelect items[index])]))
+                elif intent.Cancel then backOut (moveTo column index cursor)
+                else (moveTo column index cursor, [])
+            let (column, page) = (cursor.CursorPosition.Column, items[min cursor.CursorPosition.Row (dec count)])
             let pointedOpt =
                 match (column, leftOpt) with
                 | (0, Some left) when not intent.Confirm -> Some left

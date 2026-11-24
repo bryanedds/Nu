@@ -3,7 +3,6 @@
 
 namespace OmniBlade
 open System
-open System.IO
 open Prime
 open Nu
 
@@ -117,7 +116,7 @@ type OmniBladeDispatcher () =
          Simulants.Battle.ConcludeBattleEvent => ConcludeBattle]
 
     override this.Message (omniBlade, message, _, world) =
-        
+
         // handle message
         let (signals, omniBlade') =
             match message with
