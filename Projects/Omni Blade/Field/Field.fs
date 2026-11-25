@@ -567,6 +567,22 @@ module Field =
     let mapTeam mapper field =
         { field with Team_ = mapper field.Team_ }
 
+    let mapParty mapper field =
+        let party = getParty field
+        mapTeam (Map.map (fun teamIndex teammate ->
+            if Map.containsKey teamIndex party
+            then mapper teammate
+            else teammate))
+            field
+
+    let mapBench mapper field =
+        let party = getParty field
+        mapTeam (Map.map (fun teamIndex teammate ->
+            if not (Map.containsKey teamIndex party)
+            then mapper teammate
+            else teammate))
+            field
+
     let mapTeammate mapper teamIndex field =
         mapTeam (fun team ->
             match Map.tryFind teamIndex team with
@@ -687,8 +703,14 @@ module Field =
         let field = setFieldSongTimeOpt (Some songTime) field
         (battle, field)
 
-    let concludeBattle consequents battle field =
-        let field = synchronizeFromBattle consequents battle field
+    let concludeBattle (prizePool : PrizePool) battle field =
+        let field = synchronizeFromBattle prizePool.Consequents battle field
+        let field = // award half exp to bench, restoring any who level up
+            mapBench (fun teammate ->
+                let level = teammate.Level
+                let teammate = { teammate with ExpPoints = teammate.ExpPoints + prizePool.Exp / Constants.Gameplay.BenchExpDivisor }
+                if teammate.Level > level then Teammate.restore teammate else teammate)
+                field
         let field = clearSpirits field
         let field = { field with FieldState_ = Playing }
         field

@@ -250,7 +250,7 @@ type OmniBladeDispatcher () =
         | FromBattleToField prizePool ->
             let battle = Simulants.Battle.GetBattle world
             let field = Simulants.Field.GetField world
-            let field = Field.concludeBattle prizePool.Consequents battle field
+            let field = Field.concludeBattle prizePool battle field
             Simulants.Battle.SetBattle Battle.empty world
             Simulants.Field.SetField field world
 

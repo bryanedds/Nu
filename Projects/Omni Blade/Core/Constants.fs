@@ -61,6 +61,7 @@ module Constants =
         let BossCelSize = v2 108.0f 92.0f
         let DialogSplit = '^'
         let ArmorStatBaseDisplayDivisor = 4
+        let BenchExpDivisor = 2
         let ItemLimitNormal = 9
         let ItemLimitHardcore = 5
         let CueWalkSpeed = 1.0f
