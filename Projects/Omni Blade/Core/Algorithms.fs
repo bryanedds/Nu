@@ -16,7 +16,8 @@ module Algorithms =
          2400; 3600; 5400; 8100; 12150 // 1.5x increase
          14580; 17496; 20995; 25194; 30233 // 1.2x increase
          34768; 39983; 45980; 52877; 60809 // 1.15x increase
-         66890; 73579; 80937; 89031; 97934] // 1.1x increase
+         66890; 73579; 80937; 89031; 97934 // 1.1x increase
+         102830] // 1.05x increase
 
     let expReqRanges =
         List.pairwise expReqs
