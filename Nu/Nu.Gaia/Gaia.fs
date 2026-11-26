@@ -135,6 +135,7 @@ module Gaia =
     let mutable private ProjectImperativeExecution = false
     let mutable private GroupFileDialogState : ImGuiFileDialogState = null // this will be initialized on start
     let mutable private GroupFilePaths = Map.empty<Group Address, string>
+    let mutable private GroupWorldStates = Map.empty<Group Address, WorldState>
     let mutable private EntityFileDialogState : ImGuiFileDialogState = null // this will be initialized on start
     let mutable private EntityFilePaths = Map.empty<Entity Address, string>
     let mutable private AssetGraphStr = null // this will be initialized on start
@@ -1476,6 +1477,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private trySaveSelectedGroup filePath world =
         try World.writeGroupToFile filePath SelectedGroup world
+            GroupWorldStates <- Map.add SelectedGroup.GroupAddress world.CurrentState GroupWorldStates
             try let deploymentPath = PathF.Combine (TargetDir, PathF.GetRelativePath(TargetDir, filePath).Replace("../", ""))
                 if Directory.Exists (PathF.GetDirectoryName deploymentPath) then
                     if File.Exists deploymentPath then File.SetAttributes (deploymentPath, FileAttributes.None)
@@ -1508,6 +1510,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             try if not (group.GetExists world) || group.GetProtection world = Unprotected then
                     if group.GetExists world then World.destroyGroupImmediate SelectedGroup world
                     let group = World.readGroup groupDescriptor None SelectedScreen world
+                    GroupWorldStates <- Map.add group.GroupAddress world.CurrentState GroupWorldStates
                     selectGroup true group
                     pruneEntitySelection world
                     GroupFilePaths <- Map.add group.GroupAddress GroupFileDialogState.FilePath GroupFilePaths
@@ -1525,6 +1528,53 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         | Left exn ->
             MessageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
             false
+
+    let private getEntityModified (entity : Entity) world =
+        match Map.tryFind entity.Group.GroupAddress GroupWorldStates with
+        | Some worldState -> World.getEntityModified entity worldState world
+        | None -> false
+
+    let private getEntityRevertible (entity : Entity) world =
+        entity.GetExists world &&
+        entity.GetProtection world = Unprotected &&
+        GroupFilePaths.ContainsKey entity.Group.GroupAddress &&
+        (match Map.tryFind entity.Group.GroupAddress GroupWorldStates with
+         | Some worldState -> WorldState.getEntityExists entity worldState
+         | None -> false) &&
+        getEntityModified entity world
+
+    let private tryRevertSelectedEntity world =
+        match Seq.tryExactlyOne SelectedEntities with
+        | Some entity when getEntityRevertible entity world ->
+            let worldStateOld = world.CurrentState
+            try let groupDescriptor = scvalue<GroupDescriptor> (File.ReadAllText GroupFilePaths[entity.Group.GroupAddress])
+                let entityDescriptorOpt =
+                    Array.fold (fun descriptorsOpt name ->
+                        match descriptorsOpt with
+                        | Some (_, descriptors) ->
+                            match List.tryFind (fun descriptor -> EntityDescriptor.getNameOpt descriptor = Some name) descriptors with
+                            | Some descriptor -> Some (Some descriptor, descriptor.EntityDescriptors)
+                            | None -> None
+                        | None -> None)
+                        (Some (None, groupDescriptor.EntityDescriptors))
+                        entity.Surnames
+                    |> Option.bind fst
+                match entityDescriptorOpt with
+                | Some entityDescriptor ->
+                    snapshot RevertEntity world
+                    let parent = entity.Parent
+                    World.destroyEntityImmediate entity world
+                    let entity = World.readEntity true true entityDescriptor (Some entity.Name) parent world
+                    selectEntities true (Set.singleton entity) world
+                    true
+                | None ->
+                    MessageBoxOpt <- Some "Could not find the entity in its group's file."
+                    false
+            with exn ->
+                MessageBoxOpt <- Some ("Could not revert entity due to: " + scstring exn)
+                World.switch worldStateOld world
+                false
+        | Some _ | None -> false
 
     let private tryReloadAssets world =
         let assetSourceDir = TargetDir + "/../../.."
@@ -2265,7 +2315,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         let treeNodeLabel = if filtering then entity.Name + "##" + scstringMemo entity else entity.Name
         ImGui.SetNextItemSelectionUserData (int64 EntityHierarchyIndexed.Count)
         EntityHierarchyIndexed.Add entity
+        let modified = getEntityModified entity world
+        if modified then ImGui.PushStyleColor (ImGuiCol.Text, Color.Gold.Abgr)
         let expanded = ImGui.TreeNodeEx (treeNodeLabel, treeNodeFlags)
+        if modified then ImGui.PopStyleColor ()
         if ShowSelectedEntity && SelectedEntities.Contains entity then
             ImGui.SetScrollHereY 0.5f
         if  ImGui.IsItemFocused () &&
@@ -2308,6 +2361,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         | None -> EntityFileDialogState.FileName <- ""
                         ShowSaveEntityDialog <- true
                     | Some _ | None -> ()
+                if getEntityRevertible entity world then
+                    if ImGui.MenuItem "Revert Entity" then
+                        tryRevertSelectedEntity world |> ignore<bool>
             ImGui.Separator ()
             if singular then
                 if NewEntityParentOpt = Some entity then
@@ -3067,6 +3123,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             selectEntities true Set.empty world
                             World.destroyGroupImmediate SelectedGroup world
                             GroupFilePaths <- Map.remove SelectedGroup.GroupAddress GroupFilePaths
+                            GroupWorldStates <- Map.remove SelectedGroup.GroupAddress GroupWorldStates
                             selectGroup true (Seq.head groupsRemaining)
                         else MessageBoxOpt <- Some "Cannot close protected or only group."
                     ImGui.EndMenu ()
@@ -3091,6 +3148,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             | None -> EntityFileDialogState.FileName <- ""
                             ShowSaveEntityDialog <- true
                         | Some _ | None -> ()
+                    let revertible = (match Seq.tryExactlyOne SelectedEntities with Some entity -> getEntityRevertible entity world | None -> false)
+                    if ImGui.MenuItem ("Revert Entity", null, false, revertible) then tryRevertSelectedEntity world |> ignore<bool>
                     ImGui.Separator ()
                     if (Seq.tryExactlyOne SelectedEntities).IsSome && NewEntityParentOpt = Seq.tryExactlyOne SelectedEntities then
                         if ImGui.MenuItem ("Reset Creation Parent", "Ctrl+Shift+P") then

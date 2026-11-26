@@ -78,6 +78,12 @@ module WorldModuleEntity =
         if isNull (EntitySentinel :> obj) then EntitySentinel <- EntityState.makeSentinel world
         EntitySentinel
 
+    type WorldState with
+
+        /// Check that an entity exists in the given world state, such as a snapshot taken earlier.
+        static member getEntityExists (entity : Entity) (worldState : WorldState) =
+            worldState.EntityStates.ContainsKey entity
+
     type World with
 
         // OPTIMIZATION: a ton of optimization has gone down in here...!
@@ -275,6 +281,15 @@ module WorldModuleEntity =
             match gameState.SelectedScreenOpt with
             | Some selectedScreen when entity.Screen.Name = selectedScreen.Name -> true
             | _ -> false
+
+        /// Check that an entity has changed since the given world state, such as a snapshot taken earlier, an entity absent
+        /// from it counting as changed. In imperative mode, where an entity's state changes in place, this is always false.
+        static member getEntityModified (entity : Entity) (worldState : WorldState) (world : World) =
+            if not world.Imperative then
+                match worldState.EntityStates.TryGetValue entity with
+                | (true, entityStatePrevious) -> refNeq entityStatePrevious (World.getEntityState entity world)
+                | (false, _) -> true
+            else false
 
         static member internal computeEntityPresenceOverride entity world =
             let entityState = World.getEntityState entity world
