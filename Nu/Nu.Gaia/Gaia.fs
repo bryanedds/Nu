@@ -137,6 +137,7 @@ module Gaia =
     let mutable private GroupFileDialogState : ImGuiFileDialogState = null // this will be initialized on start
     let mutable private GroupFilePaths = Map.empty<Group Address, string>
     let mutable private GroupWorldStates = Map.empty<Group Address, WorldState>
+    let mutable private EntityWorldStatesReverted = Map.empty<Entity, WorldState list> // as just after each revert
     let mutable private EntityFileDialogState : ImGuiFileDialogState = null // this will be initialized on start
     let mutable private EntityFilePaths = Map.empty<Entity Address, string>
     let mutable private AssetGraphStr = null // this will be initialized on start
@@ -1110,7 +1111,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         | UnregisteringData simulant ->
 
             // forget the group's baseline for change detection
-            GroupWorldStates <- Map.remove (simulant :?> Group).GroupAddress GroupWorldStates
+            let group = simulant :?> Group
+            GroupWorldStates <- Map.remove group.GroupAddress GroupWorldStates
+            EntityWorldStatesReverted <- Map.filter (fun entity _ -> entity.Group <> group) EntityWorldStatesReverted
 
             // when currently the selected group, make sure we select another group, creating a default "Scene" group
             // when necessary
@@ -1482,6 +1485,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private trySaveSelectedGroup filePath world =
         try World.writeGroupToFile filePath SelectedGroup world
             GroupWorldStates <- Map.add SelectedGroup.GroupAddress world.CurrentState GroupWorldStates
+            EntityWorldStatesReverted <- Map.filter (fun entity _ -> entity.Group <> SelectedGroup) EntityWorldStatesReverted
             try let deploymentPath = PathF.Combine (TargetDir, PathF.GetRelativePath(TargetDir, filePath).Replace("../", ""))
                 if Directory.Exists (PathF.GetDirectoryName deploymentPath) then
                     if File.Exists deploymentPath then File.SetAttributes (deploymentPath, FileAttributes.None)
@@ -1536,7 +1540,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private getEntityModified (entity : Entity) world =
         if entity.GetProtection world <> DeclarativeProtection then // NOTE: a declared entity isn't saved, so isn't tracked.
             match Map.tryFind entity.Group.GroupAddress GroupWorldStates with
-            | Some worldState -> World.getEntityModified entity worldState world
+            | Some worldState ->
+                World.getEntityModified entity worldState world &&
+                (match Map.tryFind entity EntityWorldStatesReverted with // NOTE: as just after a revert is unmodified.
+                 | Some worldStates -> List.forall (fun worldState -> World.getEntityModified entity worldState world) worldStates
+                 | None -> true)
             | None -> false
         else false
 
@@ -1553,8 +1561,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         | Some entity when getEntityRevertible entity world ->
             let worldStateOld = world.CurrentState
             try snapshot RevertEntity world
-                let worldState = World.revertEntity entity GroupWorldStates[entity.Group.GroupAddress] world
-                GroupWorldStates <- Map.add entity.Group.GroupAddress worldState GroupWorldStates
+                World.revertEntity entity GroupWorldStates[entity.Group.GroupAddress] world
+                for entity in Seq.append [entity] (entity.GetDescendants world) do
+                    let worldStates = Option.defaultValue [] (Map.tryFind entity EntityWorldStatesReverted)
+                    EntityWorldStatesReverted <- Map.add entity (world.CurrentState :: worldStates) EntityWorldStatesReverted
                 selectEntities true (Set.singleton entity) world
                 true
             with exn ->
