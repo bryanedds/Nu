@@ -122,6 +122,7 @@ module Gaia =
     let mutable private PhysicsDebugRenderingHeightMaps3d = false
     let mutable private ImGuiDebugWindow = false
     let mutable private EntityHierarchySearchStr = ""
+    let mutable private EntityHierarchyShowModified = false
     let mutable private PropagationSourcesSearchStr = ""
     let mutable private AssetViewerSearchStr = ""
     let mutable private LoadPackageName = ""
@@ -2472,24 +2473,33 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     ImGui.EndTooltip ()
         expanded
 
-    let rec private imGuiEntityHierarchy (entity : Entity) world =
+    let rec private imGuiEntityHierarchy (shownOpt : Entity HashSet option) (entity : Entity) world =
         if entity.GetExists world then // NOTE: entity may have been moved during this process.
             let filtering =
                 not (String.IsNullOrWhiteSpace EntityHierarchySearchStr)
+            let shown =
+                match shownOpt with
+                | Some shown -> shown.Contains entity
+                | None -> true
             let visible =
-                String.IsNullOrWhiteSpace EntityHierarchySearchStr || entity.Name.ToLowerInvariant().Contains (EntityHierarchySearchStr.ToLowerInvariant ())
+                shown &&
+                (String.IsNullOrWhiteSpace EntityHierarchySearchStr || entity.Name.ToLowerInvariant().Contains (EntityHierarchySearchStr.ToLowerInvariant ()))
             let expanded =
                 if visible then
-                    let branch = entity.HasChildren world
+                    let branch =
+                        match shownOpt with
+                        | Some shown -> entity.GetChildren world |> Seq.exists shown.Contains
+                        | None -> entity.HasChildren world
+                    if shownOpt.IsSome && not filtering then ImGui.SetNextItemOpen true // the way to each shown entity is open
                     imGuiEntity branch filtering entity world
                 else false
-            if filtering || expanded then
+            if filtering && shown || expanded then
                 entity.GetChildren world
                 |> Array.ofSeq
                 |> Array.map (fun entity -> (struct (entity.Surnames.Length, entity.GetOrder world), entity))
                 |> Array.sortBy fst
                 |> Array.map snd
-                |> Array.iter (fun child -> imGuiEntityHierarchy child world)
+                |> Array.iter (fun child -> imGuiEntityHierarchy shownOpt child world)
                 if visible then ImGui.TreePop ()
 
     let private imGuiAppendPropertiesDispatcherExplicit simulant world =
@@ -3348,9 +3358,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     ImGui.SetKeyboardFocusHere ()
                     EntityHierarchySearchStr <- ""
                     EntityHierarchySearchRequested <- false
-                ImGui.SetNextItemWidth -1.0f
+                ImGui.SetNextItemWidth (-ImGui.GetFrameHeight () - ImGui.GetStyle().ItemSpacing.X) // leaving room for the checkbox
                 ImGui.InputTextWithHint ("##entityHierarchySearchStr", "[enter search text]", &EntityHierarchySearchStr, 4096u) |> ignore<bool>
                 if ImGui.IsItemFocused () then entityHierarchyFocused <- false
+                ImGui.SameLine ()
+                ImGui.Checkbox ("##entityHierarchyShowModified", &EntityHierarchyShowModified) |> ignore<bool>
+                if ImGui.IsItemHovered () && ImGui.BeginTooltip () then
+                    ImGui.Text "Show Modified"
+                    ImGui.EndTooltip ()
 
                 // creation parent display
                 match NewEntityParentOpt with
@@ -3402,6 +3417,20 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if not (GroupWorldStates.ContainsKey SelectedGroup.GroupAddress) then
                     GroupWorldStates <- Map.add SelectedGroup.GroupAddress world.CurrentState GroupWorldStates
                 ImGui.BeginChild "Container" |> ignore<bool>
+
+                // when showing modified entities, find them and their ancestors
+                let shownOpt =
+                    if EntityHierarchyShowModified then
+                        let shown = HashSet<Entity> HashIdentity.Structural
+                        for entity in World.getEntities SelectedGroup world do
+                            if getEntityModified entity world then
+                                let mutable ancestorOpt = Some entity
+                                while (match ancestorOpt with Some ancestor -> shown.Add ancestor | None -> false) do
+                                    ancestorOpt <- match ancestorOpt.Value.Parent with :? Entity as parent -> Some parent | _ -> None
+                        Some shown
+                    else None
+
+                // draw the hierarchy
                 let children =
                     World.getEntitiesSovereign SelectedGroup world
                     |> Array.ofSeq
@@ -3412,7 +3441,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 applyEntityHierarchySelectionRequests multiSelectIo world // NOTE: resolves against last frame's items.
                 EntityHierarchyIndexed.Clear ()
                 for child in children do
-                    imGuiEntityHierarchy child world
+                    imGuiEntityHierarchy shownOpt child world
                 let multiSelectIo = ImGui.EndMultiSelect ()
                 applyEntityHierarchySelectionRequests multiSelectIo world
                 ImGui.EndChild ()
