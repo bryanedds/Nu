@@ -28,14 +28,11 @@ open Nu.Gaia
 // Custom properties in order of priority:  //
 //  Enums                                   //
 //  Flag Enums                              //
+//  DateTimeOffset                          //
+//  SymbolicCompression                     //
 //  CollisionMask                           //
 //  CollisionCategories                     //
 //  CollisionDetection                      //
-//  BodyShape                               //
-//  BodyJoint                               //
-//  BlendMaterial                           //
-//  DateTimeOffset?                         //
-//  SymbolicCompression                     //
 //////////////////////////////////////////////
 
 [<RequireQualifiedAccess>]
@@ -491,6 +488,20 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     DockNode        ID=0x00000001 Parent=0x00000010 SizeRef=295,1080 Selected=0xD5116FF8
 
 """
+
+    (* ImGui Callbacks *)
+    
+    let private propertyValueTextCallback =
+        ImGuiInputTextCallback (fun data ->
+            match PropertyValueSelectionRequestOpt with
+            | Some (selectionStart, selectionEnd) ->
+                let data = ImGuiInputTextCallbackDataPtr data
+                data.SelectionStart <- selectionStart
+                data.SelectionEnd <- selectionEnd
+                data.CursorPos <- selectionEnd
+                PropertyValueSelectionRequestOpt <- None
+            | None -> ()
+            0)
 
     (* Prelude Functions *)
 
@@ -1024,18 +1035,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 |> Seq.tryHead|]
         |> Array.definitize
         |> Array.tryHead
-
-    let private propertyValueTextCallback =
-        ImGuiInputTextCallback (fun data ->
-            match PropertyValueSelectionRequestOpt with
-            | Some (selectionStart, selectionEnd) ->
-                let data = ImGuiInputTextCallbackDataPtr data
-                data.SelectionStart <- selectionStart
-                data.SelectionEnd <- selectionEnd
-                data.CursorPos <- selectionEnd
-                PropertyValueSelectionRequestOpt <- None
-            | None -> ()
-            0)
 
     let private searchPropertyValueStr forward (propertyValueStr : string) =
         if PropertyValueSearchStr.Length > 0 then
@@ -4532,17 +4531,17 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                    [|("Left click", "Select the entity under the mouse. Clicking the selected entity again cycles to those behind it.")
                      ("Shift+click / Ctrl+click", "Add to or remove from the selection.")
                      ("Left drag (2d)", "Move the selection.")
-                     ("Alt+left drag (2d)", "Rotate the selection. Pressing or releasing Alt mid-drag switches between rotating and moving.")
+                     ("Alt+left drag (2d)", "Rotate the selection. Alt switches between rotating and moving mid-drag.")
                      ("Ctrl+left drag (2d)", "Duplicate and move the selection (Ctrl+Shift duplicates without propagation).")
-                     ("Gizmo drag (3d)", "Translate the selection.")
+                     ("Gizmo drag (3d)", "Translate the selection. Gizmo modifiers only take effect as the drag starts.")
                      ("Shift+gizmo drag", "Scale the selection.")
                      ("Alt+gizmo drag", "Rotate the selection.")
                      ("Hold X / Y / Z + gizmo drag", "Rotate the selection about that axis.")
                      ("Ctrl+gizmo drag", "Duplicate and translate the selection (Ctrl+Shift duplicates without propagation).")
-                     ("Hold Ctrl mid-drag", "Ignore snaps.")
+                     ("Hold Ctrl mid entity drag", "Ignore snaps.")
                      ("Right click", "Open the context menu, selecting the entity under the mouse.")
                      ("Right drag", "Free look.")
-                     ("Alt+right drag", "Orbit about the selection, or a point ahead when nothing's selected. Alt switches mid-drag.")
+                     ("Alt+right drag", "Orbit about the selection, or a point ahead when nothing's selected. Alt switches between orbiting and free look mid-drag.")
                      ("Middle drag", "Pan the 3d eye.")
                      ("Alt+middle drag", "Pan the 2d eye. Alt switches between 2d and 3d panning mid-drag.")
                      ("Wheel", "Move the eye forward / back.")
