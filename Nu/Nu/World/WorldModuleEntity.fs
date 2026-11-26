@@ -2795,6 +2795,24 @@ module WorldModuleEntity =
             // fin
             entity
 
+        /// Revert an entity and its descendants to how they were in the given world state, such as a snapshot taken
+        /// earlier, returning that world state with the reverted entities' new states, so they compare as unmodified
+        /// against it. Functional mode only.
+        static member revertEntity (entity : Entity) (worldState : WorldState) (world : World) =
+            if world.Imperative then failwith "Cannot revert an entity to a previous world state in imperative mode."
+            let worldStateCurrent = world.WorldState
+            world.WorldState <- worldState // NOTE: in functional mode, entity states are found per world state.
+            let entityDescriptor =
+                try World.writeEntity true true EntityDescriptor.empty entity world
+                finally world.WorldState <- worldStateCurrent
+            let parent = entity.Parent
+            World.destroyEntityImmediate entity world
+            let entity = World.readEntity true true entityDescriptor (Some entity.Name) parent world
+            let entityStates =
+                Seq.fold (fun entityStates (entity : Entity) -> SUMap.add entity (World.getEntityState entity world) entityStates)
+                    worldState.EntityStates (Seq.append [entity] (World.getEntityDescendants entity world))
+            { worldState with EntityStates = entityStates }
+
         /// Read an entity from a file.
         static member readEntityFromFile tryReadOrder tryReadPropagationHistory filePath nameOpt parent world =
             let entityDescriptorStr = File.ReadAllText filePath

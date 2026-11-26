@@ -1543,7 +1543,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private getEntityRevertible (entity : Entity) world =
         entity.GetExists world &&
         entity.GetProtection world = Unprotected &&
-        GroupFilePaths.ContainsKey entity.Group.GroupAddress &&
         (match Map.tryFind entity.Group.GroupAddress GroupWorldStates with
          | Some worldState -> WorldState.getEntityExists entity worldState
          | None -> false) &&
@@ -1553,29 +1552,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         match Seq.tryExactlyOne SelectedEntities with
         | Some entity when getEntityRevertible entity world ->
             let worldStateOld = world.CurrentState
-            try let groupDescriptor = scvalue<GroupDescriptor> (File.ReadAllText GroupFilePaths[entity.Group.GroupAddress])
-                let entityDescriptorOpt =
-                    Array.fold (fun descriptorsOpt name ->
-                        match descriptorsOpt with
-                        | Some (_, descriptors) ->
-                            match List.tryFind (fun descriptor -> EntityDescriptor.getNameOpt descriptor = Some name) descriptors with
-                            | Some descriptor -> Some (Some descriptor, descriptor.EntityDescriptors)
-                            | None -> None
-                        | None -> None)
-                        (Some (None, groupDescriptor.EntityDescriptors))
-                        entity.Surnames
-                    |> Option.bind fst
-                match entityDescriptorOpt with
-                | Some entityDescriptor ->
-                    snapshot RevertEntity world
-                    let parent = entity.Parent
-                    World.destroyEntityImmediate entity world
-                    let entity = World.readEntity true true entityDescriptor (Some entity.Name) parent world
-                    selectEntities true (Set.singleton entity) world
-                    true
-                | None ->
-                    MessageBoxOpt <- Some "Could not find the entity in its group's file."
-                    false
+            try snapshot RevertEntity world
+                let worldState = World.revertEntity entity GroupWorldStates[entity.Group.GroupAddress] world
+                GroupWorldStates <- Map.add entity.Group.GroupAddress worldState GroupWorldStates
+                selectEntities true (Set.singleton entity) world
+                true
             with exn ->
                 MessageBoxOpt <- Some ("Could not revert entity due to: " + scstring exn)
                 World.switch worldStateOld world
