@@ -26,10 +26,11 @@ type DragEntityState =
 
 /// The state of an eye drag operation in the Gaia editor.
 type DragEyeState =
-    | DragEye2dPan of DateTime : DateTimeOffset * Previous : Vector2
-    | DragEye3dPan of Distance : single * Previous : Vector2
-    | DragEye3dOrbit of Center : Vector3 * Pivot : Vector3 * Yaw : single * Pitch : single * Origin : Vector2
-    | DragEye3dDolly of Center : Vector3 * Rotation : Quaternion * Distance : single * Origin : Vector2
+    | DragEye2dPan of Previous : Vector2
+    | DragEye3dPan of DateTime : DateTimeOffset * Distance : single * Previous : Vector2
+    | DragEye3dOrbit of DateTime : DateTimeOffset * Center : Vector3 * Pivot : Vector3 * Yaw : single * Pitch : single * Origin : Vector2
+    | DragEye3dFreeLook of DateTime : DateTimeOffset * Yaw : single * Pitch : single * Origin : Vector2
+    | DragEye3dDolly of DateTime : DateTimeOffset * Center : Vector3 * Rotation : Quaternion * Distance : single * Origin : Vector2
     | DragEyeInactive
 
 /// The persistent state of the Gaia editor.
