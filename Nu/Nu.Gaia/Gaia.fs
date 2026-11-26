@@ -64,6 +64,7 @@ module Gaia =
     let mutable private PropertyEditorFocusRequested = false
     let mutable private PropertyValueSearchStr = ""
     let mutable private PropertyValueSearchIndex = -1
+    let mutable private PropertyValueSearchRequested = false
     let mutable private PropertyValueSelectionRequestOpt = Option<int * int>.None
     let mutable private EntityHierarchySearchRequested = false
     let mutable private AssetViewerSearchRequested = false
@@ -613,24 +614,18 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         if entities.IsEmpty then DragEntityState <- DragEntityInactive
         SelectedEntities <- entities
 
-    /// Toggle whether an entity is selected.
     let private toggleEntitySelection (entity : Entity) world =
         if SelectedEntities.Contains entity
         then selectEntities false (Set.remove entity SelectedEntities) world
         else selectEntities true (Set.add entity SelectedEntities) world
 
-    /// Select an entity alone unless it's already selected, keeping the selection when it is.
     let private selectEntityUnlessSelected focusEntityProperties (entity : Entity) world =
         if not (SelectedEntities.Contains entity) then selectEntities focusEntityProperties (Set.singleton entity) world
 
-    /// Drop from the selection what's gone or not of the selected group.
     let private pruneEntitySelection world =
         let entities = Set.filter (fun (entity : Entity) -> entity.GetExists world && entity.Group = SelectedGroup) SelectedEntities
         if entities.Count <> SelectedEntities.Count then selectEntities false entities world
 
-    /// The selected entities that exist and have no selected ancestor - the ones to act on so that no entity's acted
-    /// on twice, once itself and once with its ancestor - in the hierarchy's order. Through mounts as well as parents
-    /// when moving, since an entity follows what it's mounted to.
     let private getSelectedEntityRoots viaMounts world =
         let selected = Set.filter (fun (entity : Entity) -> entity.GetExists world) SelectedEntities
         let rec hasSelectedAncestor (entity : Entity) =
@@ -649,18 +644,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             | index -> index)
         |> List.ofSeq
 
-    /// Whether every selected entity may be changed - none protected.
     let private getSelectedEntitiesUnprotected world =
         getSelectedEntityRoots false world |> List.forall (fun entity -> entity.GetProtection world = Unprotected)
 
-    /// Whether the selection mixes 2d and 3d entities, which aren't manipulated together in the viewport.
     let private getSelectionMixed world =
         let entities = SelectedEntities |> Seq.filter (fun (entity : Entity) -> entity.GetExists world) |> List.ofSeq
         List.exists (fun (entity : Entity) -> entity.GetIs2d world) entities &&
         List.exists (fun (entity : Entity) -> not (entity.GetIs2d world)) entities
 
-    /// Duplicate entities under the given parent, else the creation parent or their own group, each linked to its
-    /// original as its propagation source unless asked not to, giving each original with its duplicate.
     let private duplicateEntities propagate (parentOpt : Simulant option) (entities : Entity list) world =
         [for entity in entities do
             let entityDescriptor = World.writeEntity false false EntityDescriptor.empty entity world
@@ -688,7 +679,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             if duplicate.Has<Freezer3dFacet> world then duplicate.SetFrozen false world
             (entity, duplicate)]
 
-    /// The replacement of an entity among replacements, else the first, else the entity itself.
     let private getReplacement (entity : Entity) (replacements : (Entity * Entity) list) =
         replacements
         |> List.tryFind (fun (entity', _) -> entity' = entity)
@@ -696,9 +686,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         |> Option.map snd
         |> Option.defaultValue entity
 
-    /// Duplicate the selected entities where they lie, under the creation parent or their own group, each linked to its
-    /// original as its propagation source unless asked not to, then select the duplicates, giving each original with
-    /// its duplicate.
     let private duplicateSelectedEntities propagate world =
         let duplicates = duplicateEntities propagate None (getSelectedEntityRoots false world) world
         ImGui.SetWindowFocus "Viewport"
@@ -706,8 +693,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         ShowSelectedEntity <- true
         duplicates
 
-    /// Frame entities in the eyes - the 2d ones in the 2d eye, the 3d ones in the 3d eye - an entity alone as it's
-    /// always been framed, several by the bounds around them all.
     let private frameEntities (entities : Entity list) world =
         let entities = entities |> List.filter (fun (entity : Entity) -> entity.GetExists world && not (entity.GetAbsolute world))
         let (entities2d, entities3d) = List.partition (fun (entity : Entity) -> entity.GetIs2d world) entities
@@ -731,20 +716,16 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let distance = max NewEntityDistance (radius / tan (world.Eye3dFieldOfView * 0.5f)) // far enough to see all
             World.setEye3dCenter (center + (v3Back * distance).Transform world.Eye3dRotation) world
 
-    /// The entities a hierarchy drag of an entity carries - the selection when it's among it, else just it - in the
-    /// order the hierarchy shows them.
     let private getHierarchyDragEntities (entity : Entity) world =
         if SelectedEntities.Contains entity
         then getSelectedEntityRoots false world
         else [entity]
 
-    /// Where an entity dragged in the hierarchy lands under a parent entity, or the top of the selected group.
     let private getHierarchyDropDestination (parentOpt : Entity option) (entity : Entity) =
         match parentOpt with
         | Some parent -> parent / entity.Name
         | None -> SelectedGroup / entity.Name
 
-    /// Why entities dragged in the hierarchy can't go under a parent entity, or the top of the selected group, if any.
     let private tryGetHierarchyDropProblem (entities : Entity list) (parentOpt : Entity option) world =
         let getDestination = getHierarchyDropDestination parentOpt
         let circular (entity : Entity) =
@@ -766,9 +747,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             | None -> Some "Cannot unparent an entity when there exists another unparented entity with the same name."
         else None
 
-    /// Move entities dragged in the hierarchy under a parent entity, or to the top of the selected group, placing them
-    /// before the given entity when reordering, then select them. The whole drop's refused with one message when any
-    /// entity can't go.
     let private tryDropEntitiesInHierarchy entities (parentOpt : Entity option) (nextOpt : Entity option) world =
         match tryGetHierarchyDropProblem entities parentOpt world with
         | Some problem -> MessageBoxOpt <- Some problem
@@ -789,7 +767,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             selectEntities false (moves |> List.map snd |> Set.ofList) world
             ShowSelectedEntity <- true
 
-    /// Duplicate entities dragged in the hierarchy under a parent, then select the duplicates.
     let private tryDuplicateEntitiesInHierarchy (entities : Entity list) (parent : Simulant) world =
         if List.forall (fun (entity : Entity) -> entity.GetProtection world = Unprotected) entities then
             snapshot DuplicateEntity world
@@ -800,9 +777,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let message = "Cannot relocate a protected simulant (such as an entity created by the ImSim or MMCC API)."
             MessageBoxOpt <- Some message
 
-    /// Apply the entity hierarchy's selection requests - clicks, ctrl+clicks, shift+clicks, ctrl+a and keyboard nav,
-    /// the selection moving with the nav cursor rather than leaving a second cursor of its own (#603) - keeping focus
-    /// on the hierarchy so nav carries on.
     let private applyEntityHierarchySelectionRequests (multiSelectIo : ImGuiMultiSelectIOPtr) world =
         let popupOpen = ImGui.IsPopupOpen ("", ImGuiPopupFlags.AnyPopupId)
         if ImGui.IsAltUp () then // alt+up and alt+down reorder entities instead
@@ -823,9 +797,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 | _ -> ()
             if entities <> SelectedEntities then selectEntities false entities world
 
-    /// Select the propagation source clicked or moved to by keyboard nav - one selection with the nav cursor rather
-    /// than a second cursor of its own (#603) - keeping focus on the propagation sources so nav carries on. Clears are
-    /// ignored, since leaving the propagation sources needn't deselect what's selected elsewhere.
     let private applyPropagationSourcesSelectionRequests (multiSelectIo : ImGuiMultiSelectIOPtr) world =
         let requests = multiSelectIo.Requests
         for i in 0 .. dec requests.Size do
@@ -917,6 +888,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         ImGui.SetWindowFocus "Entity Hierarchy"
         EntityHierarchySearchRequested <- true
 
+    let private searchPropertyValue () =
+        ImGui.SetWindowFocus "Edit Property"
+        PropertyValueSearchRequested <- true
+
     let private makeEditContext focusPropertyOpt unfocusPropertyOpt =
         { Snapshot = snapshot
           FocusProperty = match focusPropertyOpt with Some focus -> focus | None -> fun () -> ()
@@ -982,7 +957,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         |> Seq.filter (fun entity -> entity.Has<LightProbeFacet> world)
         |> Seq.iter (fun lightProbe -> lightProbe.SetProbeStale true world)
 
-    /// Move each selected entity to its origin - its mount's when mounted.
     let private tryMoveSelectedEntityToOrigin skipSnapshot world =
         match getSelectedEntityRoots true world with
         | [] -> false
@@ -1028,8 +1002,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let entities3d = getPickCandidates3d world
             World.tryPickEntity3d mousePosition entities3d world
 
-    /// Pick all the entities under the mouse, from the nearest down - 2d entities when any are under the mouse, and
-    /// otherwise 3d entities.
     let private mousePickAll mousePosition world =
         let entities2d = World.pickEntities2d mousePosition (getPickCandidates2d world) world
         if Array.notEmpty entities2d then entities2d
@@ -1046,6 +1018,48 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 |> Seq.tryHead|]
         |> Array.definitize
         |> Array.tryHead
+
+    let private propertyValueTextCallback =
+        ImGuiInputTextCallback (fun data ->
+            match PropertyValueSelectionRequestOpt with
+            | Some (selectionStart, selectionEnd) ->
+                let data = ImGuiInputTextCallbackDataPtr data
+                data.SelectionStart <- selectionStart
+                data.SelectionEnd <- selectionEnd
+                data.CursorPos <- selectionEnd
+                PropertyValueSelectionRequestOpt <- None
+            | None -> ()
+            0)
+
+    let private searchPropertyValueStr forward (propertyValueStr : string) =
+        if PropertyValueSearchStr.Length > 0 then
+            let comparison = StringComparison.OrdinalIgnoreCase
+            let index =
+                if forward then
+                    let startIndex = min (PropertyValueSearchIndex + 1) propertyValueStr.Length
+                    match propertyValueStr.IndexOf (PropertyValueSearchStr, startIndex, comparison) with
+                    | -1 -> propertyValueStr.IndexOf (PropertyValueSearchStr, comparison)
+                    | index -> index
+                else
+                    let index =
+                        if PropertyValueSearchIndex > 0
+                        then propertyValueStr.LastIndexOf (PropertyValueSearchStr, PropertyValueSearchIndex - 1, comparison)
+                        else -1
+                    if index = -1 then propertyValueStr.LastIndexOf (PropertyValueSearchStr, comparison) else index
+            PropertyValueSearchIndex <- index
+            if index >= 0 then
+                let selectionStart = Encoding.UTF8.GetByteCount (propertyValueStr.AsSpan (0, index))
+                let selectionLength = Encoding.UTF8.GetByteCount (propertyValueStr.AsSpan (index, PropertyValueSearchStr.Length))
+                PropertyValueSelectionRequestOpt <- Some (selectionStart, selectionStart + selectionLength)
+
+    let private countPropertyValueSearchMatches (propertyValueStr : string) =
+        let mutable count = 0
+        if PropertyValueSearchStr.Length > 0 then
+            let mutable index = propertyValueStr.IndexOf (PropertyValueSearchStr, StringComparison.OrdinalIgnoreCase)
+            while index >= 0 do
+                count <- inc count
+                index <- propertyValueStr.IndexOf (PropertyValueSearchStr, index + PropertyValueSearchStr.Length, StringComparison.OrdinalIgnoreCase)
+        count
 
     let private revertOpenProjectState (world : World) =
         OpenProjectDllsOpt <- None
@@ -1209,8 +1223,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         ShowSelectedEntity <- true
         entity
 
-    /// The dispatcher of the entity an asset makes, if any, and how to give it the asset - a sprite of a texture, a tile
-    /// map of a tile map, and a model of a model.
     let private tryGetAssetEntityDispatcher (assetTag : AssetTag) =
         match Metadata.tryGetMetadata assetTag with
         | ValueSome metadata ->
@@ -1222,7 +1234,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             | RawMetadata | SoundMetadata | SongMetadata -> None
         | ValueNone -> None
 
-    /// Create the entity an asset makes, if any, under the given parent.
     let private tryCreateEntityOfAsset atMouse parentOverride assetTag world =
         match tryGetAssetEntityDispatcher assetTag with
         | Some (dispatcherName, giveAsset) ->
@@ -1232,7 +1243,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             Some entity
         | None -> None
 
-    /// Create an entity propagated from a propagation source, under the given parent.
     let private createEntityOfPropagationSource pasteType (parentOverride : Simulant option) (source : Entity) world =
         snapshot DuplicateEntity world
         let parent =
@@ -1332,7 +1342,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             MessageBoxOpt <- Some ("Could not load entity file due to: " + scstring exn)
             false
 
-    /// Delete the selected entities, wiping their propagation targets first if asked.
     let private deleteSelectedEntities wipePropagationTargets world =
         snapshot DeleteEntity world
         for entity in getSelectedEntityRoots false world do
@@ -1400,7 +1409,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 | None -> ()
             | Some _ | None -> ()
 
-    /// Cut the selected entities, wiping their propagation targets first if asked.
     let private cutSelectedEntities wipePropagationTargets world =
         snapshot CutEntity world
         let entities = getSelectedEntityRoots false world
@@ -1531,7 +1539,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         | Left error ->
             MessageBoxOpt <- Some ("Overlayer reload error due to: " + error + "'.")
 
-    /// Note the facet and dispatcher types defined by the fsi session so far, returning whether any are new.
     let private noteFsiSessionLateBindingTypes () =
         let mutable noted = false
         for assembly in FsiSession.DynamicAssemblies do
@@ -2168,13 +2175,20 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltDown () then (match Seq.tryExactlyOne SelectedEntities with Some entity when entity.GetExists world -> ShowSaveEntityDialog <- true | _ -> ())
             elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ReloadAllRequested <- (false, 1)
             elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then ReloadAllRequested <- (true, 1)
-            elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then searchEntityHierarchy ()
+            elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then
+                if SelectedWindowOpt = Some "Edit Property" && PropertyFocusedOpt.IsSome
+                then searchPropertyValue () // the property editor searches its value instead when it's focused on one
+                else searchEntityHierarchy ()
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then ShowOpenProjectDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then freezeEntities world
             elif ImGui.IsKeyPressed ImGuiKey.T && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then thawEntities world
             elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then synchronizeNav world
             elif ImGui.IsKeyPressed ImGuiKey.L && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then rerenderLightMaps world
             elif ImGui.IsKeyPressed ImGuiKey.I && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then tryMoveSelectedEntityToOrigin false world |> ignore<bool>
+            elif ImGui.IsKeyPressed ImGuiKey.Escape then
+                if SelectedWindowOpt = Some "Edit Property" && not (String.IsNullOrWhiteSpace PropertyValueSearchStr) then
+                    PropertyValueSearchStr <- ""
+                    PropertyValueSearchIndex <- -1
             elif not io.WantCaptureKeyboardGlobal || entityHierarchyFocused then
                 if ImGui.IsKeyPressed ImGuiKey.Z && ImGui.IsCtrlDown () then tryUndo world |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlDown () then tryRedo world |> ignore<bool>
@@ -2188,9 +2202,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         PropagationSourcesSearchStr <- ""
                     elif not (String.IsNullOrWhiteSpace EntityHierarchySearchStr) then
                         EntityHierarchySearchStr <- ""
-                    elif not (String.IsNullOrWhiteSpace PropertyValueSearchStr) then
-                        PropertyValueSearchStr <- ""
-                        PropertyValueSearchIndex <- -1
                     elif entityHierarchyFocused then
                         ViewportFocusRequested <- true
                     else
@@ -3222,11 +3233,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let windowName = "Entity Hierarchy"
             if ImGui.Begin windowName then
 
-                // store focus
-                if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
-            
-                // allow defocus of entity hierarchy?
-                entityHierarchyFocused <- ImGui.IsWindowFocused ImGuiFocusedFlags.RootAndChildWindows // its rows are in a child
+                // store focus, including its rows' child window
+                entityHierarchyFocused <- ImGui.IsWindowFocused ImGuiFocusedFlags.RootAndChildWindows
+                if entityHierarchyFocused && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
 
                 // hierarchy operations
                 if ImGui.Button "Collapse All" then
@@ -3527,59 +3536,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.InputTextMultiline ("##assetGraphStr", &AssetGraphStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
         ImGui.End ()
 
-    /// Select the property value text in the given UTF-8 byte range when requested, scrolling it into view.
-    let private propertyValueTextCallback =
-        ImGuiInputTextCallback (fun data ->
-            match PropertyValueSelectionRequestOpt with
-            | Some (selectionStart, selectionEnd) ->
-                let data = ImGuiInputTextCallbackDataPtr data
-                data.SelectionStart <- selectionStart
-                data.SelectionEnd <- selectionEnd
-                data.CursorPos <- selectionEnd
-                PropertyValueSelectionRequestOpt <- None
-            | None -> ()
-            0)
-
-    /// Find the next (or previous) occurrence of the search text in the property value text, wrapping around, and
-    /// request that it be selected.
-    let private searchPropertyValueStr forward (propertyValueStr : string) =
-        if PropertyValueSearchStr.Length > 0 then
-            let comparison = StringComparison.OrdinalIgnoreCase
-            let index =
-                if forward then
-                    let startIndex = min (PropertyValueSearchIndex + 1) propertyValueStr.Length
-                    match propertyValueStr.IndexOf (PropertyValueSearchStr, startIndex, comparison) with
-                    | -1 -> propertyValueStr.IndexOf (PropertyValueSearchStr, comparison)
-                    | index -> index
-                else
-                    let index =
-                        if PropertyValueSearchIndex > 0
-                        then propertyValueStr.LastIndexOf (PropertyValueSearchStr, PropertyValueSearchIndex - 1, comparison)
-                        else -1
-                    if index = -1 then propertyValueStr.LastIndexOf (PropertyValueSearchStr, comparison) else index
-            PropertyValueSearchIndex <- index
-            if index >= 0 then
-                let selectionStart = Encoding.UTF8.GetByteCount (propertyValueStr.AsSpan (0, index))
-                let selectionLength = Encoding.UTF8.GetByteCount (propertyValueStr.AsSpan (index, PropertyValueSearchStr.Length))
-                PropertyValueSelectionRequestOpt <- Some (selectionStart, selectionStart + selectionLength)
-
-    /// Count the occurrences of the search text in the property value text.
-    let private countPropertyValueSearchMatches (propertyValueStr : string) =
-        let mutable count = 0
-        if PropertyValueSearchStr.Length > 0 then
-            let mutable index = propertyValueStr.IndexOf (PropertyValueSearchStr, StringComparison.OrdinalIgnoreCase)
-            while index >= 0 do
-                count <- inc count
-                index <- propertyValueStr.IndexOf (PropertyValueSearchStr, index + PropertyValueSearchStr.Length, StringComparison.OrdinalIgnoreCase)
-        count
-
     let private imGuiEditPropertyWindow world =
         if PropertyEditorFocusRequested then
             ImGui.SetNextWindowFocus ()
             PropertyEditorFocusRequested <- false
         let windowName = "Edit Property"
         if ImGui.Begin (windowName, ImGuiWindowFlags.NoNavInputs) then
-            if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
+            if ImGui.IsWindowFocused ImGuiFocusedFlags.RootAndChildWindows && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             match PropertyFocusedOpt with
             | Some (propertyDescriptor, simulant) when
                 World.getExists simulant world &&
@@ -3609,21 +3572,32 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
                     // search the property value text
                     ImGui.SetNextItemWidth (ImGui.GetContentRegionAvail().X * 0.5f)
+                    if PropertyValueSearchRequested then
+                        ImGui.SetKeyboardFocusHere ()
+                        PropertyValueSearchRequested <- false
                     let searchStrPrevious = PropertyValueSearchStr
                     if ImGui.InputTextWithHint ("##propertyValueSearchStr", "[search text]", &PropertyValueSearchStr, 4096u, ImGuiInputTextFlags.EnterReturnsTrue) then
                         searchPropertyValueStr (not (ImGui.IsShiftDown ())) propertyValueStr
-                    if ImGui.IsItemDeactivated () && ImGui.IsKeyPressed ImGuiKey.Escape then PropertyValueSearchStr <- ""
+                        PropertyValueSelectionRequestOpt <- None // enter finds the next match without leaving the search box
+                        ImGui.SetKeyboardFocusHere (-1) // keep the search box active as enter would otherwise deactivate it
+                    let searchTabbed = ImGui.IsItemActive () && ImGui.IsKeyPressed ImGuiKey.Tab && ImGui.IsShiftUp ()
                     if PropertyValueSearchStr <> searchStrPrevious then PropertyValueSearchIndex <- -1
+                    if searchTabbed && PropertyValueSearchIndex >= 0 then // reselect the current match as the value text takes focus
+                        PropertyValueSearchIndex <- dec PropertyValueSearchIndex
+                        searchPropertyValueStr true propertyValueStr
                     ImGui.SameLine ()
                     if ImGui.Button "<" then searchPropertyValueStr false propertyValueStr
                     ImGui.SameLine ()
                     if ImGui.Button ">" then searchPropertyValueStr true propertyValueStr
                     if PropertyValueSearchStr.Length > 0 then
                         ImGui.SameLine ()
-                        ImGui.Text (string (countPropertyValueSearchMatches propertyValueStr) + " found")
-
-                    // activate the property value text when a found match is to be selected
-                    if PropertyValueSelectionRequestOpt.IsSome then ImGui.SetKeyboardFocusHere ()
+                        let count = countPropertyValueSearchMatches propertyValueStr
+                        if PropertyValueSearchIndex >= 0 && PropertyValueSearchIndex + PropertyValueSearchStr.Length <= propertyValueStr.Length then
+                            let ordinal = countPropertyValueSearchMatches (propertyValueStr.Substring (0, PropertyValueSearchIndex + PropertyValueSearchStr.Length))
+                            ImGui.Text (string ordinal + " of " + string count + " found")
+                        else ImGui.Text (string count + " found")
+                    if searchTabbed then
+                        ImGui.SetKeyboardFocusHere ()
 
                     // edit the property value text
                     let propertyValueFlags = ImGuiInputTextFlags.CallbackAlways
@@ -3644,6 +3618,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             setPropertyValue false propertyValue propertyDescriptor simulant world
                         with _ ->
                             Pasts <- pasts
+                    if ImGui.IsItemActive () && ImGui.IsKeyPressed ImGuiKey.Tab && ImGui.IsShiftDown () then
+                        PropertyValueSearchRequested <- true
+
+                    // accept an asset dropped onto the property value text
                     if isPropertyAssetTag && ImGui.BeginDragDropTarget () then
                         if NativePtr.notNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr then
                             match DragDropPayloadOpt with
