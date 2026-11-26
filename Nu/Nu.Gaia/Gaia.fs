@@ -3425,7 +3425,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 let treeNodeFlags = ImGuiTreeNodeFlags.Leaf ||| if SelectedEntities.Contains entity then ImGuiTreeNodeFlags.Selected else ImGuiTreeNodeFlags.None
                 ImGui.SetNextItemSelectionUserData (int64 PropagationSourcesIndexed.Count)
                 PropagationSourcesIndexed.Add entity
-                if ImGui.TreeNodeEx (entity.Name, treeNodeFlags) then
+                if ImGui.TreeNodeEx (entity.Name + "##" + scstringMemo entity, treeNodeFlags) then
                     if ImGui.BeginDragDropSource () then
                         DragDropPayloadOpt <- Some (DragDropPropagationSource entity)
                         ImGui.Text entity.Name
