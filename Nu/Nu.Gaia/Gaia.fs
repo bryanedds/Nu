@@ -1003,15 +1003,18 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         let entities = World.getEntities2dInView (HashSet (QuadelementEqualityComparer ())) world
         let entitiesInGroup =
             entities
-            |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.Group.GetEditing world && entity.GetVisible world)
+            |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.Group.GetEditing world)
             |> Seq.toArray
         entitiesInGroup
 
     let private getPickCandidates3d world =
-        let entities = World.getEntities3dInView (HashSet (OctelementEqualityComparer ())) world
+        let elements = HashSet (OctelementEqualityComparer ())
+        World.getEntities3dInView elements world |> ignore<_>
+        World.getLights3dInFrustum world.Eye3dFrustumView elements world |> ignore<_>
         let entitiesInGroup =
-            entities
-            |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.Group.GetEditing world && entity.GetVisible world)
+            elements
+            |> Seq.map (fun element -> element.Entry)
+            |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.Group.GetEditing world)
             |> Seq.toArray
         entitiesInGroup
 
@@ -4841,7 +4844,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         // exception handling dialog
         | Some exn -> imGuiExceptionDialog exn worldStateOld world
 
-    let private imGuiRender world =
+    let private imGuiRender (world : World) =
 
         // augmentative rendering while not in capture mode
         if not ViewMode.IsCaptureMode then
@@ -4859,8 +4862,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 ViewportFocusRequested <- true
 
             // render light probes of the selected group in view
-            let eyeFrustum = World.getEye3dFrustum world
-            let entities = World.getLightProbesInView (HashSet ()) world
+            let eyeFrustum = world.Eye3dFrustumView
+            let entities = World.getLightProbesInFrustum eyeFrustum (HashSet ()) world
             let lightProbeModels =
                 entities
                 |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.Group.GetEditing world && eyeFrustum.Intersects (entity.GetBounds world))
@@ -4876,7 +4879,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     world
 
             // render lights of the selected group in play
-            let entities = World.getLights3dInView (HashSet ()) world
+            let entities = World.getLights3dInFrustum eyeFrustum (HashSet ()) world
             let lightModels =
                 entities
                 |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.Group.GetEditing world && eyeFrustum.Intersects (entity.GetBounds world))
