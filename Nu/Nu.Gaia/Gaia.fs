@@ -1010,6 +1010,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private getPickCandidates3d world =
         let elements = HashSet (OctelementEqualityComparer ())
         World.getEntities3dInView elements world |> ignore<_>
+        World.getLightProbesInFrustum world.Eye3dFrustumView elements world |> ignore<_>
         World.getLights3dInFrustum world.Eye3dFrustumView elements world |> ignore<_>
         let entitiesInGroup =
             elements
