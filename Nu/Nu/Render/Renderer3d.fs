@@ -939,7 +939,8 @@ type [<SymbolicExpansion>] Lighting3dConfig =
 
 /// Configures 3d renderer.
 type [<SymbolicExpansion>] Renderer3dConfig =
-    { LightMappingEnabled : bool
+    { SkyBoxEnabled : bool
+      LightMappingEnabled : bool
       LightShadowingEnabled : bool
       SssEnabled : bool
       SsaoEnabled : bool
@@ -956,7 +957,8 @@ type [<SymbolicExpansion>] Renderer3dConfig =
       FxaaReduceMulDivisor : single }
 
     static member val defaultConfig =
-        { LightMappingEnabled = Constants.Render.LightMappingEnabledDefault
+        { SkyBoxEnabled = Constants.Render.SkyBoxEnabledDefault
+          LightMappingEnabled = Constants.Render.LightMappingEnabledDefault
           LightShadowingEnabled = Constants.Render.LightShadowingEnabledDefault
           SssEnabled = Constants.Render.SssEnabledGlobalDefault
           SsaoEnabled = Constants.Render.SsaoEnabledGlobalDefault
@@ -2246,7 +2248,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
     static member private getLastSkyBoxOpt renderPass renderer =
         let renderTasks = VulkanRenderer3d.getRenderTasks renderPass renderer
         match Seq.tryLast renderTasks.SkyBoxes with
-        | Some (lightAmbientColor, lightAmbientBrightness, cubeMapColor, cubeMapBrightness, cubeMapAsset) ->
+        | Some (lightAmbientColor, lightAmbientBrightness, cubeMapColor, cubeMapBrightness, cubeMapAsset) when renderer.RendererConfig.SkyBoxEnabled ->
             match VulkanRenderer3d.tryGetRenderAsset cubeMapAsset renderer with
             | ValueSome asset ->
                 match asset with
@@ -2259,7 +2261,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | ValueNone ->
                 Log.info "Could not utilize sky box due to non-existent cube map asset."
                 (lightAmbientColor, lightAmbientBrightness, None)
-        | None -> (Color.White, 1.0f, None)
+        | Some _ | None -> (Color.White, 1.0f, None)
         
     static member private tryComputeTerrainPatches (geometryDescriptor : TerrainGeometryDescriptor) (heightMapMetadata : HeightMapMetadata) =
 
