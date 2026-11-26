@@ -302,7 +302,7 @@ module internal Octnode =
                     if box.Intersects bounds then
                         set.Add element |> ignore<bool>
 
-    let rec internal getLightProbes (set : 'e Octelement HashSet) (node : 'e Octnode) =
+    let rec internal getLightProbesInView (set : 'e Octelement HashSet) (node : 'e Octnode) =
         match node.Children_ with
         | NoChildren ->
             ()
@@ -310,11 +310,27 @@ module internal Octnode =
             for i in 0 .. dec nodes.Length do
                 let node = nodes[i]
                 if node.ElementsCount_ > 0 then
-                    getLightProbes set node
+                    getLightProbesInView set node
         | ElementChildren elements ->
             for element in elements do
                 if element.LightProbe && element.VisibleInView then
                     set.Add element |> ignore<bool>
+
+    let rec internal getLightProbesInFrustum frustum (set : 'e Octelement HashSet) (node : 'e Octnode) =
+        match node.Children_ with
+        | NoChildren ->
+            ()
+        | NodeChildren nodes ->
+            for i in 0 .. dec nodes.Length do
+                let node = nodes[i]
+                if node.ElementsCount_ > 0 && isIntersectingFrustum frustum node then
+                    getLightProbesInFrustum frustum set node
+        | ElementChildren elements ->
+            for element in elements do
+                if element.LightProbe then
+                    let bounds = element.Bounds
+                    if frustum.Intersects bounds then
+                        set.Add element |> ignore<bool>
 
     let rec internal getLightsInViewFrustum frustum (set : 'e Octelement HashSet) (node : 'e Octnode) =
         match node.Children_ with
@@ -346,6 +362,22 @@ module internal Octnode =
                         if intersectingInterior then getLightsInViewFrustum frustumInterior set node
                         if intersectingExterior then getLightsInViewFrustum frustumExterior set node
         | ElementChildren _ -> ()
+
+    let rec internal getLightsInFrustum frustum (set : 'e Octelement HashSet) (node : 'e Octnode) =
+        match node.Children_ with
+        | NoChildren ->
+            ()
+        | NodeChildren nodes ->
+            for i in 0 .. dec nodes.Length do
+                let node = nodes[i]
+                if node.ElementsCount_ > 0 && isIntersectingFrustum frustum node then
+                    getLightsInFrustum frustum set node
+        | ElementChildren elements ->
+            for element in elements do
+                if element.Light then
+                    let bounds = element.Bounds
+                    if frustum.Intersects bounds then
+                        set.Add element |> ignore<bool>
 
     let rec internal getElementsInPlayFrustum frustum (set : 'e Octelement HashSet) (node : 'e Octnode) =
         match node.Children_ with
@@ -660,7 +692,7 @@ module Octree =
             set.Add ubiquitous |> ignore<bool>
         Octnode.getElements set tree.Node
 
-    /// Get all of the elements in a tree that satisfy the given query parameters.
+    /// Get all of the viewable elements in a tree that satisfy the given query parameters.
     let getElementsInViewFrustum interior exterior (frustum : Frustum) (set : _ HashSet) tree =
         for imposter in tree.Imposter do
             if frustum.Intersects imposter.Bounds then
@@ -671,7 +703,7 @@ module Octree =
             set.Add ubiquitous |> ignore<bool>
         Octnode.getElementsInViewFrustum interior exterior frustum set tree.Node
 
-    /// Get all of the elements in a tree that satisfy the given query parameters.
+    /// Get all of the viewable elements in a tree that satisfy the given query parameters.
     let getElementsInViewBox (box : Box3) (set : _ HashSet) tree =
         for imposter in tree.Imposter do
             if box.Intersects imposter.Bounds then
@@ -682,7 +714,7 @@ module Octree =
             set.Add ubiquitous |> ignore<bool>
         Octnode.getElementsInViewBox box set tree.Node
 
-    /// Get all of the elements in a tree that are in a node intersected by a relevant frustum.
+    /// Get all of the viewable elements in a tree that are in a node intersected by a relevant frustum.
     let getElementsInView frustumInterior frustumExterior (frustumImposter : Frustum) (set : _ HashSet) tree =
         for imposter in tree.Imposter do
             if frustumImposter.Intersects imposter.Bounds then
@@ -693,7 +725,7 @@ module Octree =
             set.Add ubiquitous |> ignore<bool>
         Octnode.getElementsInView frustumInterior frustumExterior set tree.Node
 
-    /// Get all of the light probe elements in the given frustum.
+    /// Get all of the viewable light probe elements in the given frustum.
     let getLightProbesInViewFrustum frustum (set : _ HashSet) tree =
         for omnipresent in tree.Omnipresent do
             if omnipresent.LightProbe && omnipresent.VisibleInView then
@@ -703,7 +735,7 @@ module Octree =
                 set.Add ubiquitous |> ignore<bool>
         Octnode.getLightProbesInViewFrustum frustum set tree.Node
 
-    /// Get all of the light probe elements in the given box.
+    /// Get all of the viewable light probe elements in the given box.
     let getLightProbesInViewBox box (set : _ HashSet) tree =
         for omnipresent in tree.Omnipresent do
             if omnipresent.LightProbe && omnipresent.VisibleInView then
@@ -713,7 +745,7 @@ module Octree =
                 set.Add ubiquitous |> ignore<bool>
         Octnode.getLightProbesInViewBox box set tree.Node
 
-    /// Get all of the light probe elements.
+    /// Get all of the viewable light probe elements.
     let getLightProbesInView (set : _ HashSet) tree =
         for omnipresent in tree.Omnipresent do
             if omnipresent.LightProbe && omnipresent.VisibleInView then
@@ -721,9 +753,19 @@ module Octree =
         for ubiquitous in tree.UbiquitousFallback do
             if ubiquitous.LightProbe && ubiquitous.VisibleInView then
                 set.Add ubiquitous |> ignore<bool>
-        Octnode.getLightProbes set tree.Node
+        Octnode.getLightProbesInView set tree.Node
 
-    /// Get all of the light elements in the given frustum.
+    /// Get all of the light probe elements in the given frustum.
+    let getLightProbesInFrustum frustum (set : _ HashSet) tree =
+        for omnipresent in tree.Omnipresent do
+            if omnipresent.LightProbe then
+                set.Add omnipresent |> ignore<bool>
+        for ubiquitous in tree.UbiquitousFallback do
+            if ubiquitous.LightProbe then
+                set.Add ubiquitous |> ignore<bool>
+        Octnode.getLightProbesInFrustum frustum set tree.Node
+
+    /// Get all of the viewable light elements in the given frustum.
     let getLightsInViewFrustum frustum (set : _ HashSet) tree =
         for omnipresent in tree.Omnipresent do
             if omnipresent.Light && omnipresent.VisibleInView then
@@ -733,7 +775,7 @@ module Octree =
                 set.Add ubiquitous |> ignore<bool>
         Octnode.getLightsInViewFrustum frustum set tree.Node
 
-    /// Get all of the light elements in a tree that are in a node intersected by one of the given frustums.
+    /// Get all of the viewable light elements in a tree that are in a node intersected by one of the given frustums.
     let getLightsInView frustumInterior frustumExterior (set : _ HashSet) tree =
         for omnipresent in tree.Omnipresent do
             if omnipresent.Light && omnipresent.VisibleInView then
@@ -743,7 +785,18 @@ module Octree =
                 set.Add ubiquitous |> ignore<bool>
         Octnode.getLightsInView frustumInterior frustumExterior set tree.Node
 
-    /// Get all of the elements in a tree that are in a node intersected by one of the given box or frustum depending on its attributes.
+    /// Get all of the light elements in the given frustum.
+    let getLightsInFrustum frustum (set : _ HashSet) tree =
+        for omnipresent in tree.Omnipresent do
+            if omnipresent.Light then
+                set.Add omnipresent |> ignore<bool>
+        for ubiquitous in tree.UbiquitousFallback do
+            if ubiquitous.Light then
+                set.Add ubiquitous |> ignore<bool>
+        Octnode.getLightsInFrustum frustum set tree.Node
+
+    /// Get all of the playing elements in a tree that are in a node intersected by one of the given box or frustum
+    /// depending on its attributes.
     let getElementsInPlay playBox playFrustum (set : _ HashSet) tree =
         for imposter in tree.Imposter do
             set.Add imposter |> ignore<bool>

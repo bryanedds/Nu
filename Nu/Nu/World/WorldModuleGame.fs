@@ -388,7 +388,7 @@ module WorldModuleGame =
         static member internal getGameEye3dFrustumImposter game world =
             (World.getGameState game world).Eye3dFrustumImposter
 
-        static member internal getGameEye3dFrustum game (world : World) =
+        static member internal getGameEye3dFrustumView game (world : World) =
             let eyeCenter = World.getGameEye3dCenter game world
             let eyeRotation = World.getGameEye3dRotation game world
             let eyeFieldOfView = World.getGameEye3dFieldOfView game world
@@ -406,9 +406,9 @@ module WorldModuleGame =
         static member getEye3dFrustumImposter world =
             World.getGameEye3dFrustumImposter Game.Handle world
 
-        /// Get the current 3d eye frustum.
-        static member getEye3dFrustum world =
-            World.getGameEye3dFrustum Game.Handle world
+        /// Get the current view 3d eye frustum.
+        static member getEye3dFrustumView world =
+            World.getGameEye3dFrustumView Game.Handle world
 
         /// Convert the given relative 3d position to the absolute 2d position.
         /// Useful for gui entities that track 3d entities.
@@ -453,7 +453,7 @@ module WorldModuleGame =
                 containment = ContainmentType.Intersects
 
         /// Query the octree's spatial bounds for 3D entities.
-        static member getSpatialBounds3d world =
+        static member getSpatialBounds3d (world : World) =
             Octree.getBounds world.Octree
 
         static member internal getElements2dBy (getElementsFromQuadree : Entity Quadtree -> unit) (world : World) =
@@ -482,13 +482,13 @@ module WorldModuleGame =
             Quadtree.getElements set world.Quadtree
             Seq.map (fun (element : Entity Quadelement) -> element.Entry) set
 
-        /// Get all 2d entities in the current 2d view, including all uncullable entities.
+        /// Get all viewable 2d entities in the current 2d view, including all uncullable entities.
         static member getEntities2dInView set (world : World) =
             let viewBounds = World.getViewBounds2dRelative world
             Quadtree.getElementsInView viewBounds set world.Quadtree
             Seq.map (fun (element : Entity Quadelement) -> element.Entry) set
 
-        /// Get all 2d entities needing to update for the current 2d play zone, including all uncullable entities.
+        /// Get all playing 2d entities needing to update for the current 2d play zone, including all uncullable entities.
         static member getEntities2dInPlay set (world : World) =
             let playBounds = World.getPlayBounds2dRelative world
             Quadtree.getElementsInPlay playBounds set world.Quadtree
@@ -522,32 +522,42 @@ module WorldModuleGame =
             Octree.getElements set world.Octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
-        /// Get all 3d entities in the current 3d view, including all uncullable entities.
+        /// Get all viewable 3d entities in the current 3d view, including all uncullable entities.
         static member getEntities3dInView set (world : World) =
             Octree.getElementsInView world.Eye3dFrustumInterior world.Eye3dFrustumExterior world.Eye3dFrustumImposter set world.Octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
-        /// Get all light probe entities in the given view frustum, including all uncullable light probes.
+        /// Get all viewable light probe entities in the given view frustum, including all uncullable light probes.
         static member getLightProbesInViewFrustum frustum set (world : World) =
             Octree.getLightProbesInViewFrustum frustum set world.Octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
-        /// Get all light probe entities in the current 3d view, including all uncullable lights.
+        /// Get all viewable light probe entities in the current 3d view, including all uncullable lights.
         static member getLightProbesInView set (world : World) =
             Octree.getLightProbesInView set world.Octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
-        /// Get all 3d light entities in the given view frustum, including all uncullable lights.
+        /// Get all light probe entities in the current 3d view, including all uncullable lights.
+        static member getLightProbesInFrustum frustum set (world : World) =
+            Octree.getLightProbesInFrustum frustum set world.Octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+
+        /// Get all viewable 3d light entities in the given view frustum, including all uncullable lights.
         static member getLights3dInViewFrustum frustum set (world : World) =
             Octree.getLightsInViewFrustum frustum set world.Octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
-        /// Get all 3d light entities in the current 3d view, including all uncullable entities.
+        /// Get all viewable 3d light entities in the current 3d view, including all uncullable entities.
         static member getLights3dInView set (world : World) =
             Octree.getLightsInView world.Eye3dFrustumInterior world.Eye3dFrustumExterior set world.Octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
-        /// Get all 3d entities in the current 3d play zone, including all uncullable entities.
+        /// Get all 3d light entities in the given frustum, including all uncullable lights.
+        static member getLights3dInFrustum frustum set (world : World) =
+            Octree.getLightsInFrustum frustum set world.Octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+
+        /// Get all playing 3d entities in the current 3d play zone, including all uncullable entities.
         static member getEntities3dInPlay set (world : World) =
             let struct (playBox, playFrustum) = World.getPlayBounds3d world
             Octree.getElementsInPlay playBox playFrustum set world.Octree
