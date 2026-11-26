@@ -173,6 +173,7 @@ module Gaia =
     let mutable private ShowRenameEntityDialog = false
     let mutable private ShowDeleteEntityDialog = false
     let mutable private ShowCutEntityDialog = false
+    let mutable private ShowInputsDialog = false
     let mutable private ShowConfirmExitDialog = false
     let mutable private ShowRestartDialog = false
     let mutable private ReloadAssetsRequested = 0
@@ -194,6 +195,7 @@ module Gaia =
         ShowRenameEntityDialog ||
         ShowDeleteEntityDialog ||
         ShowCutEntityDialog ||
+        ShowInputsDialog ||
         ShowConfirmExitDialog ||
         ShowRestartDialog ||
         ReloadAssetsRequested <> 0 ||
@@ -373,9 +375,9 @@ Pos=699,495
 Size=524,138
 Collapsed=0
 
-[Window][Choose a project .dll... *EDITOR RESTART REQUIRED!*]
-Pos=628,476
-Size=674,128
+[Window][Choose a project... *EDITOR RESTART REQUIRED!*]
+Pos=434,298
+Size=411,123
 Collapsed=0
 
 [Window][Create a group...]
@@ -416,6 +418,11 @@ Collapsed=0
 [Window][Rename entity...]
 Pos=734,514
 Size=444,94
+Collapsed=0
+
+[Window][Gaia Inputs]
+Pos=448,180
+Size=1024,720
 Collapsed=0
 
 [Window][Reloading assets...]
@@ -2166,7 +2173,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then World.tryToggleWindowFullScreen world
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity true world
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity false world
-            elif ImGui.IsKeyPressed ImGuiKey.M && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ManipulationWorld <- not ManipulationWorld
             elif ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then LogStr <- ""
             elif ImGui.IsKeyPressed ImGuiKey.L && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then ImGuiIniResetRequested <- true
             elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then step world
@@ -2201,6 +2207,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 elif ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlDown () then tryPaste PasteAtLook (Option.map cast NewEntityParentOpt) world |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () then createEntity false false None None world |> ignore<Entity>
                 elif ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity world |> ignore<bool>
+                elif ImGui.IsKeyPressed ImGuiKey.M && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ManipulationWorld <- not ManipulationWorld
+                elif ImGui.IsKeyPressed ImGuiKey.I && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ShowInputsDialog <- true
                 elif ImGui.IsKeyPressed ImGuiKey.Escape then
                     if not (String.IsNullOrWhiteSpace PropagationSourcesSearchStr) then
                         PropagationSourcesSearchStr <- ""
@@ -2267,6 +2275,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     createEntity true true None None world |> ignore<Entity>
                     tryMoveSelectedEntityToOrigin true world |> ignore<bool>
             if ImGui.MenuItem "Delete Entity" then tryDeleteSelectedEntity world |> ignore<bool>
+            if singular && entity.GetProtection world = Unprotected then
+                if ImGui.MenuItem ("Rename Entity", "F2") then ShowRenameEntityDialog <- true
             ImGui.Separator ()
             if ImGui.MenuItem "Cut Entity" then tryCutSelectedEntity world |> ignore<bool>
             if ImGui.MenuItem "Copy Entity" then tryCopySelectedEntity world |> ignore<bool>
@@ -3008,12 +3018,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     if ImGui.MenuItem ("Create Restore Point", "F7") then createRestorePoint world
                     if ImGui.MenuItem ("Clear Log", "Alt+C") then LogStr <- ""
                     if ImGui.MenuItem ("Reset Layout", "Alt+L") then ImGuiIniResetRequested <- true
-                    ImGui.Separator ()
                     if ImGui.MenuItem ("Reload Assets", "F8") then ReloadAssetsRequested <- 1
                     if ImGui.MenuItem ("Reload Code", "F9") then ReloadCodeRequested <- (false, 1)
                     if ImGui.MenuItem ("Reload Code and Initialize", "Shift+F9") then ReloadCodeRequested <- (true, 1)
                     if ImGui.MenuItem ("Reload All", "Ctrl+R") then ReloadAllRequested <- (false, 1)
                     if ImGui.MenuItem ("Reload All and Initialize", "Ctrl+Shift+R") then ReloadAllRequested <- (true, 1)
+                    ImGui.Separator ()
+                    if ImGui.MenuItem ("Show Inputs", "I") then ShowInputsDialog <- true
                     ImGui.Separator ()
                     if ImGui.MenuItem ("Exit", "Alt+F4") then ShowConfirmExitDialog <- true
                     ImGui.EndMenu ()
@@ -3051,6 +3062,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if ImGui.BeginMenu "Entity" then
                     if ImGui.MenuItem ("Create Entity", "Ctrl+Enter") then createEntity false false None None world |> ignore<Entity>
                     if ImGui.MenuItem ("Delete Entity", "Delete") then tryDeleteSelectedEntity world |> ignore<bool>
+                    let renamable = (match Seq.tryExactlyOne SelectedEntities with Some entity -> entity.GetProtection world = Unprotected | None -> false)
+                    if ImGui.MenuItem ("Rename Entity", "F2", false, renamable) then ShowRenameEntityDialog <- true
                     ImGui.Separator ()
                     if ImGui.MenuItem ("Cut Entity", "Ctrl+X") then tryCutSelectedEntity world |> ignore<bool>
                     if ImGui.MenuItem ("Copy Entity", "Ctrl+C") then tryCopySelectedEntity world |> ignore<bool>
@@ -4486,6 +4499,113 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 ImGui.EndPopup ()
         | [] -> ShowCutEntityDialog <- false
 
+    let private imGuiInputsDialog () =
+        let title = "Gaia Inputs"
+        ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
+        ImGui.SetNextWindowSize (v2 1024.0f 720.0f, ImGuiCond.Appearing)
+        if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+        if ImGui.BeginPopupModal (title, &ShowInputsDialog) then
+            let sections =
+                [|("Eye travel, while the viewport has the keyboard",
+                   [|("W / S", "Move forward / back.")
+                     ("A / D", "Move left / right.")
+                     ("E / Q", "Move up / down.")
+                     ("Up / Down", "Look up / down.")
+                     ("Left / Right", "Turn left / right.")
+                     ("Hold Shift", "Move or turn slower.")
+                     ("Hold Enter / Enter+Shift", "Move faster / fastest.")|])
+                  ("Viewport mouse",
+                   [|("Left click", "Select the entity under the mouse. Clicking the selected entity again cycles to those behind it.")
+                     ("Shift+click / Ctrl+click", "Add to or remove from the selection.")
+                     ("Left drag (2d)", "Move the selection.")
+                     ("Alt+left drag (2d)", "Rotate the selection.")
+                     ("Ctrl+left drag (2d)", "Duplicate and move the selection (Ctrl+Shift duplicates without propagation).")
+                     ("Gizmo drag (3d)", "Translate the selection.")
+                     ("Shift+gizmo drag", "Scale the selection.")
+                     ("Alt+gizmo drag", "Rotate the selection.")
+                     ("Hold X / Y / Z + gizmo drag", "Rotate the selection about that axis.")
+                     ("Ctrl+gizmo drag", "Duplicate and translate the selection (Ctrl+Shift duplicates without propagation).")
+                     ("Hold Ctrl mid-drag", "Ignore snaps.")
+                     ("Right click", "Open the context menu, selecting the entity under the mouse.")
+                     ("Right drag", "Free look.")
+                     ("Alt+right drag", "Orbit about the selection, or a point ahead when nothing's selected.")
+                     ("Ctrl+right drag", "Dolly toward the selection, or a point ahead when nothing's selected.")
+                     ("Middle drag", "Pan the 3d eye.")
+                     ("Alt+middle drag", "Pan the 2d eye.")
+                     ("Wheel", "Move the eye forward / back.")
+                     ("Hold Shift / Ctrl or Enter", "Pan or wheel slower / faster.")
+                     ("Drop an asset or propagation source", "Create an entity from it.")|])
+                  ("Entity hierarchy",
+                   [|("Click / Ctrl+click / Shift+click", "Select / toggle / select a range.")
+                     ("Arrow keys", "Move between entities.")
+                     ("Enter", "Hand the keyboard back to the viewport.")
+                     ("Double click", "Frame the entity, or the selection it's in.")
+                     ("Right click", "Open the entity's context menu.")
+                     ("Drag onto an entity", "Parent the dragged entities under it.")
+                     ("Alt+drag onto an entity", "Place the dragged entities before it.")
+                     ("Ctrl+drag onto an entity", "Duplicate the dragged entities under it (Ctrl+Shift without propagation).")
+                     ("Drag onto the group selector", "Move the dragged entities to the top level (Ctrl duplicates them).")
+                     ("Drop an asset or propagation source", "Create an entity from it.")|])
+                  ("Property editor",
+                   [|("Ctrl+F", "Search property values.")
+                     ("Enter, in the search box", "Find the next match.")
+                     ("Tab / Shift+Tab", "Go from the search box to the value text / back.")
+                     ("Escape", "Clear the search.")
+                     ("Drop an asset onto an asset property", "Set the property to it.")|])
+                  ("Other windows",
+                   [|("Double click a propagation source", "Move the eye to it.")
+                     ("Ctrl+Enter / Ctrl+Shift+Enter", "Eval / enter, in the interactive window.")|])
+                  ("Keyboard Shortcuts",
+                   [|("I", "Show or hide this list.")
+                     ("M", "Toggle manipulation between world and object space.")
+                     ("Delete", "Delete the selected entity.")
+                     ("Escape", "Clear search / deselect.")
+                     ("Alt+Enter", "Toggle full screen.")
+                     ("Alt+Up / Alt+Down", "Move the selected entity up or down among its siblings.")
+                     ("Alt+S", "Step time by one frame.")
+                     ("Alt+C", "Clear the log.")
+                     ("Alt+L", "Reset the window layout.")
+                     ("Ctrl+N / Ctrl+O / Ctrl+S", "New, open or save a group.")
+                     ("Ctrl+Shift+O", "Open a project.")
+                     ("Ctrl+Alt+O / Ctrl+Alt+S", "Open or save an entity.")
+                     ("Ctrl+R / Ctrl+Shift+R", "Reload all / reload all and initialize.")
+                     ("Ctrl+B", "Auto bounds the selected entity.")
+                     ("Ctrl+I", "Move the selected entity to the origin.")
+                     ("Ctrl+P / Ctrl+Shift+P", "Set / reset the creation parent.")
+                     ("Ctrl+F", "Search the entity hierarchy, or property values when the property editor is focused.")
+                     ("Ctrl+Shift+F / Ctrl+Shift+T", "Freeze / thaw all entities.")
+                     ("Ctrl+Shift+N", "Rebuild navigation.")
+                     ("Ctrl+Shift+L", "Rerender light maps.")
+                     ("Ctrl+Z / Ctrl+Y", "Undo / redo.")
+                     ("Ctrl+X / Ctrl+C", "Cut / copy the selected entity.")
+                     ("Ctrl+V", "Paste an entity where the eye looks.")
+                     ("Ctrl+Enter", "Create an entity.")
+                     ("F2", "Rename the selected entity.")
+                     ("F3", "Switch between 2d and 3d snaps.")
+                     ("F5", "Advance or halt time.")
+                     ("F6", "Toggle editing while advancing.")
+                     ("F7", "Create a restore point.")
+                     ("F8", "Reload assets.")
+                     ("F9 / Shift+F9", "Reload code / reload code and initialize.")
+                     ("F10", "Toggle overlay mode.")
+                     ("F11", "Toggle free mode.")
+                     ("F12", "Toggle capture mode.")
+                     ("Alt+F4", "Exit Gaia.")|])|]
+            for (section, inputs) in sections do
+                ImGui.SeparatorText section
+                if ImGui.BeginTable (section, 2, ImGuiTableFlags.RowBg) then
+                    ImGui.TableSetupColumn ("Input", ImGuiTableColumnFlags.WidthFixed, 300.0f)
+                    ImGui.TableSetupColumn ("Action", ImGuiTableColumnFlags.WidthStretch)
+                    for (input, action) in inputs do
+                        ImGui.TableNextRow ()
+                        ImGui.TableNextColumn () |> ignore<bool>
+                        ImGui.Text input
+                        ImGui.TableNextColumn () |> ignore<bool>
+                        ImGui.TextWrapped action
+                    ImGui.EndTable ()
+            if ImGui.IsKeyPressed (ImGuiKey.I, false) || ImGui.IsKeyReleased ImGuiKey.Escape then ShowInputsDialog <- false
+            ImGui.EndPopup ()
+
     let private imGuiConfirmExitDialog world =
         let title = "Are you okay with exiting Gaia?"
         ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
@@ -4557,6 +4677,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             if ImGui.Button "Delete" then
                 tryDeleteSelectedEntity world |> ignore<bool>
                 ShowEntityContextMenu <- false
+            if (match Seq.tryExactlyOne SelectedEntities with Some entity -> entity.GetProtection world = Unprotected | None -> false) then
+                ImGui.SameLine ()
+                if ImGui.Button "Rename" then
+                    ShowRenameEntityDialog <- true
+                    ShowEntityContextMenu <- false
             if  ImGui.IsMouseReleased ImGuiMouseButton.Right ||
                 ImGui.IsKeyReleased ImGuiKey.Escape then
                 ShowEntityContextMenu <- false
@@ -4794,6 +4919,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     if ShowRenameEntityDialog then imGuiRenameEntityDialog world
                     if ShowDeleteEntityDialog then imGuiDeleteEntityDialog world
                     if ShowCutEntityDialog then imGuiCutEntityDialog world
+                    if ShowInputsDialog then imGuiInputsDialog ()
                     if ShowConfirmExitDialog then imGuiConfirmExitDialog world
                     if ShowRestartDialog then imGuiRestartDialog world
                 | Some message -> imGuiMessageBoxDialog message
