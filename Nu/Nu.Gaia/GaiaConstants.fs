@@ -35,7 +35,6 @@ module Constants =
         let [<Literal>] Eye3dPanSpeedFast = 12.0f // how many times faster it pans with enter or ctrl held.
         let [<Literal>] Eye3dPanSpeedSlow = 1.0f // how many times faster it pans with shift held.
         let [<Literal>] Eye3dOrbitSpeed = 0.005f // radians the 3d eye orbits per pixel dragged.
-        let [<Literal>] Eye3dDollySpeed = 0.005f // how quickly the 3d eye dollies toward its pivot per pixel dragged.
         let [<Literal>] Eye3dScrollTravel = 1.0f // how far the 3d eye travels forward or back per notch scrolled.
         let [<Literal>] Eye3dScrollTravelFast = 8.0f // how far it travels per notch with enter or ctrl held.
         let [<Literal>] Eye3dScrollTravelSlow = 0.125f // how far it travels per notch with shift held.
