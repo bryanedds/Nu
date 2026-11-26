@@ -8,6 +8,7 @@ namespace Nu
 open System
 open System.Collections
 open System.Collections.Generic
+open System.ComponentModel
 open System.Numerics
 open System.Reflection
 open FSharp.NativeInterop
@@ -299,7 +300,8 @@ module WorldImGui =
                                 else fieldInfo.Name
                             else fieldInfo.Name
                         let (promoted2, edited2, field) =
-                            if  fieldInfo.PropertyType.Name <> typedefof<_ AssetTag>.Name &&
+                            // NOTE: a record with a converter of its own, such as an asset tag or an address, is edited as its text.
+                            if  not (fieldInfo.PropertyType.IsDefined (typeof<TypeConverterAttribute>, true)) &&
                                 (FSharpType.IsRecord fieldInfo.PropertyType || FSharpType.isRecordAbstract fieldInfo.PropertyType) then
                                 World.imGuiEditPropertyRecord true fieldName fieldInfo.PropertyType field context world
                             else World.imGuiEditProperty fieldName fieldInfo.PropertyType field context world
@@ -432,7 +434,7 @@ module WorldImGui =
                         let contents = (snd (FSharpValue.GetUnionFields (value, ty)))[0]
                         let contentsType = ty.GenericTypeArguments[0]
                         let (promoted, edited3, contents) =
-                            if  contentsType.Name <> typedefof<_ AssetTag>.Name &&
+                            if  not (contentsType.IsDefined (typeof<TypeConverterAttribute>, true)) &&
                                 (FSharpType.IsRecord contentsType || FSharpType.isRecordAbstract contentsType) then
                                 World.imGuiEditPropertyRecord true name contentsType contents context world
                             else World.imGuiEditProperty name contentsType contents context world
@@ -519,7 +521,7 @@ module WorldImGui =
                                 for j in 0 .. dec row.Length do
                                     let elementName = if not mapping then itemName elif j = 0 then itemName + " Key" else itemName + " Value"
                                     try let (promoted3, edited3, element) =
-                                            if  itemTypes[j].Name <> typedefof<_ AssetTag>.Name &&
+                                            if  not (itemTypes[j].IsDefined (typeof<TypeConverterAttribute>, true)) &&
                                                 (FSharpType.IsRecord itemTypes[j] || FSharpType.isRecordAbstract itemTypes[j]) then
                                                 World.imGuiEditPropertyRecord true elementName itemTypes[j] row[j] context world
                                             else World.imGuiEditProperty elementName itemTypes[j] row[j] context world
