@@ -2109,7 +2109,7 @@ type [<Struct>] FogType =
         | _ -> failwithumf ()
 
 /// The type of subsurface scattering that a material utilizes.
-type [<Struct>] ScatterType =
+type [<Struct; DefaultValue "NoScatter">] ScatterType =
     | NoScatter
     | SkinScatter
     | FoliageScatter
