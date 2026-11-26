@@ -26,10 +26,11 @@ type DragEntityState =
 
 /// The state of an eye drag operation in the Gaia editor.
 type DragEyeState =
-    | DragEye2dPan of DateTime : DateTimeOffset * Previous : Vector2
-    | DragEye3dPan of Distance : single * Previous : Vector2
-    | DragEye3dOrbit of Center : Vector3 * Pivot : Vector3 * Yaw : single * Pitch : single * Origin : Vector2
-    | DragEye3dDolly of Center : Vector3 * Rotation : Quaternion * Distance : single * Origin : Vector2
+    | DragEye2dPan of Previous : Vector2
+    | DragEye3dPan of DateTime : DateTimeOffset * Distance : single * Previous : Vector2
+    | DragEye3dOrbit of DateTime : DateTimeOffset * Center : Vector3 * Pivot : Vector3 * Yaw : single * Pitch : single * Origin : Vector2
+    | DragEye3dFreeLook of DateTime : DateTimeOffset * Yaw : single * Pitch : single * Origin : Vector2
+    | DragEye3dDolly of DateTime : DateTimeOffset * Center : Vector3 * Rotation : Quaternion * Distance : single * Origin : Vector2
     | DragEyeInactive
 
 /// The persistent state of the Gaia editor.
@@ -47,15 +48,13 @@ type [<SymbolicExpansion>] GaiaState =
       Snaps3d : single * single * single
       CreationElevation : single
       CreationDistance : single
-      AlternativeEyeTravelInput : bool
       OverlayMode : bool }
 
     /// Make a Gaia state.
     static member make
         dllPath editModeOpt freshlyLoaded
         desiredEye2dCenter desiredEye3dCenter desiredEye3dRotation masterSoundVolume masterSongVolume
-        snaps2dSelected snaps2d snaps3d creationElevation creationDistance alternativeEyeTravelInput
-        overlayMode =
+        snaps2dSelected snaps2d snaps3d creationElevation creationDistance overlayMode =
         { ProjectDllPath = dllPath
           ProjectEditModeOpt = editModeOpt
           ProjectFreshlyLoaded = freshlyLoaded
@@ -69,7 +68,6 @@ type [<SymbolicExpansion>] GaiaState =
           Snaps3d = snaps3d
           CreationElevation = creationElevation
           CreationDistance = creationDistance
-          AlternativeEyeTravelInput = alternativeEyeTravelInput
           OverlayMode = overlayMode }
 
     /// The default Gaia state.
@@ -77,4 +75,4 @@ type [<SymbolicExpansion>] GaiaState =
         GaiaState.make
             "" None false
             v2Zero Constants.Engine.Eye3dCenterDefault quatIdentity Constants.Audio.SoundVolumeDefault Constants.Audio.SongVolumeDefault
-            true Constants.Gaia.Snaps2dDefault Constants.Gaia.Snaps3dDefault 0.0f 2.0f false false
+            true Constants.Gaia.Snaps2dDefault Constants.Gaia.Snaps3dDefault 0.0f 2.0f false

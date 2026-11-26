@@ -458,7 +458,7 @@ module Quadtree =
             set.Add ubiquitous |> ignore<bool>
         Quadnode.getElements set tree.Node
 
-    /// Get all of the elements in a tree that are in a node intersected by the given bounds.
+    /// Get all of the viewable elements in a tree that are in a node intersected by the given bounds.
     let getElementsInView (bounds : Box2) (set : _ HashSet) tree =
         for ubiquitous in tree.Ubiquitous do
             set.Add ubiquitous |> ignore<bool>
@@ -468,7 +468,7 @@ module Quadtree =
                 set.Add ubiquitous |> ignore<bool>
         Quadnode.getElementsInView bounds set tree.Node
 
-    /// Get all of the elements in a tree that are in a node intersected by the given bounds.
+    /// Get all of the playing elements in a tree that are in a node intersected by the given bounds.
     let getElementsInPlay (bounds : Box2) (set : _ HashSet) tree =
         for ubiquitous in tree.Ubiquitous do
             set.Add ubiquitous |> ignore<bool>
