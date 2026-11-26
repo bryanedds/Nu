@@ -30,7 +30,6 @@ type DragEyeState =
     | DragEye3dPan of DateTime : DateTimeOffset * Distance : single * Previous : Vector2
     | DragEye3dOrbit of DateTime : DateTimeOffset * Center : Vector3 * Pivot : Vector3 * Yaw : single * Pitch : single * Origin : Vector2
     | DragEye3dFreeLook of DateTime : DateTimeOffset * Yaw : single * Pitch : single * Origin : Vector2
-    | DragEye3dDolly of DateTime : DateTimeOffset * Center : Vector3 * Rotation : Quaternion * Distance : single * Origin : Vector2
     | DragEyeInactive
 
 /// The persistent state of the Gaia editor.

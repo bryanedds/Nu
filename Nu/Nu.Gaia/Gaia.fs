@@ -1847,7 +1847,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private updateEyeDrag world =
         if canEditWithMouse world then
-            if ImGui.IsMouseClicked ImGuiMouseButton.Middle then
+            let middleStarting = // a middle drag restarts as 2d or 3d as alt changes mid-drag
+                ImGui.IsMouseClicked ImGuiMouseButton.Middle ||
+                match DragEyeState with
+                | DragEye2dPan _ -> ImGui.IsAltUp ()
+                | DragEye3dPan _ -> ImGui.IsAltDown ()
+                | _ -> false
+            if middleStarting then
                 if ImGui.IsAltDown () then
                     let mousePositionInset = World.getMousePosition2dInset world
                     DragEyeState <- DragEye2dPan mousePositionInset
@@ -1856,23 +1862,22 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     let pivot = getEyeDragPivot world
                     let distance = max (Vector3.Distance (pivot, world.Eye3dCenter)) Constants.Gaia.Eye3dDragDistanceMinimum
                     DragEyeState <- DragEye3dPan (world.DateTime, distance, mousePosition)
-            if ImGui.IsMouseClicked ImGuiMouseButton.Right then
+            let rightStartTimeOpt = // a right drag restarts as orbit or free look as alt changes mid-drag, keeping its time
+                match DragEyeState with
+                | DragEye3dOrbit (time, _, _, _, _, _) when ImGui.IsAltUp () -> Some time
+                | DragEye3dFreeLook (time, _, _, _) when ImGui.IsAltDown () -> Some time
+                | _ -> if ImGui.IsMouseClicked ImGuiMouseButton.Right then Some world.DateTime else None
+            match rightStartTimeOpt with
+            | Some time ->
                 let mousePosition = World.getMousePosition world
-                let pivot = getEyeDragPivot world
-                let distance = max (Vector3.Distance (pivot, world.Eye3dCenter)) Constants.Gaia.Eye3dDragDistanceMinimum
+                let forward = world.Eye3dRotation.Forward
+                let yaw = MathF.Atan2 (-forward.X, -forward.Z)
+                let pitch = Math.Clamp (MathF.Asin (Math.Clamp (forward.Y, -1.0f, 1.0f)), -Constants.Gaia.Eye3dPitchMaximum, Constants.Gaia.Eye3dPitchMaximum)
                 DragEyeState <-
-                    if ImGui.IsCtrlDown () then
-                        DragEye3dDolly (world.DateTime, world.Eye3dCenter, world.Eye3dRotation, distance, mousePosition)
-                    elif ImGui.IsAltDown () then
-                        let forward = world.Eye3dRotation.Forward
-                        let yaw = MathF.Atan2 (-forward.X, -forward.Z)
-                        let pitch = Math.Clamp (MathF.Asin (Math.Clamp (forward.Y, -1.0f, 1.0f)), -Constants.Gaia.Eye3dPitchMaximum, Constants.Gaia.Eye3dPitchMaximum)
-                        DragEye3dOrbit (world.DateTime, world.Eye3dCenter, pivot, yaw, pitch, mousePosition)
-                    else
-                        let forward = world.Eye3dRotation.Forward
-                        let yaw = MathF.Atan2 (-forward.X, -forward.Z)
-                        let pitch = Math.Clamp (MathF.Asin (Math.Clamp (forward.Y, -1.0f, 1.0f)), -Constants.Gaia.Eye3dPitchMaximum, Constants.Gaia.Eye3dPitchMaximum)
-                        DragEye3dFreeLook (world.DateTime, yaw, pitch, mousePosition)
+                    if ImGui.IsAltDown ()
+                    then DragEye3dOrbit (time, world.Eye3dCenter, getEyeDragPivot world, yaw, pitch, mousePosition)
+                    else DragEye3dFreeLook (time, yaw, pitch, mousePosition)
+            | None -> ()
             match DragEyeState with
             | DragEye2dPan mousePositionInsetPrevious ->
                 let mousePositionInset = World.getMousePosition2dInset world
@@ -1908,11 +1913,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     let yaw' = yaw - mouseDelta.X * Constants.Gaia.Eye3dOrbitSpeed
                     let pitch' = Math.Clamp (pitch - mouseDelta.Y * Constants.Gaia.Eye3dOrbitSpeed, -Constants.Gaia.Eye3dPitchMaximum, Constants.Gaia.Eye3dPitchMaximum) // never upside-down
                     DesiredEye3dRotation <- Quaternion.CreateFromAxisAngle (v3Up, yaw') * Quaternion.CreateFromAxisAngle (v3Right, pitch')
-            | DragEye3dDolly (time, center, rotation, distance, mousePositionOrig) ->
-                if (world.DateTime - time).TotalSeconds >= Constants.Gaia.DragMinimumSeconds then // a right click held only briefly opens the context menu instead
-                    let mouseDelta = World.getMousePosition world - mousePositionOrig
-                    let travel = distance * (1.0f - exp (mouseDelta.Y * Constants.Gaia.Eye3dDollySpeed)) // nears the pivot without ever reaching it
-                    DesiredEye3dCenter <- center + rotation.Forward * travel
             | DragEyeInactive ->
                 ()
             let scroll = ImGui.GetIO().MouseWheel
@@ -1927,7 +1927,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         match DragEyeState with
         | DragEye2dPan _ | DragEye3dPan _ when ImGui.IsMouseReleased ImGuiMouseButton.Middle ->
             DragEyeState <- DragEyeInactive
-        | DragEye3dOrbit _ | DragEye3dFreeLook _ | DragEye3dDolly _ when ImGui.IsMouseReleased ImGuiMouseButton.Right ->
+        | DragEye3dOrbit _ | DragEye3dFreeLook _ when ImGui.IsMouseReleased ImGuiMouseButton.Right ->
             DragEyeState <- DragEyeInactive
         | _ -> ()
 
@@ -1982,8 +1982,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 match DragEyeState with
                 | DragEye3dPan (time, _, _)
                 | DragEye3dOrbit (time, _, _, _, _, _)
-                | DragEye3dFreeLook (time, _, _, _)
-                | DragEye3dDolly (time, _, _, _, _) -> (world.DateTime - time).TotalSeconds >= Constants.Gaia.DragMinimumSeconds
+                | DragEye3dFreeLook (time, _, _, _) -> (world.DateTime - time).TotalSeconds >= Constants.Gaia.DragMinimumSeconds
                 | _ -> false
             if ImGui.IsMouseReleased ImGuiMouseButton.Right && not eyeDragged then
                 let mousePosition = World.getMousePosition world
@@ -1998,50 +1997,65 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         // attempt to start dragging an entity with the mouse
         if canEditWithMouse world then
 
-            // attempt to start dragging, unless the eye's dragged
-            if ImGui.IsMouseClicked ImGuiMouseButton.Left then
-                let mousePosition = World.getMousePosition world
-                match tryMousePick mousePosition world with
-                | Some (_, entity) when ImGui.IsShiftDown () && ImGui.IsCtrlUp () && ImGui.IsAltUp () ->
-                    toggleEntitySelection entity world // shift+click adds to or takes from the selection
-                | Some (_, entity) when ImGui.IsCtrlDown () && ImGui.IsAltUp () ->
-                    if entity.GetIs2d world then // ctrl+click adds to or takes from the selection, ctrl+drag duplicates it
-                        let absolute = entity.GetAbsolute world
-                        let mousePositionWorld = Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize mousePosition world.WindowViewport
-                        DragEntityState <- DragEntityDuplicate2d (world.DateTime, mousePositionWorld, entity)
-                    else toggleEntitySelection entity world
-                | Some (_, entity) ->
+            // attempt to start dragging, unless the eye's dragged, or to restart a drag as moving or rotating as alt
+            // changes mid-drag, keeping its time and snapshot so it's still a single undo
+            let dragStartOpt =
+                if ImGui.IsMouseClicked ImGuiMouseButton.Left then
+                    let mousePosition = World.getMousePosition world
+                    match tryMousePick mousePosition world with
+                    | Some (_, entity) when ImGui.IsShiftDown () && ImGui.IsCtrlUp () && ImGui.IsAltUp () ->
+                        toggleEntitySelection entity world // shift+click adds to or takes from the selection
+                        None
+                    | Some (_, entity) when ImGui.IsCtrlDown () && ImGui.IsAltUp () ->
+                        if entity.GetIs2d world then // ctrl+click adds to or takes from the selection, ctrl+drag duplicates it
+                            let absolute = entity.GetAbsolute world
+                            let mousePositionWorld = Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize mousePosition world.WindowViewport
+                            DragEntityState <- DragEntityDuplicate2d (world.DateTime, mousePositionWorld, entity)
+                        else toggleEntitySelection entity world
+                        None
+                    | Some (_, entity) ->
 
-                    // when the lone selected entity is under the mouse, even behind others, clicking it acts on it
-                    // and selects the entity behind it on release unless dragged, cycling through overlapping entities
-                    let picks = mousePickAll mousePosition world
-                    let selectedIndexOpt =
-                        match Seq.tryExactlyOne SelectedEntities with
-                        | Some selected -> Array.tryFindIndex ((=) selected) picks
-                        | None -> None
-                    let entity =
-                        match selectedIndexOpt with
-                        | Some selectedIndex ->
-                            if picks.Length > 1 then SelectionCollapseRequestedOpt <- Some picks[(inc selectedIndex) % picks.Length]
-                            picks[selectedIndex]
-                        | None ->
-                            // keep the selection to drag, unless just clicked
-                            if SelectedEntities.Contains entity && SelectedEntities.Count > 1
-                            then SelectionCollapseRequestedOpt <- Some entity
-                            else selectEntities true (Set.singleton entity) world
-                            entity
-                    if entity.GetIs2d world && not (getSelectionMixed world) then // not 2d and 3d together
-                        if World.isKeyboardAltDown world then
-                            let absolute = entity.GetAbsolute world
-                            let mousePositionWorld = Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize mousePosition world.WindowViewport
-                            let entityDegrees = if entity.MountExists world then entity.GetDegreesLocal world else entity.GetDegrees world
-                            DragEntityState <- DragEntityRotation2d (world.DateTime, ref false, mousePositionWorld, entityDegrees.Z + mousePositionWorld.Y, entity)
-                        else
-                            let absolute = entity.GetAbsolute world
-                            let mousePositionWorld = Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize mousePosition world.WindowViewport
-                            let entityPosition = entity.GetPosition world
-                            DragEntityState <- DragEntityPosition2d (world.DateTime, ref false, mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity)
-                | None -> ()
+                        // when the lone selected entity is under the mouse, even behind others, clicking it acts on it
+                        // and selects the entity behind it on release unless dragged, cycling through overlapping entities
+                        let picks = mousePickAll mousePosition world
+                        let selectedIndexOpt =
+                            match Seq.tryExactlyOne SelectedEntities with
+                            | Some selected -> Array.tryFindIndex ((=) selected) picks
+                            | None -> None
+                        let entity =
+                            match selectedIndexOpt with
+                            | Some selectedIndex ->
+                                if picks.Length > 1 then SelectionCollapseRequestedOpt <- Some picks[(inc selectedIndex) % picks.Length]
+                                picks[selectedIndex]
+                            | None ->
+                                // keep the selection to drag, unless just clicked
+                                if SelectedEntities.Contains entity && SelectedEntities.Count > 1
+                                then SelectionCollapseRequestedOpt <- Some entity
+                                else selectEntities true (Set.singleton entity) world
+                                entity
+                        if entity.GetIs2d world && not (getSelectionMixed world) // not 2d and 3d together
+                        then Some (world.DateTime, ref false, entity)
+                        else None
+
+                    | None -> None
+                else
+                    match DragEntityState with
+                    | DragEntityPosition2d (time, snapshottedRef, _, _, entity) when World.isKeyboardAltDown world && entity.GetExists world ->
+                        Some (time, snapshottedRef, entity)
+                    | DragEntityRotation2d (time, snapshottedRef, _, _, entity) when not (World.isKeyboardAltDown world) && entity.GetExists world ->
+                        Some (time, snapshottedRef, entity)
+                    | _ -> None
+            match dragStartOpt with
+            | Some (time, snapshottedRef, entity) ->
+                let absolute = entity.GetAbsolute world
+                let mousePositionWorld = Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize (World.getMousePosition world) world.WindowViewport
+                if World.isKeyboardAltDown world then
+                    let entityDegrees = if entity.MountExists world then entity.GetDegreesLocal world else entity.GetDegrees world
+                    DragEntityState <- DragEntityRotation2d (time, snapshottedRef, mousePositionWorld, entityDegrees.Z + mousePositionWorld.Y, entity)
+                else
+                    let entityPosition = entity.GetPosition world
+                    DragEntityState <- DragEntityPosition2d (time, snapshottedRef, mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity)
+            | None -> ()
 
             // attempt to continue dragging
             match DragEntityState with
@@ -4518,7 +4532,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                    [|("Left click", "Select the entity under the mouse. Clicking the selected entity again cycles to those behind it.")
                      ("Shift+click / Ctrl+click", "Add to or remove from the selection.")
                      ("Left drag (2d)", "Move the selection.")
-                     ("Alt+left drag (2d)", "Rotate the selection.")
+                     ("Alt+left drag (2d)", "Rotate the selection. Pressing or releasing Alt mid-drag switches between rotating and moving.")
                      ("Ctrl+left drag (2d)", "Duplicate and move the selection (Ctrl+Shift duplicates without propagation).")
                      ("Gizmo drag (3d)", "Translate the selection.")
                      ("Shift+gizmo drag", "Scale the selection.")
@@ -4528,10 +4542,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                      ("Hold Ctrl mid-drag", "Ignore snaps.")
                      ("Right click", "Open the context menu, selecting the entity under the mouse.")
                      ("Right drag", "Free look.")
-                     ("Alt+right drag", "Orbit about the selection, or a point ahead when nothing's selected.")
-                     ("Ctrl+right drag", "Dolly toward the selection, or a point ahead when nothing's selected.")
+                     ("Alt+right drag", "Orbit about the selection, or a point ahead when nothing's selected. Alt switches mid-drag.")
                      ("Middle drag", "Pan the 3d eye.")
-                     ("Alt+middle drag", "Pan the 2d eye.")
+                     ("Alt+middle drag", "Pan the 2d eye. Alt switches between 2d and 3d panning mid-drag.")
                      ("Wheel", "Move the eye forward / back.")
                      ("Hold Shift / Ctrl or Enter", "Pan or wheel slower / faster.")
                      ("Drop an asset or propagation source", "Create an entity from it.")|])
