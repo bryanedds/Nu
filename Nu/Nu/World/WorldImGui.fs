@@ -466,7 +466,10 @@ module WorldImGui =
                                 else [|item|]|]
                     let mutable promoted2 = false
                     let mutable edited2 = false
-                    ImGui.Text name
+
+                    // collapsed by default, so a closed sequence draws none of its rows
+                    let treeNodeId = ImGui.GetID name
+                    let opened = ImGui.TreeNodeEx (name, ImGuiTreeNodeFlags.AllowOverlap)
                     ImGui.SameLine ()
                     ImGui.PushID name
 
@@ -496,14 +499,15 @@ module WorldImGui =
                             let rowOpts = itemTypes |> Array.map (fun itemType -> World.imGuiTryMakeDefaultValue itemType context)
                             if Array.forall Option.isSome rowOpts then
                                 edited2 <- true
+                                storage.SetInt (treeNodeId, 1) // opens the sequence to show the added row
                                 Array.add (Array.map Option.get rowOpts) rows
                             else rows
                         else rows
                     if ImGui.IsItemFocused () then context.FocusProperty ()
 
                     // edit and remove
-                    ImGui.Indent ()
                     let rows =
+                        if not opened then rows else
                         [|for i in 0 .. dec rows.Length do
                             let itemName = name + "[" + string i + "]"
                             ImGui.PushID itemName
@@ -531,8 +535,8 @@ module WorldImGui =
                                 yield row
                             else edited2 <- true
                             ImGui.PopID ()|]
-                    ImGui.Unindent ()
                     ImGui.PopID ()
+                    if opened then ImGui.TreePop ()
 
                     // rebuild the sequence only when an item's changed, keys that collide merging as a map's do
                     let value =
