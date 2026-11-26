@@ -1533,9 +1533,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             false
 
     let private getEntityModified (entity : Entity) world =
-        match Map.tryFind entity.Group.GroupAddress GroupWorldStates with
-        | Some worldState -> World.getEntityModified entity worldState world
-        | None -> false
+        if entity.GetProtection world <> DeclarativeProtection then // NOTE: a declared entity isn't saved, so isn't tracked.
+            match Map.tryFind entity.Group.GroupAddress GroupWorldStates with
+            | Some worldState -> World.getEntityModified entity worldState world
+            | None -> false
+        else false
 
     let private getEntityRevertible (entity : Entity) world =
         entity.GetExists world &&
