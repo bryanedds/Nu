@@ -707,8 +707,10 @@ module WorldModule2 =
                 if World.getEntityExists target world then
                     let targetDescriptor = World.writeEntity true false EntityDescriptor.empty target world
                     let propagatedDescriptor = World.propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor (Some entity) world
+                    let order = World.getEntityOrder target world // NOTE: a target keeps its place among its siblings.
                     World.destroyEntityImmediate target world
-                    World.readEntity true false propagatedDescriptor (Some target.Name) target.Parent world |> ignore<Entity>
+                    let target = World.readEntity true false propagatedDescriptor (Some target.Name) target.Parent world
+                    World.setEntityOrder order target world |> ignore<bool>
                     World.propagateEntityAffineMatrix target world
             let currentDescriptor = { currentDescriptor with EntityProperties = Map.remove (nameof Entity.PropagatedDescriptorOpt) currentDescriptor.EntityProperties }
             entity.SetPropagatedDescriptorOpt (Some currentDescriptor) world
