@@ -1854,15 +1854,18 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 let pivot = getEyeDragPivot world
                 let distance = max (Vector3.Distance (pivot, world.Eye3dCenter)) Constants.Gaia.Eye3dDragDistanceMinimum
                 DragEyeState <-
-                    if ImGui.IsAltDown () then
+                    if ImGui.IsCtrlDown () then
                         DragEye3dDolly (world.DateTime, world.Eye3dCenter, world.Eye3dRotation, distance, mousePosition)
+                    elif ImGui.IsAltDown () then
+                        let forward = world.Eye3dRotation.Forward
+                        let yaw = MathF.Atan2 (-forward.X, -forward.Z)
+                        let pitch = Math.Clamp (MathF.Asin (Math.Clamp (forward.Y, -1.0f, 1.0f)), -Constants.Gaia.Eye3dPitchMaximum, Constants.Gaia.Eye3dPitchMaximum)
+                        DragEye3dOrbit (world.DateTime, world.Eye3dCenter, pivot, yaw, pitch, mousePosition)
                     else
                         let forward = world.Eye3dRotation.Forward
                         let yaw = MathF.Atan2 (-forward.X, -forward.Z)
                         let pitch = Math.Clamp (MathF.Asin (Math.Clamp (forward.Y, -1.0f, 1.0f)), -Constants.Gaia.Eye3dPitchMaximum, Constants.Gaia.Eye3dPitchMaximum)
-                        if SelectedEntities.IsEmpty
-                        then DragEye3dFreeLook (world.DateTime, yaw, pitch, mousePosition) // nothing to orbit, so the eye turns in place
-                        else DragEye3dOrbit (world.DateTime, world.Eye3dCenter, pivot, yaw, pitch, mousePosition)
+                        DragEye3dFreeLook (world.DateTime, yaw, pitch, mousePosition)
             match DragEyeState with
             | DragEye2dPan mousePositionInsetPrevious ->
                 let mousePositionInset = World.getMousePosition2dInset world
@@ -2187,10 +2190,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then synchronizeNav world
             elif ImGui.IsKeyPressed ImGuiKey.L && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then rerenderLightMaps world
             elif ImGui.IsKeyPressed ImGuiKey.I && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then tryMoveSelectedEntityToOrigin false world |> ignore<bool>
-            elif ImGui.IsKeyPressed ImGuiKey.Escape then
-                if SelectedWindowOpt = Some "Edit Property" && not (String.IsNullOrWhiteSpace PropertyValueSearchStr) then
-                    PropertyValueSearchStr <- ""
-                    PropertyValueSearchIndex <- -1
+            elif ImGui.IsKeyPressed ImGuiKey.Escape && SelectedWindowOpt = Some "Edit Property" && not (String.IsNullOrWhiteSpace PropertyValueSearchStr) then
+                PropertyValueSearchStr <- ""
+                PropertyValueSearchIndex <- -1
             elif not io.WantCaptureKeyboardGlobal || entityHierarchyFocused then
                 if ImGui.IsKeyPressed ImGuiKey.Z && ImGui.IsCtrlDown () then tryUndo world |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlDown () then tryRedo world |> ignore<bool>
