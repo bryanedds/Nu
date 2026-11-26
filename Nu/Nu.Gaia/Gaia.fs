@@ -31,9 +31,7 @@ open Nu.Gaia
 //  CollisionMask                           //
 //  CollisionCategories                     //
 //  CollisionDetection                      //
-//  BodyShape                               //
-//  BodyJoint                               //
-//  DateTimeOffset?                         //
+//  DateTimeOffset                          //
 //  SymbolicCompression                     //
 //////////////////////////////////////////////
 
