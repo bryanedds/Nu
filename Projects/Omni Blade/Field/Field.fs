@@ -746,10 +746,18 @@ module Field =
         try File.WriteAllText (saveFilePath, fieldStr + ChecksumToken + checksumStr) with _ -> ()
 
     let truncate field =
-        { field with Spirits_ = [||] }
+        { field with
+            Spirits_ = [||]
+            Advents_ = field.Advents_ |> Set.filter (fun value -> not value.IsOpened)
+            Props_ = Map.empty
+            AutoMaps_ = Map.empty }
 
     let untruncate current incoming =
-        { incoming with Spirits_ = current.Spirits_ }
+        { incoming with
+            Spirits_ = current.Spirits_
+            Advents_ = current.Advents_
+            Props_ = current.Props_
+            AutoMaps_ = current.AutoMaps_ }
 
     (* Input *)
 
