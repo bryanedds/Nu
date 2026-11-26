@@ -119,7 +119,6 @@ module Gaia =
     let mutable private Snaps2d = Constants.Gaia.Snaps2dDefault
     let mutable private Snaps3d = Constants.Gaia.Snaps3dDefault
     let mutable private SnapDrag = 0.1f
-    let mutable private AlternativeEyeTravelInput = false
     let mutable private PhysicsDebugRendering2d = false
     let mutable private PhysicsDebugRendering3d = false
     let mutable private PhysicsDebugRenderingDistance3d = Constants.Render.Body3dRenderDistanceMax
@@ -524,7 +523,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         GaiaState.make
             projectDllPath editModeOpt freshlyLoaded OpenProjectImperativeExecution
             DesiredEye2dCenter DesiredEye3dCenter DesiredEye3dRotation (World.getMasterSoundVolume world) (World.getMasterSongVolume world)            
-            Snaps2dSelected Snaps2d Snaps3d NewEntityElevation NewEntityDistance AlternativeEyeTravelInput OverlayMode
+            Snaps2dSelected Snaps2d Snaps3d NewEntityElevation NewEntityDistance OverlayMode
 
     let private printGaiaState gaiaState =
         PrettyPrinter.prettyPrintSymbol (valueToSymbol gaiaState) PrettyPrinter.defaultPrinter
@@ -1842,18 +1841,22 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private updateEyeDrag world =
         if canEditWithMouse world then
             if ImGui.IsMouseClicked ImGuiMouseButton.Middle then
-                let mousePositionInset = World.getMousePosition2dInset world
-                DragEyeState <- DragEye2dPan mousePositionInset
+                if ImGui.IsAltDown () then
+                    let mousePositionInset = World.getMousePosition2dInset world
+                    DragEyeState <- DragEye2dPan mousePositionInset
+                else
+                    let mousePosition = World.getMousePosition world
+                    let pivot = getEyeDragPivot world
+                    let distance = max (Vector3.Distance (pivot, world.Eye3dCenter)) Constants.Gaia.Eye3dDragDistanceMinimum
+                    DragEyeState <- DragEye3dPan (world.DateTime, distance, mousePosition)
             if ImGui.IsMouseClicked ImGuiMouseButton.Right then
                 let mousePosition = World.getMousePosition world
                 let pivot = getEyeDragPivot world
                 let distance = max (Vector3.Distance (pivot, world.Eye3dCenter)) Constants.Gaia.Eye3dDragDistanceMinimum
                 DragEyeState <-
-                    if ImGui.IsAltDown () && ImGui.IsCtrlDown () then
+                    if ImGui.IsAltDown () then
                         DragEye3dDolly (world.DateTime, world.Eye3dCenter, world.Eye3dRotation, distance, mousePosition)
-                    elif ImGui.IsAltDown () then
-                        DragEye3dPan (world.DateTime, distance, mousePosition)
-                    else 
+                    else
                         let forward = world.Eye3dRotation.Forward
                         let yaw = MathF.Atan2 (-forward.X, -forward.Z)
                         let pitch = Math.Clamp (MathF.Asin (Math.Clamp (forward.Y, -1.0f, 1.0f)), -Constants.Gaia.Eye3dPitchMaximum, Constants.Gaia.Eye3dPitchMaximum)
@@ -1870,17 +1873,16 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 DesiredEye2dCenter <- DesiredEye2dCenter - (mousePositionInset - mousePositionInsetPrevious) * speed // by frame so the speed can change mid-drag
                 DragEyeState <- DragEye2dPan mousePositionInset
             | DragEye3dPan (time, distance, mousePositionPrevious) ->
-                if (world.DateTime - time).TotalSeconds >= Constants.Gaia.DragMinimumSeconds then // a right click held only briefly opens the context menu instead
-                    let mousePosition = World.getMousePosition world
-                    let mouseDelta = mousePosition - mousePositionPrevious // by frame so the speed can change mid-drag
-                    let speed =
-                        if ImGui.IsEnterDown () || ImGui.IsCtrlDown () then Constants.Gaia.Eye3dPanSpeedFast
-                        elif ImGui.IsShiftDown () then Constants.Gaia.Eye3dPanSpeedSlow
-                        else Constants.Gaia.Eye3dPanSpeed
-                    let unitsPerPixel = 2.0f * distance * tan (world.Eye3dFieldOfView * 0.5f) / single world.WindowViewport.Bounds.Size.Y // the world under the mouse at the pivot's distance
-                    let rotation = world.Eye3dRotation
-                    DesiredEye3dCenter <- DesiredEye3dCenter + (rotation.Right * -mouseDelta.X + rotation.Up * mouseDelta.Y) * unitsPerPixel * speed
-                    DragEyeState <- DragEye3dPan (time, distance, mousePosition)
+                let mousePosition = World.getMousePosition world
+                let mouseDelta = mousePosition - mousePositionPrevious // by frame so the speed can change mid-drag
+                let speed =
+                    if ImGui.IsEnterDown () || ImGui.IsCtrlDown () then Constants.Gaia.Eye3dPanSpeedFast
+                    elif ImGui.IsShiftDown () then Constants.Gaia.Eye3dPanSpeedSlow
+                    else Constants.Gaia.Eye3dPanSpeed
+                let unitsPerPixel = 2.0f * distance * tan (world.Eye3dFieldOfView * 0.5f) / single world.WindowViewport.Bounds.Size.Y // the world under the mouse at the pivot's distance
+                let rotation = world.Eye3dRotation
+                DesiredEye3dCenter <- DesiredEye3dCenter + (rotation.Right * -mouseDelta.X + rotation.Up * mouseDelta.Y) * unitsPerPixel * speed
+                DragEyeState <- DragEye3dPan (time, distance, mousePosition)
             | DragEye3dOrbit (time, center, pivot, yaw, pitch, mousePositionOrig) ->
                 if (world.DateTime - time).TotalSeconds >= Constants.Gaia.DragMinimumSeconds then // a right click held only briefly opens the context menu instead
                     let mouseDelta = World.getMousePosition world - mousePositionOrig
@@ -1913,9 +1915,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 DesiredEye3dCenter <- world.Eye3dCenter + world.Eye3dRotation.Forward * scroll * travel
             | _ -> ()
         match DragEyeState with
-        | DragEye2dPan _ when ImGui.IsMouseReleased ImGuiMouseButton.Middle ->
+        | DragEye2dPan _ | DragEye3dPan _ when ImGui.IsMouseReleased ImGuiMouseButton.Middle ->
             DragEyeState <- DragEyeInactive
-        | DragEye3dPan _ | DragEye3dOrbit _ | DragEye3dFreeLook _ | DragEye3dDolly _ when ImGui.IsMouseReleased ImGuiMouseButton.Right ->
+        | DragEye3dOrbit _ | DragEye3dFreeLook _ | DragEye3dDolly _ when ImGui.IsMouseReleased ImGuiMouseButton.Right ->
             DragEyeState <- DragEyeInactive
         | _ -> ()
 
@@ -1941,23 +1943,23 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 DesiredEye3dCenter <- center + v3Left.Transform rotation * moveSpeed
             if ImGui.IsKeyDown ImGuiKey.D && ImGui.IsCtrlUp () && ImGui.IsAltUp () then
                 DesiredEye3dCenter <- center + v3Right.Transform rotation * moveSpeed
-            if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.UpArrow else ImGuiKey.E) && ImGui.IsCtrlUp () then
+            if ImGui.IsKeyDown ImGuiKey.UpArrow && ImGui.IsCtrlUp () then
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)
                 DesiredEye3dRotation <-
                     if rotation'.Forward.Dot v3Up < 0.99f then rotation'
                     else
                         Quaternion.CreateFromAxisAngle (v3Down, 2.0f * MathF.Atan2(rotation.Z, rotation.W)) *
                         Quaternion.CreateFromAxisAngle (v3Right, MathF.PI_OVER_2)
-            if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.DownArrow else ImGuiKey.Q) && ImGui.IsCtrlUp () then
+            if ImGui.IsKeyDown ImGuiKey.DownArrow && ImGui.IsCtrlUp () then
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)
                 DesiredEye3dRotation <-
                     if rotation'.Forward.Dot v3Down < 0.99f then rotation'
                     else
                         Quaternion.CreateFromAxisAngle (v3Up, 2.0f * MathF.Atan2(rotation.Z, rotation.W)) *
                         Quaternion.CreateFromAxisAngle (v3Right, -MathF.PI_OVER_2)
-            if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.E else ImGuiKey.UpArrow) && ImGui.IsAltUp () then
+            if ImGui.IsKeyDown ImGuiKey.E && ImGui.IsAltUp () then
                 DesiredEye3dCenter <- center + v3Up.Transform rotation * moveSpeed
-            if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.Q else ImGuiKey.DownArrow) && ImGui.IsAltUp () then
+            if ImGui.IsKeyDown ImGuiKey.Q && ImGui.IsAltUp () then
                 DesiredEye3dCenter <- center + v3Down.Transform rotation * moveSpeed
             if ImGui.IsKeyDown ImGuiKey.LeftArrow && ImGui.IsAltUp () then
                 DesiredEye3dRotation <- Quaternion.CreateFromAxisAngle (v3Up, turnSpeed) * rotation
@@ -4023,8 +4025,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.DragFloat ("##newEntityElevation", &NewEntityElevation, SnapDrag, Single.MinValue, Single.MaxValue, "%2.2f") |> ignore<bool>
             ImGui.Text "Creation Distance (3d)"
             ImGui.DragFloat ("##newEntityDistance", &NewEntityDistance, SnapDrag, 0.5f, Single.MaxValue, "%2.2f") |> ignore<bool>
-            ImGui.Text "Input"
-            ImGui.Checkbox ("Alternative Eye Travel Input", &AlternativeEyeTravelInput) |> ignore<bool>
             ImGui.Text "Debug"
             ImGui.Checkbox ("Physics Debug Rendering (2d)", &PhysicsDebugRendering2d) |> ignore<bool>
             ImGui.Checkbox ("Physics Debug Rendering (3d)", &PhysicsDebugRendering3d) |> ignore<bool>
@@ -4997,7 +4997,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             override this.WriteLine (message : string) = concatLog (message + "\n") }
         |> Trace.Listeners.Add
         |> ignore<int>
-        AlternativeEyeTravelInput <- gaiaState.AlternativeEyeTravelInput
         let world =
             if not gaiaState.ProjectFreshlyLoaded then
                 DesiredEye2dCenter <- gaiaState.DesiredEye2dCenter
