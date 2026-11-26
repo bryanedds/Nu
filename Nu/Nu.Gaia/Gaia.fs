@@ -33,7 +33,6 @@ open Nu.Gaia
 //  CollisionDetection                      //
 //  BodyShape                               //
 //  BodyJoint                               //
-//  BlendMaterial                           //
 //  DateTimeOffset?                         //
 //  SymbolicCompression                     //
 //////////////////////////////////////////////

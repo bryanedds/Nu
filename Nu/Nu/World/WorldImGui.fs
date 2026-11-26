@@ -918,6 +918,140 @@ module WorldImGui =
                         else None
                     | None -> None
                 World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedSettingOpt true name (typeof<TerrainMaterialProperties>) tmps context world
+            | :? TerrainMaterial as material ->
+
+                // select the material's case, carrying its images over when it changes
+                let (_, caseNameEdited, caseName) = World.imGuiSelectCase name ty material context
+                let material =
+                    if caseNameEdited then
+                        match (caseName, material) with
+                        | (nameof FlatMaterial, BlendMaterial blend) ->
+                            let layer =
+                                match Array.tryHead blend.TerrainLayers with
+                                | Some layer -> layer
+                                | None ->
+                                    { AlbedoImage = Assets.Default.TerrainLayer0Albedo
+                                      RoughnessImage = Assets.Default.TerrainLayer0Roughness
+                                      AmbientOcclusionImage = Assets.Default.TerrainLayer0AmbientOcclusion
+                                      NormalImage = Assets.Default.TerrainLayer0Normal
+                                      UserDefinedImage = Assets.Default.TerrainLayer0UserDefinedImage }
+                            FlatMaterial
+                                { AlbedoImage = layer.AlbedoImage
+                                  RoughnessImage = layer.RoughnessImage
+                                  AmbientOcclusionImage = layer.AmbientOcclusionImage
+                                  NormalImage = layer.NormalImage
+                                  UserDefinedImage = layer.UserDefinedImage
+                                  UserDefinedImage0 = blend.UserDefinedImage0
+                                  UserDefinedImage1 = blend.UserDefinedImage1
+                                  PipelineName = blend.PipelineName }
+                        | (nameof BlendMaterial, FlatMaterial flat) ->
+                            BlendMaterial
+                                { TerrainLayers =
+                                    [|{ AlbedoImage = flat.AlbedoImage
+                                        RoughnessImage = flat.RoughnessImage
+                                        AmbientOcclusionImage = flat.AmbientOcclusionImage
+                                        NormalImage = flat.NormalImage
+                                        UserDefinedImage = flat.UserDefinedImage }|]
+                                  BlendMap = RedsMap [|Assets.Default.TerrainLayer0Blend|]
+                                  UserDefinedImage0 = flat.UserDefinedImage0
+                                  UserDefinedImage1 = flat.UserDefinedImage1
+                                  PipelineName = flat.PipelineName }
+                        | (_, _) -> material
+                    else material
+
+                // edit the case's fields, with a pipeline combo, a row per layer and a blend map editor in place of text
+                let tryReplaceField (fieldInfo : PropertyInfo) (field : obj) =
+                    match fieldInfo.Name with
+                    | "PipelineName" ->
+                        let mutable pipelineName = field :?> string
+                        let mutable pipelineNameEdited = false
+                        let descriptors = World.getUserDefinedPipeline3dDescriptors world
+                        let pipelineNames =
+                            seq { Constants.Render.PipelineNameDefault
+                                  for kvp in descriptors do if kvp.Value.Pipeline3dType = TerrainPipeline then kvp.Key }
+                        if ImGui.BeginCombo (fieldInfo.Name, pipelineName) then
+                            for pipelineName' in pipelineNames do
+                                if String.notEmpty pipelineName' && ImGui.Selectable (pipelineName', (pipelineName' = pipelineName)) then
+                                    if pipelineName <> pipelineName' then
+                                        pipelineName <- pipelineName'
+                                        pipelineNameEdited <- true
+                            ImGui.EndCombo ()
+                        if ImGui.IsItemFocused () then context.FocusProperty ()
+                        Some (pipelineNameEdited, pipelineName :> obj)
+                    | "TerrainLayers" ->
+                        let layers = field :?> TerrainLayer array
+                        let layerDefault =
+                            match Array.tryLast layers with
+                            | Some layer -> layer
+                            | None ->
+                                { AlbedoImage = Assets.Default.TerrainLayer0Albedo
+                                  RoughnessImage = Assets.Default.TerrainLayer0Roughness
+                                  AmbientOcclusionImage = Assets.Default.TerrainLayer0AmbientOcclusion
+                                  NormalImage = Assets.Default.TerrainLayer0Normal
+                                  UserDefinedImage = Assets.Default.TerrainLayer0UserDefinedImage }
+                        ImGui.Text fieldInfo.Name
+                        ImGui.SameLine ()
+                        ImGui.PushID fieldInfo.Name // NOTE: keeps the array's + button apart from the reds' + button.
+                        let (_, layersEdited, layers) =
+                            World.imGuiEditPropertyArray
+                                (fun layerName layer ->
+                                    let (promoted, edited, layer) = World.imGuiEditPropertyRecord true layerName (typeof<TerrainLayer>) layer context world
+                                    (promoted, edited, layer :?> TerrainLayer))
+                                layerDefault "Layer" layers context
+                        ImGui.PopID ()
+                        if layers.Length > Constants.Render.TerrainLayersMax then
+                            ImGui.Text ("(more than " + string Constants.Render.TerrainLayersMax + " layers aren't supported)")
+                        Some (layersEdited, layers :> obj)
+                    | "BlendMap" ->
+                        let blendMap = field :?> BlendMap
+                        let (_, blendCaseNameEdited, blendCaseName) = World.imGuiSelectCase fieldInfo.Name (typeof<BlendMap>) blendMap context
+                        let blendMap =
+                            if blendCaseNameEdited then
+                                match (blendCaseName, blendMap) with
+                                | (nameof RgbaMap, RedsMap reds) -> RgbaMap (if Array.notEmpty reds then reds[0] else Assets.Default.TerrainLayer0Blend)
+                                | (nameof RedsMap, RgbaMap rgba) -> RedsMap [|rgba|]
+                                | (_, _) -> blendMap
+                            else blendMap
+                        let layerCount = match material with BlendMaterial blend -> blend.TerrainLayers.Length | FlatMaterial _ -> 0
+                        ImGui.Indent ()
+                        let (blendMapEdited, blendMap) =
+                            match blendMap with
+                            | RgbaMap rgba ->
+                                let (_, rgbaEdited, rgba) = World.imGuiEditProperty "Rgba" (typeof<Image AssetTag>) rgba context world
+                                ImGui.Text "(red, green, blue and alpha weigh layers 0 to 3)"
+                                if layerCount > 4 then ImGui.Text ("(" + string layerCount + " layers, but an rgba map weighs only 4)")
+                                (blendCaseNameEdited || rgbaEdited, RgbaMap (rgba :?> Image AssetTag))
+                            | RedsMap reds ->
+                                ImGui.Text "Reds"
+                                ImGui.SameLine ()
+                                ImGui.PushID "Reds"
+                                let (_, redsEdited, reds) =
+                                    World.imGuiEditPropertyArray
+                                        (fun redName red ->
+                                            let (promoted, edited, red) = World.imGuiEditProperty redName (typeof<Image AssetTag>) red context world
+                                            (promoted, edited, red :?> Image AssetTag))
+                                        Assets.Default.TerrainLayer0Blend "Red" reds context
+                                ImGui.PopID ()
+                                if reds.Length <> layerCount then
+                                    ImGui.Text ("(" + string reds.Length + " reds for " + string layerCount + " layers; each layer takes one)")
+                                (blendCaseNameEdited || redsEdited, RedsMap reds)
+                        ImGui.Unindent ()
+                        Some (blendMapEdited, blendMap :> obj)
+                    | _ -> None
+                
+                // edit property
+                ImGui.Indent ()
+                let (edited, material) =
+                    match material with
+                    | FlatMaterial flat ->
+                        let (_, edited, flat) = World.imGuiEditPropertyRecordPlus tryReplaceField false name (typeof<FlatMaterial>) flat context world
+                        (caseNameEdited || edited, FlatMaterial (flat :?> FlatMaterial))
+                    | BlendMaterial blend ->
+                        let (_, edited, blend) = World.imGuiEditPropertyRecordPlus tryReplaceField false name (typeof<BlendMaterial>) blend context world
+                        (caseNameEdited || edited, BlendMaterial (blend :?> BlendMaterial))
+                ImGui.Unindent ()
+                (false, edited, material :> obj)
+
             | :? Material as material ->
                 let tryReplaceUserDefinedImageOpt (fieldInfo : PropertyInfo) (field : obj) =
                     match Seq.tryExactlyOne context.SelectedEntities with
