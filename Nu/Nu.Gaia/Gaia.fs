@@ -28,11 +28,11 @@ open Nu.Gaia
 // Custom properties in order of priority:  //
 //  Enums                                   //
 //  Flag Enums                              //
+//  DateTimeOffset                          //
+//  SymbolicCompression                     //
 //  CollisionMask                           //
 //  CollisionCategories                     //
 //  CollisionDetection                      //
-//  DateTimeOffset                          //
-//  SymbolicCompression                     //
 //////////////////////////////////////////////
 
 [<RequireQualifiedAccess>]
