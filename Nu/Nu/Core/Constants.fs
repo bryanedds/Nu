@@ -266,6 +266,7 @@ module Render =
     let [<Literal>] BloomSampleLevels = 6
     let [<Literal>] UserDefinedSettingCount = 8 // NOTE: to change this requires more changes across F# and shaders!
     let [<Literal>] PipelineNameDefault = "Default"
+    let [<Literal>] SkyBoxEnabledDefault = true
     let [<Literal>] LightMappingEnabledDefault = true
     let [<Literal>] LightCutoffMarginDefault = 0.4f
     let [<Literal>] LightAmbientBoostCutoffDefault = 0.3f

@@ -3899,6 +3899,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             let renderer3dConfig = World.getRenderer3dConfig world
             let mutable renderer3dEdited = false
+            let mutable skyBoxEnabled = renderer3dConfig.SkyBoxEnabled
             let mutable lightMappingEnabled = renderer3dConfig.LightMappingEnabled
             let mutable lightShadowingEnabled = renderer3dConfig.LightShadowingEnabled
             let mutable sssEnabled = renderer3dConfig.SssEnabled
@@ -3914,6 +3915,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let mutable fxaaSpanMax = renderer3dConfig.FxaaSpanMax
             let mutable fxaaReduceMinDivisor = renderer3dConfig.FxaaReduceMinDivisor
             let mutable fxaaReduceMulDivisor = renderer3dConfig.FxaaReduceMulDivisor
+            renderer3dEdited <- ImGui.Checkbox ("Sky Box Enabled", &skyBoxEnabled) || renderer3dEdited
             renderer3dEdited <- ImGui.Checkbox ("Light Mapping Enabled", &lightMappingEnabled) || renderer3dEdited
             renderer3dEdited <- ImGui.Checkbox ("Light Shadowing Enabled", &lightShadowingEnabled) || renderer3dEdited
             renderer3dEdited <- ImGui.Checkbox ("Sss Enabled", &sssEnabled) || renderer3dEdited
@@ -3931,7 +3933,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             renderer3dEdited <- ImGui.InputFloat ("Fxaa Reduce Mul Divisor", &fxaaReduceMulDivisor) || renderer3dEdited
             if renderer3dEdited then
                 let renderer3dConfig =
-                    { LightMappingEnabled = lightMappingEnabled
+                    { SkyBoxEnabled = skyBoxEnabled
+                      LightMappingEnabled = lightMappingEnabled
                       LightShadowingEnabled = lightShadowingEnabled
                       SssEnabled = sssEnabled
                       SsaoEnabled = ssaoEnabled
