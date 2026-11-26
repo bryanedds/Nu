@@ -1108,6 +1108,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         match evt.Data with
         | UnregisteringData simulant ->
 
+            // forget the group's baseline for change detection
+            GroupWorldStates <- Map.remove (simulant :?> Group).GroupAddress GroupWorldStates
+
             // when currently the selected group, make sure we select another group, creating a default "Scene" group
             // when necessary
             if SelectedGroup :> Simulant = simulant then
@@ -3123,7 +3126,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             selectEntities true Set.empty world
                             World.destroyGroupImmediate SelectedGroup world
                             GroupFilePaths <- Map.remove SelectedGroup.GroupAddress GroupFilePaths
-                            GroupWorldStates <- Map.remove SelectedGroup.GroupAddress GroupWorldStates
                             selectGroup true (Seq.head groupsRemaining)
                         else MessageBoxOpt <- Some "Cannot close protected or only group."
                     ImGui.EndMenu ()
@@ -3393,7 +3395,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         | Some _ | None -> ()
                     ImGui.EndDragDropTarget ()
 
-                // entity editing
+                // entity editing, first taking a baseline for change detection when this group has none, such as when
+                // it was read from a file by the game rather than opened here
+                if not (GroupWorldStates.ContainsKey SelectedGroup.GroupAddress) then
+                    GroupWorldStates <- Map.add SelectedGroup.GroupAddress world.CurrentState GroupWorldStates
                 ImGui.BeginChild "Container" |> ignore<bool>
                 let children =
                     World.getEntitiesSovereign SelectedGroup world
