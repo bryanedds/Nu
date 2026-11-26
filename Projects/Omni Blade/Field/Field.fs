@@ -213,8 +213,8 @@ module Field =
               PartyMenu_ : PartyMenu
               ShopOpt_ : Shop option
               Options_ : Options
-              Definitions_ : CueSystem.CueDefinitions
-              DefinitionsOriginal_ : CueSystem.CueDefinitions
+              CueDefinitions_ : CueSystem.CueDefinitions
+              CueDefinitionsOriginal_ : CueSystem.CueDefinitions
               Cue_ : CueSystem.Cue
               Tint_ : Color
               ScreenTransitioning_ : bool
@@ -245,8 +245,8 @@ module Field =
         member this.PartyMenu = this.PartyMenu_
         member this.ShopOpt = this.ShopOpt_
         member this.Options = this.Options_
-        member this.Definitions = this.Definitions_
-        member this.DefinitionsOriginal = this.DefinitionsOriginal_
+        member this.CueDefinitions = this.CueDefinitions_
+        member this.CueDefinitionsOriginal = this.CueDefinitionsOriginal_
         member this.Cue = this.Cue_
         member this.Tint = this.Tint_
         member this.ScreenTransitioning = this.ScreenTransitioning_
@@ -630,8 +630,8 @@ module Field =
     let mapOptions mapper field =
         { field with Options_ = mapper field.Options_ }
 
-    let setDefinitions definitions field =
-        { field with Definitions_ = definitions }
+    let setCueDefinitions definitions field =
+        { field with CueDefinitions_ = definitions }
 
     let setCue cue field =
         { field with Cue_ = cue }
@@ -749,14 +749,12 @@ module Field =
         { field with
             Spirits_ = [||]
             Advents_ = field.Advents_ |> Set.filter (fun value -> not value.IsOpened)
-            Props_ = Map.empty
             AutoMaps_ = Map.empty }
 
     let untruncate current incoming =
         { incoming with
             Spirits_ = current.Spirits_
             Advents_ = current.Advents_
-            Props_ = current.Props_
             AutoMaps_ = current.AutoMaps_ }
 
     (* Input *)
@@ -2149,13 +2147,13 @@ module Field =
                 | None -> field
 
             // update cue
-            let (cue, definitions, (signals, field)) = updateCue field.Cue_ field.Definitions_ field world
+            let (cue, definitions, (signals, field)) = updateCue field.Cue_ field.CueDefinitions_ field world
 
             // reset cue definitions if finished
             let field =
                 match cue with
-                | CueSystem.Fin -> setDefinitions field.DefinitionsOriginal_ field
-                | _ -> setDefinitions definitions field
+                | CueSystem.Fin -> setCueDefinitions field.CueDefinitionsOriginal_ field
+                | _ -> setCueDefinitions definitions field
             let field = setCue cue field
 
             // update portal
@@ -2236,7 +2234,7 @@ module Field =
         just field
 
     let make time fieldType saveSlot randSeedState (avatar : Avatar) team advents inventory =
-        let (spiritRate, debugAdvents, debugKeyItems, definitions) =
+        let (spiritRate, debugAdvents, debugKeyItems, cueDefinitions) =
             match Data.Value.Fields.TryGetValue fieldType with
             | (true, fieldData) -> (fieldData.EncounterRate, fieldData.FieldDebugAdvents, fieldData.FieldDebugKeyItems, fieldData.Definitions)
             | (false, _) -> (1.0f, Set.empty, List.empty, Map.empty)
@@ -2269,8 +2267,8 @@ module Field =
           PartyMenu_ = { PartyMenuState = PartyMenuClosed; PartyMenuSelections = [] }
           ShopOpt_ = None
           Options_ = options
-          Definitions_ = definitions
-          DefinitionsOriginal_ = definitions
+          CueDefinitions_ = cueDefinitions
+          CueDefinitionsOriginal_ = cueDefinitions
           Cue_ = CueSystem.Fin
           Tint_ = Color.Zero
           ScreenTransitioning_ = false
@@ -2303,8 +2301,8 @@ module Field =
           PartyMenu_ = { PartyMenuState = PartyMenuClosed; PartyMenuSelections = [] }
           ShopOpt_ = None
           Options_ = { BattleSpeed = WaitSpeed; HardcoreMode = false; SongVolume = Constants.Gameplay.SongVolumeDefault }
-          Definitions_ = Map.empty
-          DefinitionsOriginal_ = Map.empty
+          CueDefinitions_ = Map.empty
+          CueDefinitionsOriginal_ = Map.empty
           Cue_ = CueSystem.Fin
           Tint_ = Color.Zero
           ScreenTransitioning_ = false
