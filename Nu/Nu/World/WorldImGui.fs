@@ -442,10 +442,7 @@ module WorldImGui =
                        ty.GetGenericTypeDefinition () = typedefof<_ Set> ||
                        ty.GetGenericTypeDefinition () = typedefof<_ FSet> ||
                        ty.GetGenericTypeDefinition () = typedefof<Map<_, _>> ||
-                       ty.GetGenericTypeDefinition () = typedefof<FMap<_, _>>)) &&
-                     (if ty.IsArray
-                      then Array.forall (fun itemType -> (World.imGuiTryMakeDefaultValue itemType context).IsSome) [|ty.GetElementType ()|]
-                      else Array.forall (fun itemType -> (World.imGuiTryMakeDefaultValue itemType context).IsSome) ty.GenericTypeArguments) then
+                       ty.GetGenericTypeDefinition () = typedefof<FMap<_, _>>)) then
 
                     // a row per item, or per key and value of a map, each edited by its own type's editor
                     let mapping = ty.IsGenericType && (ty.GetGenericTypeDefinition () = typedefof<Map<_, _>> || ty.GetGenericTypeDefinition () = typedefof<FMap<_, _>>)
