@@ -748,14 +748,12 @@ module Field =
     let truncate field =
         { field with
             Spirits_ = [||]
-            Advents_ = field.Advents_ |> Set.filter (fun value -> not value.IsOpened)
-            AutoMaps_ = Map.empty }
+            Advents_ = field.Advents_ |> Set.filter (fun value -> not value.IsOpened) }
 
     let untruncate current incoming =
         { incoming with
             Spirits_ = current.Spirits_
-            Advents_ = current.Advents_
-            AutoMaps_ = current.AutoMaps_ }
+            Advents_ = current.Advents_ }
 
     (* Input *)
 
