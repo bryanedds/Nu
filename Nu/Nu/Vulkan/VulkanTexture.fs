@@ -484,8 +484,10 @@ type [<CustomEquality; NoComparison>] TextureInternal =
             // handle all compression scenarios
             let compression =
                 if blockCompressed then
-                    if compression.IsUncompressed then Log.info "Potential inadvertent block-compression of texture (place a breakpoint here for more detail)."
-                    compression
+                    if compression.IsUncompressed then
+                        Log.info "Potential inadvertent block-compression of texture (place a breakpoint here for more detail)."
+                        ColorCompression // continue with compression in order to avoid AVE
+                    else compression
                 else Uncompressed
         
             // if pregenerated mipmap images are available then that determines texture mipmaps, otherwise determined by parameter as usual

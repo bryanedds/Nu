@@ -64,11 +64,13 @@ module WorldImGui =
                 elif ty = typeof<Entity> then Some (Nu.Entity (Array.add "???" context.SelectedGroup.Names) :> obj)
                 elif FSharpType.isNullTrueValue ty then Some null
                 else
-                    try match ty.TryGetDefaultValue () with
+                    try let converter = SymbolicConverter (false, None, ty, context.ToSymbolMemo, context.OfSymbolMemo)
+                        match ty.TryGetDefaultValue () with
                         | Some (:? string as valueStr) when ty <> typeof<string> ->
-                            let converter = SymbolicConverter (false, None, ty, context.ToSymbolMemo, context.OfSymbolMemo)
                             Some (converter.ConvertFromString valueStr)
-                        | Some value when not (isNull value) && ty.IsInstanceOfType value -> Some value
+                        | Some value when not (isNull value) && ty.IsInstanceOfType value ->
+                            if ty <> typeof<string> then converter.ConvertFromString (converter.ConvertToString value) |> ignore
+                            Some value
                         | Some _ | None -> None
                     with _ -> None
 
@@ -428,7 +430,12 @@ module WorldImGui =
                         ImGui.SameLine ()
                         ImGui.PushID name
                         let contents = (snd (FSharpValue.GetUnionFields (value, ty)))[0]
-                        let (promoted, edited3, contents) = World.imGuiEditProperty name ty.GenericTypeArguments[0] contents context world
+                        let contentsType = ty.GenericTypeArguments[0]
+                        let (promoted, edited3, contents) =
+                            if  contentsType.Name <> typedefof<_ AssetTag>.Name &&
+                                (FSharpType.IsRecord contentsType || FSharpType.isRecordAbstract contentsType) then
+                                World.imGuiEditPropertyRecord true name contentsType contents context world
+                            else World.imGuiEditProperty name contentsType contents context world
                         ImGui.PopID ()
                         (promoted, edited || edited2 || edited3, makeSome contents)
                     else
@@ -507,7 +514,11 @@ module WorldImGui =
                                 let row = Array.copy rows[i]
                                 for j in 0 .. dec row.Length do
                                     let elementName = if not mapping then itemName elif j = 0 then itemName + " Key" else itemName + " Value"
-                                    try let (promoted3, edited3, element) = World.imGuiEditProperty elementName itemTypes[j] row[j] context world
+                                    try let (promoted3, edited3, element) =
+                                            if  itemTypes[j].Name <> typedefof<_ AssetTag>.Name &&
+                                                (FSharpType.IsRecord itemTypes[j] || FSharpType.isRecordAbstract itemTypes[j]) then
+                                                World.imGuiEditPropertyRecord true elementName itemTypes[j] row[j] context world
+                                            else World.imGuiEditProperty elementName itemTypes[j] row[j] context world
                                         if promoted3 then promoted2 <- true
                                         if edited3 then
                                             edited2 <- true
