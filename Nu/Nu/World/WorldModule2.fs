@@ -1911,9 +1911,12 @@ module WorldModule2 =
                                             (-sectionRadius, sectionRadius, -sectionRadius, sectionRadius, -sectionRadius - cascadeDepthExtent, sectionRadius)
                                     let cascadeCullFrustum = Frustum (sectionViewOrtho * cascadeCullProjection)
 
-                                    // cull the gathered casters to this cascade so smaller cascades don't draw everything
+                                    // cull the gathered casters to this cascade so smaller cascades don't draw everything, keeping
+                                    // omnipresent casters in every cascade just as the gather above does since their bounds don't
+                                    // describe where they render
                                     for element in WorldModuleInternal2.HashSet3dNormalCached do
-                                        if cascadeCullFrustum.Intersects element.Bounds then
+                                        let presence = element.Presence
+                                        if presence.IsOmnipresent || cascadeCullFrustum.Intersects element.Bounds then
                                             WorldModuleInternal2.HashSet3dCascadeCached.Add element |> ignore<bool>
 
                                     // render
