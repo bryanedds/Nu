@@ -282,15 +282,6 @@ module WorldModuleEntity =
             | Some selectedScreen when entity.Screen.Name = selectedScreen.Name -> true
             | _ -> false
 
-        /// Check that an entity has changed since the given world state, such as a snapshot taken earlier, an entity absent
-        /// from it counting as changed. In imperative mode, where an entity's state changes in place, this is always false.
-        static member getEntityModified (entity : Entity) (worldState : WorldState) (world : World) =
-            if not world.Imperative then
-                match worldState.EntityStates.TryGetValue entity with
-                | (true, entityStatePrevious) -> refNeq entityStatePrevious (World.getEntityState entity world)
-                | (false, _) -> true
-            else false
-
         static member internal computeEntityPresenceOverride entity world =
             let entityState = World.getEntityState entity world
             let dispatcherOverride =
@@ -2799,17 +2790,18 @@ module WorldModuleEntity =
             entity
 
         /// Revert an entity and its descendants to how they were in the given world state, such as a snapshot taken
-        /// earlier. Functional mode only.
+        /// earlier. Does nothing in Imperative mode.
         static member revertEntity (entity : Entity) (worldState : WorldState) (world : World) =
-            if world.Imperative then failwith "Cannot revert an entity to a previous world state in imperative mode."
-            let worldStateCurrent = world.WorldState
-            world.WorldState <- worldState // NOTE: in functional mode, entity states are found per world state.
-            let entityDescriptor =
-                try World.writeEntity true true EntityDescriptor.empty entity world
-                finally world.WorldState <- worldStateCurrent
-            let parent = entity.Parent
-            World.destroyEntityImmediate entity world
-            World.readEntity true true entityDescriptor (Some entity.Name) parent world |> ignore<Entity>
+            if world.Functional then
+                let worldStateCurrent = world.WorldState
+                world.WorldState <- worldState // NOTE: in functional mode, entity states are found per world state.
+                let entityDescriptor =
+                    try World.writeEntity true true EntityDescriptor.empty entity world
+                    finally world.WorldState <- worldStateCurrent
+                let parent = entity.Parent
+                World.destroyEntityImmediate entity world
+                World.readEntity true true entityDescriptor (Some entity.Name) parent world |> ignore<Entity>
+            else Log.warn "Reverting an entity to a previous world state is unsupported in imperative mode."
 
         /// Read an entity from a file.
         static member readEntityFromFile tryReadOrder tryReadPropagationHistory filePath nameOpt parent world =
