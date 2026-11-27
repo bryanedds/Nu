@@ -3188,7 +3188,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
         ImGui.End ()
 
-    let private imGuiHierarchyWindow world =
+    let private imGuiHierarchyWindow (world : World) =
 
         // track state for hot key input
         let entityHierarchyFocused =
@@ -3218,10 +3218,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     ImGui.SetKeyboardFocusHere ()
                     EntityHierarchySearchStr <- ""
                     EntityHierarchySearchRequested <- false
-                ImGui.SetNextItemWidth (-ImGui.GetFrameHeight () - ImGui.GetStyle().ItemSpacing.X) // leaving room for the checkbox
+                ImGui.SetNextItemWidth -1.0f
                 ImGui.InputTextWithHint ("##entityHierarchySearchStr", "[enter search text]", &EntityHierarchySearchStr, 4096u) |> ignore<bool>
                 if ImGui.IsItemFocused () then entityHierarchyFocused <- false
-                ImGui.SameLine ()
 
                 // creation parent display
                 match NewEntityParentOpt with
