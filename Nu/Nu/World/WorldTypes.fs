@@ -388,6 +388,7 @@ and SnapshotType =
     | CutEntity
     | PasteEntity
     | LoadEntity
+    | RevertEntity
     | DuplicateEntity
     | CreateGroup
     | RenameGroup
@@ -434,6 +435,7 @@ and SnapshotType =
         | CutEntity -> (scstringMemo this).Spaced
         | PasteEntity -> (scstringMemo this).Spaced
         | LoadEntity -> (scstringMemo this).Spaced
+        | RevertEntity -> (scstringMemo this).Spaced
         | DuplicateEntity -> (scstringMemo this).Spaced
         | RenameGroup -> (scstringMemo this).Spaced
         | CreateGroup -> (scstringMemo this).Spaced

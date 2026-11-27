@@ -6,7 +6,9 @@
 
 namespace Nu
 open System
+open System.Collections
 open System.Collections.Generic
+open System.ComponentModel
 open System.Numerics
 open System.Reflection
 open FSharp.NativeInterop
@@ -29,6 +31,49 @@ module WorldImGui =
         static member imGuiTryGetTextureId assetTag world =
             let rendererProcess = World.getRendererProcess world
             rendererProcess.TryGetImGuiTextureId assetTag
+
+        /// Attempt to make a value of a type for the editor to start something new with - an option's contents as it's made
+        /// Some, or an item added to a sequence - from the type's DefaultValueAttribute, else a default chosen for the editor,
+        /// else the type's own default as Prime determines it.
+        static member imGuiTryMakeDefaultValue (ty : Type) (context : EditContext) : obj option =
+            match ty.TryGetDefaultValueFromAttribute () with
+            | Some (:? string as valueStr) -> // NOTE: the attribute gives symbolic text.
+                let converter = SymbolicConverter (false, None, ty, context.ToSymbolMemo, context.OfSymbolMemo)
+                try Some (converter.ConvertFromString valueStr)
+                with _ -> None
+            | Some value ->
+                Some value
+            | None ->
+                if ty = typeof<Color> then Some (colorOne :> obj)
+                elif ty = typeof<Slide> then Some ({ IdlingTime = GameTime.zero; Destination = context.SelectedScreen } :> obj)
+                elif ty = typeof<Image AssetTag> then Some (Assets.Default.Image :> obj)
+                elif ty = typeof<Font AssetTag> then Some (Assets.Default.Font :> obj)
+                elif ty = typeof<TileMap AssetTag> then Some (Assets.Default.TileMap :> obj)
+                elif ty = typeof<CubeMap AssetTag> then Some (Assets.Default.SkyBoxMap :> obj)
+                elif ty = typeof<Sound AssetTag> then Some (Assets.Default.Sound :> obj)
+                elif ty = typeof<Song AssetTag> then Some (Assets.Default.Song :> obj)
+                elif ty = typeof<StaticModel AssetTag> then Some (Assets.Default.StaticModel :> obj)
+                elif ty = typeof<AnimatedModel AssetTag> then Some (Assets.Default.AnimatedModel :> obj)
+                elif ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<_ AssetTag> then
+                    Some (Activator.CreateInstance (ty, [|""; ""|])) // an asset tag of any other kind
+                elif ty = typeof<SoundDescriptor> then Some (SoundDescriptor.defaultDescriptor :> obj)
+                elif ty = typeof<SongDescriptor> then Some (SongDescriptor.defaultDescriptor :> obj)
+                elif ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<_ Address> then
+                    let makeFromStringFunction = ty.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
+                    let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((ty.GetGenericArguments ())[0])
+                    Some (makeFromStringFunctionGeneric.Invoke (null, [|"???"|]))
+                elif ty = typeof<Entity> then Some (Nu.Entity (Array.add "???" context.SelectedGroup.Names) :> obj)
+                elif FSharpType.isNullTrueValue ty then Some null
+                else
+                    try let converter = SymbolicConverter (false, None, ty, context.ToSymbolMemo, context.OfSymbolMemo)
+                        match ty.TryGetDefaultValue () with
+                        | Some (:? string as valueStr) when ty <> typeof<string> ->
+                            Some (converter.ConvertFromString valueStr)
+                        | Some value when not (isNull value) && ty.IsInstanceOfType value ->
+                            if ty <> typeof<string> then converter.ConvertFromString (converter.ConvertToString value) |> ignore
+                            Some value
+                        | Some _ | None -> None
+                    with _ -> None
 
         /// Render circles via ImGui in the current eye 2d space, computing color as specified.
         static member imGuiCircles2dPlus absolute (positions : Vector2 seq) radius filled (computeColor : Vector2 -> Color) (world : World) =
@@ -255,7 +300,8 @@ module WorldImGui =
                                 else fieldInfo.Name
                             else fieldInfo.Name
                         let (promoted2, edited2, field) =
-                            if  fieldInfo.PropertyType.Name <> typedefof<_ AssetTag>.Name &&
+                            // NOTE: a record with a converter of its own, such as an asset tag or an address, is edited as its text.
+                            if  not (fieldInfo.PropertyType.IsDefined (typeof<TypeConverterAttribute>, true)) &&
                                 (FSharpType.IsRecord fieldInfo.PropertyType || FSharpType.isRecordAbstract fieldInfo.PropertyType) then
                                 World.imGuiEditPropertyRecord true fieldName fieldInfo.PropertyType field context world
                             else World.imGuiEditProperty fieldName fieldInfo.PropertyType field context world
@@ -312,7 +358,7 @@ module WorldImGui =
             (promoted, edited, value' :> obj)
 
         /// Edit a general value via ImGui, also automatically promoting user-defined types for code-reloading.
-        static member private imGuiEditPropertyGeneralized (name : string) (ty : Type) (value : obj) (context : EditContext) world : bool * bool * obj =
+        static member imGuiEditPropertyGeneralized (name : string) (ty : Type) (value : obj) (context : EditContext) world : bool * bool * obj =
                 
             // unspecialized type, so promotion is always possible here
             let (promoted, value) =
@@ -341,7 +387,7 @@ module WorldImGui =
             // when not combo box editing
             if not combo then
                 if  ty.IsGenericType &&
-                    ty.GetGenericTypeDefinition () = typedefof<_ option> &&
+                    (ty.GetGenericTypeDefinition () = typedefof<_ option> || ty.GetGenericTypeDefinition () = typedefof<_ voption>) &&
                     (not ty.GenericTypeArguments[0].IsGenericType || ty.GenericTypeArguments[0].GetGenericTypeDefinition () <> typedefof<_ option>) &&
                     (not ty.GenericTypeArguments[0].IsGenericType || ty.GenericTypeArguments[0].GetGenericTypeDefinition () <> typedefof<_ voption>) &&
                     ty.GenericTypeArguments[0] <> typeof<Material> &&
@@ -359,169 +405,167 @@ module WorldImGui =
                      ty.GenericTypeArguments[0] = typeof<AnimatedModel AssetTag> ||
                      ty.GenericTypeArguments[0] = typeof<SoundDescriptor> ||
                      ty.GenericTypeArguments[0] = typeof<SongDescriptor> ||
-                     ty.GenericTypeArguments[0] = typeof<ScatterType> ||
                      ty.GenericTypeArguments[0] = typeof<Entity> ||
-                     (ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ array>) ||
+                     ty.GenericTypeArguments[0].IsArray ||
+                     (ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ Address>) ||
+                     (ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ AssetTag>) ||
                      (ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ list>) ||
-                     (ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ FList>) ||
-                     (ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ FQueue>) ||
-                     (ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ FDeque>) ||
                      (ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ Set>) ||
                      (ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ FSet>) ||
                      (ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<Map<_, _>>) ||
                      (ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<FMap<_, _>>) ||
-                     (ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ Address>) ||
-                     ty.GenericTypeArguments[0] |> FSharpType.isNullTrueValue) then
-                    let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|value|]) :?> bool
+                     ty.GenericTypeArguments[0].IsDefined (typeof<DefaultValueAttribute>, true) ||
+                     FSharpType.isNullTrueValue ty.GenericTypeArguments[0]) then
+                    let cases = FSharpType.GetUnionCases ty // None or ValueNone, then Some or ValueSome
+                    let makeSome (contents : obj) = FSharpValue.MakeUnion (cases[1], [|contents|])
+                    let mutable isSome = (fst (FSharpValue.GetUnionFields (value, ty))).Tag = 1
                     let (edited2, value) =
                         if ImGui.Checkbox ("##" + name, &isSome) then
                             if isSome then
-                                if ty.GenericTypeArguments[0].IsValueType then
-                                    if ty.GenericTypeArguments[0] = typeof<Color> then
-                                        (true, Activator.CreateInstance (ty, [|colorOne :> obj|]))
-                                    elif ty.GenericTypeArguments[0].Name = typedefof<_ AssetTag>.Name then
-                                        (true, Activator.CreateInstance (ty, [|Activator.CreateInstance (ty.GenericTypeArguments[0], [|""; ""|])|]))
-                                    else
-                                        (true, Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments[0]|]))
-                                elif ty.GenericTypeArguments[0] = typeof<string> then (true, Activator.CreateInstance (ty, [|"" :> obj|]))
-                                elif ty.GenericTypeArguments[0] = typeof<Slide> then (true, Activator.CreateInstance (ty, [|{ IdlingTime = GameTime.zero; Destination = context.SelectedScreen } :> obj|]))
-                                elif ty.GenericTypeArguments[0] = typeof<Image AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.Image :> obj|]))
-                                elif ty.GenericTypeArguments[0] = typeof<Font AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.Font :> obj|]))
-                                elif ty.GenericTypeArguments[0] = typeof<TileMap AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.TileMap :> obj|]))
-                                elif ty.GenericTypeArguments[0] = typeof<CubeMap AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.SkyBoxMap :> obj|]))
-                                elif ty.GenericTypeArguments[0] = typeof<Sound AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.Sound :> obj|]))
-                                elif ty.GenericTypeArguments[0] = typeof<Song AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.Song :> obj|]))
-                                elif ty.GenericTypeArguments[0] = typeof<StaticModel AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.StaticModel :> obj|]))
-                                elif ty.GenericTypeArguments[0] = typeof<AnimatedModel AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.AnimatedModel :> obj|]))
-                                elif ty.GenericTypeArguments[0] = typeof<SoundDescriptor> then (true, Activator.CreateInstance (ty, [|SoundDescriptor.defaultDescriptor :> obj|]))
-                                elif ty.GenericTypeArguments[0] = typeof<SongDescriptor> then (true, Activator.CreateInstance (ty, [|SongDescriptor.defaultDescriptor :> obj|]))
-                                elif ty.GenericTypeArguments[0] = typeof<ScatterType> then (true, Activator.CreateInstance (ty, [|NoScatter :> obj|]))
-                                elif ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ array> then (true, Activator.CreateInstance (ty, [|Reflection.objsToArray ty.GenericTypeArguments[0] []|]))
-                                elif ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ list> then (true, Activator.CreateInstance (ty, [|Reflection.objsToList ty.GenericTypeArguments[0] []|]))
-                                elif ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ FList> then (true, Activator.CreateInstance (ty, [|Reflection.objsToCollection typedefof<_ FList>.Name ty.GenericTypeArguments[0] []|]))
-                                elif ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ FQueue> then (true, Activator.CreateInstance (ty, [|Reflection.objsToCollection typedefof<_ FQueue>.Name ty.GenericTypeArguments[0] []|]))
-                                elif ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ FDeque> then (true, Activator.CreateInstance (ty, [|Reflection.objsToCollection typedefof<_ FDeque>.Name ty.GenericTypeArguments[0] []|]))
-                                elif ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ Set> then (true, Activator.CreateInstance (ty, [|Reflection.objsToSet ty.GenericTypeArguments[0] []|]))
-                                elif ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ FSet> then (true, Activator.CreateInstance (ty, [|Reflection.objsToFSet ty.GenericTypeArguments[0] []|]))
-                                elif ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<Map<_, _>> then (true, Activator.CreateInstance (ty, [|Reflection.pairsToMap ty.GenericTypeArguments[0] []|]))
-                                elif ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<FMap<_, _>> then (true, Activator.CreateInstance (ty, [|Reflection.pairsToFMap ty.GenericTypeArguments[0] []|]))
-                                elif ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ Address> then
-                                    let addressType = ty.GenericTypeArguments[0]
-                                    let makeFromStringFunction = addressType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
-                                    let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((addressType.GetGenericArguments ())[0])
-                                    let addressValue = makeFromStringFunctionGeneric.Invoke (null, [|"???"|])
-                                    (true, Activator.CreateInstance (ty, [|addressValue|]))
-                                elif ty.GenericTypeArguments[0] = typeof<Entity> then
-                                    (true, Activator.CreateInstance (ty, [|Nu.Entity (Array.add "???" context.SelectedGroup.Names) :> obj|]))
-                                elif FSharpType.isNullTrueValue ty.GenericTypeArguments[0] then
-                                    (true, Activator.CreateInstance (ty, [|null|]))
-                                else (false, value)
-                            else (true, None)
+                                match World.imGuiTryMakeDefaultValue ty.GenericTypeArguments[0] context with
+                                | Some contents -> (true, makeSome contents)
+                                | None -> isSome <- false; (false, value) // no default to be had, so it stays None
+                            else (true, FSharpValue.MakeUnion (cases[0], [||]))
                         else (false, value)
                     if ImGui.IsItemFocused () then context.FocusProperty ()
                     if isSome then
                         ImGui.SameLine ()
                         ImGui.PushID name
-                        let (promoted, edited3, value2) = World.imGuiEditProperty name ty.GenericTypeArguments[0] (ty.GetProperty("Value").GetValue(value, [||])) context world
+                        let contents = (snd (FSharpValue.GetUnionFields (value, ty)))[0]
+                        let contentsType = ty.GenericTypeArguments[0]
+                        let (promoted, edited3, contents) =
+                            if  not (contentsType.IsDefined (typeof<TypeConverterAttribute>, true)) &&
+                                (FSharpType.IsRecord contentsType || FSharpType.isRecordAbstract contentsType) then
+                                World.imGuiEditPropertyRecord true name contentsType contents context world
+                            else World.imGuiEditProperty name contentsType contents context world
                         ImGui.PopID ()
-                        let value = Activator.CreateInstance (ty, [|value2|])
-                        (promoted, edited || edited2 || edited3, value)
+                        (promoted, edited || edited2 || edited3, makeSome contents)
                     else
                         ImGui.SameLine ()
                         ImGui.Text name
                         (false, edited || edited2, value)
-                elif ty.IsGenericType &&
-                     ty.GetGenericTypeDefinition () = typedefof<_ voption> &&
-                     (not ty.GenericTypeArguments[0].IsGenericType || ty.GenericTypeArguments[0].GetGenericTypeDefinition () <> typedefof<_ option>) &&
-                     (not ty.GenericTypeArguments[0].IsGenericType || ty.GenericTypeArguments[0].GetGenericTypeDefinition () <> typedefof<_ voption>) &&
-                     ty.GenericTypeArguments[0] <> typeof<Material> &&
-                     ty.GenericTypeArguments[0] <> typeof<MaterialProperties> &&
-                     (ty.GenericTypeArguments[0].IsValueType ||
-                      ty.GenericTypeArguments[0] = typeof<string> ||
-                      ty.GenericTypeArguments[0] = typeof<Slide> ||
-                      ty.GenericTypeArguments[0] = typeof<Image AssetTag> ||
-                      ty.GenericTypeArguments[0] = typeof<Font AssetTag> ||
-                      ty.GenericTypeArguments[0] = typeof<TileMap AssetTag> ||
-                      ty.GenericTypeArguments[0] = typeof<CubeMap AssetTag> ||
-                      ty.GenericTypeArguments[0] = typeof<Sound AssetTag> ||
-                      ty.GenericTypeArguments[0] = typeof<Song AssetTag> ||
-                      ty.GenericTypeArguments[0] = typeof<StaticModel AssetTag> ||
-                      ty.GenericTypeArguments[0] = typeof<AnimatedModel AssetTag> ||
-                      ty.GenericTypeArguments[0] = typeof<SoundDescriptor> ||
-                      ty.GenericTypeArguments[0] = typeof<SongDescriptor> ||
-                      ty.GenericTypeArguments[0] = typeof<ScatterType> ||
-                      ty.GenericTypeArguments[0] = typeof<Entity> ||
-                      (ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ array>) ||
-                      (ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ list>) ||
-                      (ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ FList>) ||
-                      (ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ FQueue>) ||
-                      (ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ FDeque>) ||
-                      (ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ Set>) ||
-                      (ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ FSet>) ||
-                      (ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<Map<_, _>>) ||
-                      (ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<FMap<_, _>>) ||
-                      (ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ Address>) ||
-                      ty.GenericTypeArguments[0] |> FSharpType.isNullTrueValue) then
-                    let mutable isSome = ty.GetProperty("IsSome").GetValue(value, [||]) :?> bool
-                    let (edited2, value) =
-                        if ImGui.Checkbox ("##" + name, &isSome) then
-                            let createValueOption value =
-                                ty.GetMethod("Some", BindingFlags.Public ||| BindingFlags.Static).Invoke(null, [|value :> obj|])
-                            if isSome then
-                                if ty.GenericTypeArguments[0].IsValueType then
-                                    if ty.GenericTypeArguments[0] = typeof<Color> then
-                                        (true, createValueOption colorOne)
-                                    elif ty.GenericTypeArguments[0].Name = typedefof<_ AssetTag>.Name then
-                                        (true, createValueOption (Activator.CreateInstance (ty.GenericTypeArguments[0], [|""; ""|])))
-                                    else
-                                        (true, createValueOption (Activator.CreateInstance ty.GenericTypeArguments[0]))
-                                elif ty.GenericTypeArguments[0] = typeof<string> then (true, createValueOption "")
-                                elif ty.GenericTypeArguments[0] = typeof<Slide> then (true, createValueOption { IdlingTime = GameTime.zero; Destination = context.SelectedScreen })
-                                elif ty.GenericTypeArguments[0] = typeof<Image AssetTag> then (true, createValueOption Assets.Default.Image)
-                                elif ty.GenericTypeArguments[0] = typeof<Font AssetTag> then (true, createValueOption Assets.Default.Font)
-                                elif ty.GenericTypeArguments[0] = typeof<TileMap AssetTag> then (true, createValueOption Assets.Default.TileMap)
-                                elif ty.GenericTypeArguments[0] = typeof<CubeMap AssetTag> then (true, createValueOption Assets.Default.SkyBoxMap)
-                                elif ty.GenericTypeArguments[0] = typeof<Sound AssetTag> then (true, createValueOption Assets.Default.Sound)
-                                elif ty.GenericTypeArguments[0] = typeof<Song AssetTag> then (true, createValueOption Assets.Default.Song)
-                                elif ty.GenericTypeArguments[0] = typeof<StaticModel AssetTag> then (true, createValueOption Assets.Default.StaticModel)
-                                elif ty.GenericTypeArguments[0] = typeof<AnimatedModel AssetTag> then (true, createValueOption Assets.Default.AnimatedModel)
-                                elif ty.GenericTypeArguments[0] = typeof<SoundDescriptor> then (true, createValueOption SoundDescriptor.defaultDescriptor)
-                                elif ty.GenericTypeArguments[0] = typeof<SongDescriptor> then (true, createValueOption SongDescriptor.defaultDescriptor)
-                                elif ty.GenericTypeArguments[0] = typeof<ScatterType> then (true, createValueOption NoScatter)
-                                elif ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ array> then (true, createValueOption (Reflection.objsToArray ty.GenericTypeArguments[0] []))
-                                elif ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ list> then (true, createValueOption (Reflection.objsToList ty.GenericTypeArguments[0] []))
-                                elif ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ FList> then (true, createValueOption (Reflection.objsToCollection typedefof<_ FList>.Name ty.GenericTypeArguments[0] []))
-                                elif ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ FQueue> then (true, createValueOption (Reflection.objsToCollection typedefof<_ FQueue>.Name ty.GenericTypeArguments[0] []))
-                                elif ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ FDeque> then (true, createValueOption (Reflection.objsToCollection typedefof<_ FDeque>.Name ty.GenericTypeArguments[0] []))
-                                elif ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ Set> then (true, createValueOption (Reflection.objsToSet ty.GenericTypeArguments[0] []))
-                                elif ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ FSet> then (true, createValueOption (Reflection.objsToFSet ty.GenericTypeArguments[0] []))
-                                elif ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<Map<_, _>> then (true, createValueOption (Reflection.pairsToMap ty.GenericTypeArguments[0] []))
-                                elif ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<FMap<_, _>> then (true, createValueOption (Reflection.pairsToFMap ty.GenericTypeArguments[0] []))
-                                elif ty.GenericTypeArguments[0].IsGenericType && ty.GenericTypeArguments[0].GetGenericTypeDefinition () = typedefof<_ Address> then
-                                    let addressType = ty.GenericTypeArguments[0]
-                                    let makeFromStringFunction = addressType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
-                                    let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((addressType.GetGenericArguments ())[0])
-                                    let addressValue = makeFromStringFunctionGeneric.Invoke (null, [|"^"|])
-                                    (true, createValueOption addressValue)
-                                elif ty.GenericTypeArguments[0] = typeof<Entity> then
-                                    (true, createValueOption (Nu.Entity (Array.add "???" context.SelectedGroup.Names)))
-                                elif FSharpType.isNullTrueValue ty.GenericTypeArguments[0] then
-                                    (true, createValueOption null)
-                                else failwithumf ()
-                            else (true, ty.GetProperty("None", BindingFlags.Public ||| BindingFlags.Static).GetValue(null))
-                        else (false, value)
+                elif (ty.IsArray && ty.GetArrayRank () = 1 ||
+                      ty.IsGenericType &&
+                      (ty.IsDefined (typeof<DefaultValueAttribute>, true) && typeof<IEnumerable>.IsAssignableFrom ty && ty.GenericTypeArguments.Length = 1 ||
+                       ty.GetGenericTypeDefinition () = typedefof<_ list> ||
+                       ty.GetGenericTypeDefinition () = typedefof<_ Set> ||
+                       ty.GetGenericTypeDefinition () = typedefof<_ FSet> ||
+                       ty.GetGenericTypeDefinition () = typedefof<Map<_, _>> ||
+                       ty.GetGenericTypeDefinition () = typedefof<FMap<_, _>>)) then
+
+                    // a row per item, or per key and value of a map, each edited by its own type's editor
+                    let mapping = ty.IsGenericType && (ty.GetGenericTypeDefinition () = typedefof<Map<_, _>> || ty.GetGenericTypeDefinition () = typedefof<FMap<_, _>>)
+                    let sorted = mapping || ty.IsGenericType && (ty.GetGenericTypeDefinition () = typedefof<_ Set> || ty.GetGenericTypeDefinition () = typedefof<_ FSet>)
+                    let itemTypes = if ty.IsArray then [|ty.GetElementType ()|] else ty.GenericTypeArguments
+                    let rows =
+                        match value with
+                        | null -> [||] // an array field that was never set
+                        | _ ->
+                            [|for item in value :?> IEnumerable do
+                                if mapping then
+                                    let itemType = item.GetType ()
+                                    [|itemType.GetProperty("Key").GetValue item; itemType.GetProperty("Value").GetValue item|]
+                                else [|item|]|]
+                    let mutable promoted2 = false
+                    let mutable edited2 = false
+
+                    // collapsed by default, so a closed sequence draws none of its rows
+                    let treeNodeId = ImGui.GetID name
+                    let opened = ImGui.TreeNodeEx (name, ImGuiTreeNodeFlags.AllowOverlap)
+                    ImGui.SameLine ()
+                    ImGui.PushID name
+
+                    // a set's items and a map's keys re-sort as they're edited, so the row being edited is pinned to where it
+                    // was until the edit ends, else its widget would go on to edit whichever entry sorted into its place
+                    let storage = ImGui.GetStateStorage ()
+                    let pinnedHashId = ImGui.GetID "PinnedHash"
+                    let pinnedIndexId = ImGui.GetID "PinnedIndex"
+                    let rows =
+                        let pinnedIndex = storage.GetInt (pinnedIndexId, -1)
+                        if sorted && pinnedIndex >= 0 then
+                            if ImGui.IsAnyItemActive () then
+                                let pinnedHash = storage.GetInt (pinnedHashId, 0)
+                                match Array.tryFindIndex (fun (row : obj array) -> hash row[0] = pinnedHash) rows with
+                                | Some index when index <> pinnedIndex && pinnedIndex < rows.Length ->
+                                    let row = rows[index]
+                                    Array.insertAt pinnedIndex row (Array.removeAt index rows)
+                                | Some _ | None -> rows
+                            else
+                                storage.SetInt (pinnedIndexId, -1)
+                                rows
+                        else rows
+
+                    // add
+                    let rows =
+                        if ImGui.SmallButton "+" then
+                            let rowOpts = itemTypes |> Array.map (fun itemType -> World.imGuiTryMakeDefaultValue itemType context)
+                            if Array.forall Option.isSome rowOpts then
+                                edited2 <- true
+                                storage.SetInt (treeNodeId, 1) // opens the sequence to show the added row
+                                Array.add (Array.map Option.get rowOpts) rows
+                            else rows
+                        else rows
                     if ImGui.IsItemFocused () then context.FocusProperty ()
-                    if isSome then
-                        ImGui.SameLine ()
-                        ImGui.PushID name
-                        let (promoted, edited3, value2) = World.imGuiEditProperty name ty.GenericTypeArguments[0] (ty.GetProperty("Value").GetValue(value, [||])) context world
-                        ImGui.PopID ()
-                        let value = ty.GetMethod("Some", BindingFlags.Public ||| BindingFlags.Static).Invoke(null, [|value2|])
-                        (promoted, edited || edited2 || edited3, value)
-                    else
-                        ImGui.SameLine ()
-                        ImGui.Text name
-                        (false, edited || edited2, value)
+
+                    // edit and remove
+                    let rows =
+                        if not opened then rows else
+                        [|for i in 0 .. dec rows.Length do
+                            let itemName = name + "[" + string i + "]"
+                            ImGui.PushID itemName
+                            let removed = ImGui.SmallButton "x"
+                            if ImGui.IsItemFocused () then context.FocusProperty ()
+                            if not removed then
+                                ImGui.SameLine ()
+                                let row = Array.copy rows[i]
+                                for j in 0 .. dec row.Length do
+                                    let elementName = if not mapping then itemName elif j = 0 then itemName + " Key" else itemName + " Value"
+                                    try let (promoted3, edited3, element) =
+                                            if  not (itemTypes[j].IsDefined (typeof<TypeConverterAttribute>, true)) &&
+                                                (FSharpType.IsRecord itemTypes[j] || FSharpType.isRecordAbstract itemTypes[j]) then
+                                                World.imGuiEditPropertyRecord true elementName itemTypes[j] row[j] context world
+                                            else World.imGuiEditProperty elementName itemTypes[j] row[j] context world
+                                        if promoted3 then promoted2 <- true
+                                        if edited3 then
+                                            edited2 <- true
+                                            if sorted && j = 0 then
+                                                storage.SetInt (pinnedHashId, hash element)
+                                                storage.SetInt (pinnedIndexId, i)
+                                        row[j] <- element
+                                    with _ -> ()
+                                    if ImGui.IsItemFocused () then context.FocusProperty ()
+                                yield row
+                            else edited2 <- true
+                            ImGui.PopID ()|]
+                    ImGui.PopID ()
+                    if opened then ImGui.TreePop ()
+
+                    // rebuild the sequence only when an item's changed, keys that collide merging as a map's do
+                    let value =
+                        if edited2 || promoted2 then
+                            let elements =
+                                if mapping
+                                then [for row in rows -> FSharpValue.MakeTuple (row, FSharpType.MakeTupleType itemTypes)]
+                                else [for row in rows -> row[0]]
+                            if ty.IsArray then Reflection.objsToArray ty elements
+                            else
+                                let definition = ty.GetGenericTypeDefinition ()
+                                if definition = typedefof<_ list> then Reflection.objsToList ty elements
+                                elif definition = typedefof<_ Set> then Reflection.objsToSet ty elements
+                                elif definition = typedefof<_ FSet> then Reflection.objsToFSet ty elements
+                                elif definition = typedefof<Map<_, _>> then Reflection.pairsToMap ty elements
+                                elif definition = typedefof<FMap<_, _>> then Reflection.pairsToFMap ty elements
+                                else
+                                    try let itemConverter = SymbolicConverter (false, None, itemTypes[0], context.ToSymbolMemo, context.OfSymbolMemo)
+                                        let symbols = [for element in elements -> itemConverter.ConvertTo (element, typeof<Symbol>) :?> Symbol]
+                                        let converter = SymbolicConverter (false, None, ty, context.ToSymbolMemo, context.OfSymbolMemo)
+                                        converter.ConvertFrom (Symbols (symbols, ValueNone))
+                                    with _ -> value
+                        else value
+
+                    // fin
+                    (promoted || promoted2, edited || edited2, value)
+
                 elif ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<_ AssetTag> then
                     let converter = SymbolicConverter (false, None, ty, context.ToSymbolMemo, context.OfSymbolMemo)                        
                     let mutable valueStr = converter.ConvertToString value
@@ -918,6 +962,140 @@ module WorldImGui =
                         else None
                     | None -> None
                 World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedSettingOpt true name (typeof<TerrainMaterialProperties>) tmps context world
+            | :? TerrainMaterial as material ->
+
+                // select the material's case, carrying its images over when it changes
+                let (_, caseNameEdited, caseName) = World.imGuiSelectCase name ty material context
+                let material =
+                    if caseNameEdited then
+                        match (caseName, material) with
+                        | (nameof FlatMaterial, BlendMaterial blend) ->
+                            let layer =
+                                match Array.tryHead blend.TerrainLayers with
+                                | Some layer -> layer
+                                | None ->
+                                    { AlbedoImage = Assets.Default.TerrainLayer0Albedo
+                                      RoughnessImage = Assets.Default.TerrainLayer0Roughness
+                                      AmbientOcclusionImage = Assets.Default.TerrainLayer0AmbientOcclusion
+                                      NormalImage = Assets.Default.TerrainLayer0Normal
+                                      UserDefinedImage = Assets.Default.TerrainLayer0UserDefinedImage }
+                            FlatMaterial
+                                { AlbedoImage = layer.AlbedoImage
+                                  RoughnessImage = layer.RoughnessImage
+                                  AmbientOcclusionImage = layer.AmbientOcclusionImage
+                                  NormalImage = layer.NormalImage
+                                  UserDefinedImage = layer.UserDefinedImage
+                                  UserDefinedImage0 = blend.UserDefinedImage0
+                                  UserDefinedImage1 = blend.UserDefinedImage1
+                                  PipelineName = blend.PipelineName }
+                        | (nameof BlendMaterial, FlatMaterial flat) ->
+                            BlendMaterial
+                                { TerrainLayers =
+                                    [|{ AlbedoImage = flat.AlbedoImage
+                                        RoughnessImage = flat.RoughnessImage
+                                        AmbientOcclusionImage = flat.AmbientOcclusionImage
+                                        NormalImage = flat.NormalImage
+                                        UserDefinedImage = flat.UserDefinedImage }|]
+                                  BlendMap = RedsMap [|Assets.Default.TerrainLayer0Blend|]
+                                  UserDefinedImage0 = flat.UserDefinedImage0
+                                  UserDefinedImage1 = flat.UserDefinedImage1
+                                  PipelineName = flat.PipelineName }
+                        | (_, _) -> material
+                    else material
+
+                // edit the case's fields, with a pipeline combo, a row per layer and a blend map editor in place of text
+                let tryReplaceField (fieldInfo : PropertyInfo) (field : obj) =
+                    match fieldInfo.Name with
+                    | "PipelineName" ->
+                        let mutable pipelineName = field :?> string
+                        let mutable pipelineNameEdited = false
+                        let descriptors = World.getUserDefinedPipeline3dDescriptors world
+                        let pipelineNames =
+                            seq { Constants.Render.PipelineNameDefault
+                                  for kvp in descriptors do if kvp.Value.Pipeline3dType = TerrainPipeline then kvp.Key }
+                        if ImGui.BeginCombo (fieldInfo.Name, pipelineName) then
+                            for pipelineName' in pipelineNames do
+                                if String.notEmpty pipelineName' && ImGui.Selectable (pipelineName', (pipelineName' = pipelineName)) then
+                                    if pipelineName <> pipelineName' then
+                                        pipelineName <- pipelineName'
+                                        pipelineNameEdited <- true
+                            ImGui.EndCombo ()
+                        if ImGui.IsItemFocused () then context.FocusProperty ()
+                        Some (pipelineNameEdited, pipelineName :> obj)
+                    | "TerrainLayers" ->
+                        let layers = field :?> TerrainLayer array
+                        let layerDefault =
+                            match Array.tryLast layers with
+                            | Some layer -> layer
+                            | None ->
+                                { AlbedoImage = Assets.Default.TerrainLayer0Albedo
+                                  RoughnessImage = Assets.Default.TerrainLayer0Roughness
+                                  AmbientOcclusionImage = Assets.Default.TerrainLayer0AmbientOcclusion
+                                  NormalImage = Assets.Default.TerrainLayer0Normal
+                                  UserDefinedImage = Assets.Default.TerrainLayer0UserDefinedImage }
+                        ImGui.Text fieldInfo.Name
+                        ImGui.SameLine ()
+                        ImGui.PushID fieldInfo.Name // NOTE: keeps the array's + button apart from the reds' + button.
+                        let (_, layersEdited, layers) =
+                            World.imGuiEditPropertyArray
+                                (fun layerName layer ->
+                                    let (promoted, edited, layer) = World.imGuiEditPropertyRecord true layerName (typeof<TerrainLayer>) layer context world
+                                    (promoted, edited, layer :?> TerrainLayer))
+                                layerDefault "Layer" layers context
+                        ImGui.PopID ()
+                        if layers.Length > Constants.Render.TerrainLayersMax then
+                            ImGui.Text ("(more than " + string Constants.Render.TerrainLayersMax + " layers aren't supported)")
+                        Some (layersEdited, layers :> obj)
+                    | "BlendMap" ->
+                        let blendMap = field :?> BlendMap
+                        let (_, blendCaseNameEdited, blendCaseName) = World.imGuiSelectCase fieldInfo.Name (typeof<BlendMap>) blendMap context
+                        let blendMap =
+                            if blendCaseNameEdited then
+                                match (blendCaseName, blendMap) with
+                                | (nameof RgbaMap, RedsMap reds) -> RgbaMap (if Array.notEmpty reds then reds[0] else Assets.Default.TerrainLayer0Blend)
+                                | (nameof RedsMap, RgbaMap rgba) -> RedsMap [|rgba|]
+                                | (_, _) -> blendMap
+                            else blendMap
+                        let layerCount = match material with BlendMaterial blend -> blend.TerrainLayers.Length | FlatMaterial _ -> 0
+                        ImGui.Indent ()
+                        let (blendMapEdited, blendMap) =
+                            match blendMap with
+                            | RgbaMap rgba ->
+                                let (_, rgbaEdited, rgba) = World.imGuiEditProperty "Rgba" (typeof<Image AssetTag>) rgba context world
+                                ImGui.Text "(red, green, blue and alpha weigh layers 0 to 3)"
+                                if layerCount > 4 then ImGui.Text ("(" + string layerCount + " layers, but an rgba map weighs only 4)")
+                                (blendCaseNameEdited || rgbaEdited, RgbaMap (rgba :?> Image AssetTag))
+                            | RedsMap reds ->
+                                ImGui.Text "Reds"
+                                ImGui.SameLine ()
+                                ImGui.PushID "Reds"
+                                let (_, redsEdited, reds) =
+                                    World.imGuiEditPropertyArray
+                                        (fun redName red ->
+                                            let (promoted, edited, red) = World.imGuiEditProperty redName (typeof<Image AssetTag>) red context world
+                                            (promoted, edited, red :?> Image AssetTag))
+                                        Assets.Default.TerrainLayer0Blend "Red" reds context
+                                ImGui.PopID ()
+                                if reds.Length <> layerCount then
+                                    ImGui.Text ("(" + string reds.Length + " reds for " + string layerCount + " layers; each layer takes one)")
+                                (blendCaseNameEdited || redsEdited, RedsMap reds)
+                        ImGui.Unindent ()
+                        Some (blendMapEdited, blendMap :> obj)
+                    | _ -> None
+                
+                // edit property
+                ImGui.Indent ()
+                let (edited, material) =
+                    match material with
+                    | FlatMaterial flat ->
+                        let (_, edited, flat) = World.imGuiEditPropertyRecordPlus tryReplaceField false name (typeof<FlatMaterial>) flat context world
+                        (caseNameEdited || edited, FlatMaterial (flat :?> FlatMaterial))
+                    | BlendMaterial blend ->
+                        let (_, edited, blend) = World.imGuiEditPropertyRecordPlus tryReplaceField false name (typeof<BlendMaterial>) blend context world
+                        (caseNameEdited || edited, BlendMaterial (blend :?> BlendMaterial))
+                ImGui.Unindent ()
+                (false, edited, material :> obj)
+
             | :? Material as material ->
                 let tryReplaceUserDefinedImageOpt (fieldInfo : PropertyInfo) (field : obj) =
                     match Seq.tryExactlyOne context.SelectedEntities with
