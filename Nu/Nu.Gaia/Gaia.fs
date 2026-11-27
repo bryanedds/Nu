@@ -4499,6 +4499,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                      ("Ctrl+Enter / Ctrl+Shift+Enter", "Eval / enter, in the interactive window.")|])
                   ("Keyboard Shortcuts",
                    [|("I", "Show or hide this list.")
+                     ("H", "Highlight modified entities.")
                      ("M", "Toggle manipulation between world and object space.")
                      ("Delete", "Delete the selected entity.")
                      ("Escape", "Clear search / deselect.")
