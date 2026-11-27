@@ -3341,8 +3341,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     ImGui.SetKeyboardFocusHere ()
                     EntityHierarchySearchStr <- ""
                     EntityHierarchySearchRequested <- false
-                let functional = world.Functional
-                if functional then
+                if world.Functional then
                     let style = ImGui.GetStyle () // leaving room for the button
                     ImGui.SetNextItemWidth (-(ImGui.CalcTextSize "Highlight").X - style.FramePadding.X * 2.0f - style.ItemSpacing.X)
                 ImGui.InputTextWithHint ("##entityHierarchySearchStr", "[enter search text]", &EntityHierarchySearchStr, 4096u) |> ignore<bool>
@@ -3350,7 +3349,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     let io = ImGui.GetIO ()
                     io.SwallowKeyboard ()
                     entityHierarchyFocused <- false
-                if functional then
+                if world.Functional then
                     ImGui.SameLine ()
                     if ImGui.Button "Highlight" then refreshEntitiesModified world
                     if ImGui.IsItemHovered () && ImGui.BeginTooltip () then
