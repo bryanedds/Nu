@@ -135,9 +135,9 @@ module Gaia =
     let mutable private ProjectEditMode = ""
     let mutable private ProjectImperativeExecution = false
     let mutable private GroupFileDialogState : ImGuiFileDialogState = null // this will be initialized on start
-    let mutable private GroupFilePaths = Map.empty<Group Address, string>
-    let mutable private GroupWorldStates = Map.empty<Group Address, WorldState>
-    let mutable private EntityWorldStatesReverted = Map.empty<Entity, WorldState list> // as just after each revert
+    let mutable private GroupFilePaths = Map.empty<Group, string>
+    let mutable private GroupWorldStates = Map.empty<Group, WorldState>
+    let mutable private EntityWorldStatesReverted = Map.empty<Entity, WorldState list>
     let mutable private EntityFileDialogState : ImGuiFileDialogState = null // this will be initialized on start
     let mutable private EntityFilePaths = Map.empty<Entity Address, string>
     let mutable private AssetGraphStr = null // this will be initialized on start
@@ -1112,7 +1112,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
             // forget the group's baseline for change detection
             let group = simulant :?> Group
-            GroupWorldStates <- Map.remove group.GroupAddress GroupWorldStates
+            GroupWorldStates <- Map.remove group GroupWorldStates
             EntityWorldStatesReverted <- Map.filter (fun entity _ -> entity.Group <> group) EntityWorldStatesReverted
 
             // when currently the selected group, make sure we select another group, creating a default "Scene" group
@@ -1484,7 +1484,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private trySaveSelectedGroup filePath world =
         try World.writeGroupToFile filePath SelectedGroup world
-            GroupWorldStates <- Map.add SelectedGroup.GroupAddress world.CurrentState GroupWorldStates
+            GroupWorldStates <- Map.add SelectedGroup world.CurrentState GroupWorldStates
             EntityWorldStatesReverted <- Map.filter (fun entity _ -> entity.Group <> SelectedGroup) EntityWorldStatesReverted
             try let deploymentPath = PathF.Combine (TargetDir, PathF.GetRelativePath(TargetDir, filePath).Replace("../", ""))
                 if Directory.Exists (PathF.GetDirectoryName deploymentPath) then
@@ -1492,7 +1492,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     File.Copy (filePath, deploymentPath, true)
                     File.SetAttributes (deploymentPath, FileAttributes.ReadOnly)
             with exn -> MessageBoxOpt <- Some ("Could not deploy file due to: " + scstring exn)
-            GroupFilePaths <- Map.add SelectedGroup.GroupAddress GroupFileDialogState.FilePath GroupFilePaths
+            GroupFilePaths <- Map.add SelectedGroup GroupFileDialogState.FilePath GroupFilePaths
             true
         with exn ->
             MessageBoxOpt <- Some ("Could not save file due to: " + scstring exn)
@@ -1518,10 +1518,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             try if not (group.GetExists world) || group.GetProtection world = Unprotected then
                     if group.GetExists world then World.destroyGroupImmediate SelectedGroup world
                     let group = World.readGroup groupDescriptor None SelectedScreen world
-                    GroupWorldStates <- Map.add group.GroupAddress world.CurrentState GroupWorldStates
+                    GroupWorldStates <- Map.add group world.CurrentState GroupWorldStates
                     selectGroup true group
                     pruneEntitySelection world
-                    GroupFilePaths <- Map.add group.GroupAddress GroupFileDialogState.FilePath GroupFilePaths
+                    GroupFilePaths <- Map.add group GroupFileDialogState.FilePath GroupFilePaths
                     GroupFileDialogState.FileName <- ""
                     true
                 else
@@ -1539,7 +1539,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private getEntityModified (entity : Entity) world =
         if entity.GetProtection world <> DeclarativeProtection then // NOTE: a declared entity isn't saved, so isn't tracked.
-            match Map.tryFind entity.Group.GroupAddress GroupWorldStates with
+            match Map.tryFind entity.Group GroupWorldStates with
             | Some worldState ->
                 World.getEntityModified entity worldState world &&
                 (match Map.tryFind entity EntityWorldStatesReverted with // NOTE: as just after a revert is unmodified.
@@ -1551,7 +1551,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private getEntityRevertible (entity : Entity) world =
         entity.GetExists world &&
         entity.GetProtection world = Unprotected &&
-        (match Map.tryFind entity.Group.GroupAddress GroupWorldStates with
+        (match Map.tryFind entity.Group GroupWorldStates with
          | Some worldState -> WorldState.getEntityExists entity worldState
          | None -> false) &&
         getEntityModified entity world
@@ -1561,7 +1561,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         | Some entity when getEntityRevertible entity world ->
             let worldStateOld = world.CurrentState
             try snapshot RevertEntity world
-                World.revertEntity entity GroupWorldStates[entity.Group.GroupAddress] world
+                World.revertEntity entity GroupWorldStates[entity.Group] world
                 for entity in Seq.append [entity] (entity.GetDescendants world) do
                     let worldStates = Option.defaultValue [] (Map.tryFind entity EntityWorldStatesReverted)
                     EntityWorldStatesReverted <- Map.add entity (world.CurrentState :: worldStates) EntityWorldStatesReverted
@@ -3118,7 +3118,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     if ImGui.MenuItem ("New Group", "Ctrl+N") then ShowNewGroupDialog <- true
                     if ImGui.MenuItem ("Open Group", "Ctrl+O") then ShowOpenGroupDialog <- true
                     if ImGui.MenuItem ("Save Group", "Ctrl+S") then
-                        match Map.tryFind SelectedGroup.GroupAddress GroupFilePaths with
+                        match Map.tryFind SelectedGroup GroupFilePaths with
                         | Some filePath -> GroupFileDialogState.FilePath <- filePath
                         | None -> GroupFileDialogState.FileName <- ""
                         ShowSaveGroupDialog <- true
@@ -3129,7 +3129,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             let groupsRemaining = Set.remove SelectedGroup groups
                             selectEntities true Set.empty world
                             World.destroyGroupImmediate SelectedGroup world
-                            GroupFilePaths <- Map.remove SelectedGroup.GroupAddress GroupFilePaths
+                            GroupFilePaths <- Map.remove SelectedGroup GroupFilePaths
                             selectGroup true (Seq.head groupsRemaining)
                         else MessageBoxOpt <- Some "Cannot close protected or only group."
                     ImGui.EndMenu ()
@@ -3407,10 +3407,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         | Some _ | None -> ()
                     ImGui.EndDragDropTarget ()
 
-                // entity editing, first taking a baseline for change detection when this group has none, such as when
-                // it was read from a file by the game rather than opened here
-                if not (GroupWorldStates.ContainsKey SelectedGroup.GroupAddress) then
-                    GroupWorldStates <- Map.add SelectedGroup.GroupAddress world.CurrentState GroupWorldStates
+                // entity editing, first 
                 ImGui.BeginChild "Container" |> ignore<bool>
 
                 // when showing modified entities, find them and their ancestors
@@ -4924,8 +4921,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiProcess (world : World) =
 
-        // store old world state
+        // reference old world state
         let worldStateOld = world.CurrentState
+
+        // store the world state snapshot for change detection for each group
+        for group in World.getGroups1 world do
+            if not (GroupWorldStates.ContainsKey group) then
+                GroupWorldStates <- Map.add group worldStateOld GroupWorldStates
 
         // detect if eyes were changed somewhere other than in the editor (such as in gameplay code)
         detectEyeChangedElsewhere world
