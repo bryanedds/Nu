@@ -4368,13 +4368,14 @@ type TraversalInterpolatedFacet () =
 
     override this.Edit (op, entity, world) =
 
-        // ensure position history isn't stale when editing
+        // ensure position history isn't stale when editing, leaving it be when it isn't so the entity is unchanged
         match op with
         | ViewportOverlay _ when world.TimeHalted ->
             let position = entity.GetPosition world
-            let gameTime = if entity.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
-            let positionHistory = FQueue.singleton (gameTime, position)
-            entity.SetPositionHistory positionHistory world
+            if Seq.exists (fun (_, positionPast) -> positionPast <> position) (entity.GetPositionHistory world) then
+                let gameTime = if entity.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
+                let positionHistory = FQueue.singleton (gameTime, position)
+                entity.SetPositionHistory positionHistory world
         | _ -> ()
 
 [<AutoOpen>]
