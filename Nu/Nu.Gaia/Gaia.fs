@@ -2272,7 +2272,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 elif ImGui.IsKeyPressed ImGuiKey.Escape then
                     if not (String.IsNullOrWhiteSpace PropagationSourcesSearchStr) then
                         PropagationSourcesSearchStr <- ""
-                    elif not (String.IsNullOrWhiteSpace EntityHierarchySearchStr) then
+                    elif not (String.IsNullOrWhiteSpace EntityHierarchySearchStr) || EntityHierarchyShowModified then
                         EntityHierarchySearchStr <- ""
                         EntityHierarchyShowModified <- false
                     elif entityHierarchyFocused then
