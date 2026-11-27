@@ -1912,7 +1912,7 @@ module WorldModule2 =
                                     let cascadeCullFrustum = Frustum (sectionViewOrtho * cascadeCullProjection)
 
                                     // cull the gathered casters to this cascade so smaller cascades don't draw everything, keeping
-                                    // omnipresent casters in every cascade just as the gather above does since their bounds don't
+                                    // Omnipresent casters in every cascade just as the gather above does since their bounds don't
                                     // describe where they render
                                     for element in WorldModuleInternal2.HashSet3dNormalCached do
                                         let presence = element.Presence

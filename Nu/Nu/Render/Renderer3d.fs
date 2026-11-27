@@ -308,6 +308,33 @@ type [<SymbolicExpansion>] MaterialProperties =
     member this.UserDefinedSetting6 = ValueOption.defaultValue 0.0f this.UserDefinedSetting6Opt
     member this.UserDefinedSetting7 = ValueOption.defaultValue 0.0f this.UserDefinedSetting7Opt
 
+    /// Override material properties.
+    static member overrideProperties (properties : MaterialProperties) (override_ : MaterialProperties) =
+        { AlbedoOpt = match override_.AlbedoOpt with ValueSome _ as opt -> opt | ValueNone -> properties.AlbedoOpt
+          RoughnessOpt = match override_.RoughnessOpt with ValueSome _ as opt -> opt | ValueNone -> properties.RoughnessOpt
+          MetallicOpt = match override_.MetallicOpt with ValueSome _ as opt -> opt | ValueNone -> properties.MetallicOpt
+          AmbientOcclusionOpt = match override_.AmbientOcclusionOpt with ValueSome _ as opt -> opt | ValueNone -> properties.AmbientOcclusionOpt
+          EmissionOpt = match override_.EmissionOpt with ValueSome _ as opt -> opt | ValueNone -> properties.EmissionOpt
+          IgnoreLightMapsOpt = match override_.IgnoreLightMapsOpt with ValueSome _ as opt -> opt | ValueNone -> properties.IgnoreLightMapsOpt
+          AnisotropyOpt = match override_.AnisotropyOpt with ValueSome _ as opt -> opt | ValueNone -> properties.AnisotropyOpt
+          OpaqueDistanceOpt = match override_.OpaqueDistanceOpt with ValueSome _ as opt -> opt | ValueNone -> properties.OpaqueDistanceOpt
+          FinenessOffsetOpt = match override_.FinenessOffsetOpt with ValueSome _ as opt -> opt | ValueNone -> properties.FinenessOffsetOpt
+          ScatterTypeOpt = match override_.ScatterTypeOpt with ValueSome _ as opt -> opt | ValueNone -> properties.ScatterTypeOpt
+          SpecularScalarOpt = match override_.SpecularScalarOpt with ValueSome _ as opt -> opt | ValueNone -> properties.SpecularScalarOpt
+          SubsurfaceCutoffOpt = match override_.SubsurfaceCutoffOpt with ValueSome _ as opt -> opt | ValueNone -> properties.SubsurfaceCutoffOpt
+          SubsurfaceCutoffMarginOpt = match override_.SubsurfaceCutoffMarginOpt with ValueSome _ as opt -> opt | ValueNone -> properties.SubsurfaceCutoffMarginOpt
+          RefractiveIndexOpt = match override_.RefractiveIndexOpt with ValueSome _ as opt -> opt | ValueNone -> properties.RefractiveIndexOpt
+          ClearCoatOpt = match override_.ClearCoatOpt with ValueSome _ as opt -> opt | ValueNone -> properties.ClearCoatOpt
+          ClearCoatRoughnessOpt = match override_.ClearCoatRoughnessOpt with ValueSome _ as opt -> opt | ValueNone -> properties.ClearCoatRoughnessOpt
+          UserDefinedSetting0Opt = match override_.UserDefinedSetting0Opt with ValueSome _ as opt -> opt | ValueNone -> properties.UserDefinedSetting0Opt
+          UserDefinedSetting1Opt = match override_.UserDefinedSetting1Opt with ValueSome _ as opt -> opt | ValueNone -> properties.UserDefinedSetting1Opt
+          UserDefinedSetting2Opt = match override_.UserDefinedSetting2Opt with ValueSome _ as opt -> opt | ValueNone -> properties.UserDefinedSetting2Opt
+          UserDefinedSetting3Opt = match override_.UserDefinedSetting3Opt with ValueSome _ as opt -> opt | ValueNone -> properties.UserDefinedSetting3Opt
+          UserDefinedSetting4Opt = match override_.UserDefinedSetting4Opt with ValueSome _ as opt -> opt | ValueNone -> properties.UserDefinedSetting4Opt
+          UserDefinedSetting5Opt = match override_.UserDefinedSetting5Opt with ValueSome _ as opt -> opt | ValueNone -> properties.UserDefinedSetting5Opt
+          UserDefinedSetting6Opt = match override_.UserDefinedSetting6Opt with ValueSome _ as opt -> opt | ValueNone -> properties.UserDefinedSetting6Opt
+          UserDefinedSetting7Opt = match override_.UserDefinedSetting7Opt with ValueSome _ as opt -> opt | ValueNone -> properties.UserDefinedSetting7Opt }
+
     /// Material properties with populated default properties.
     static member val defaultProperties =
         { AlbedoOpt = ValueSome Constants.Render.AlbedoDefault
@@ -690,6 +717,7 @@ type StaticModelSurfacePreBatch =
     { PreBatchId : Guid
       PreBatchItems : StaticModelSurfacePreBatchItem array
       Material : Material
+      MaterialPropertiesOverride : MaterialProperties voption // populated properties take precedence over each item's
       StaticModel : StaticModel AssetTag
       SurfaceIndex : int
       RenderType : RenderType }
@@ -1234,9 +1262,9 @@ type [<ReferenceEquality>] private RenderTasks =
       LightMapRenders : uint64 HashSet
       Lights : SortableLight List
       DeferredStatic : Dictionary<string, Dictionary<PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>>
-      DeferredStaticPreBatches : Dictionary<string, Dictionary<Guid, struct (PhysicallyBasedSurface * StaticModelSurfacePreBatchItem array)>>
+      DeferredStaticPreBatches : Dictionary<string, Dictionary<Guid, struct (PhysicallyBasedSurface * MaterialProperties voption * StaticModelSurfacePreBatchItem array)>>
       DeferredStaticClipped : Dictionary<string, Dictionary<PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>>
-      DeferredStaticClippedPreBatches : Dictionary<string, Dictionary<Guid, struct (PhysicallyBasedSurface * StaticModelSurfacePreBatchItem array)>>
+      DeferredStaticClippedPreBatches : Dictionary<string, Dictionary<Guid, struct (PhysicallyBasedSurface * MaterialProperties voption * StaticModelSurfacePreBatchItem array)>>
       DeferredAnimated : Dictionary<string, Dictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>>
       DeferredTerrains : Dictionary<string, struct (TerrainDescriptor * TerrainPatchDescriptor * PhysicallyBasedGeometry) List>
       Forward : struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBasedSurface) List
@@ -3036,6 +3064,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         (preBatchId : Guid,
          preBatchItems : StaticModelSurfacePreBatchItem array,
          material : Material,
+         propertiesOverride : MaterialProperties voption,
          staticModel : StaticModel AssetTag,
          surfaceIndex : int,
          renderType : RenderType,
@@ -3068,7 +3097,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                     item
                             if item.ContainsKey preBatchId then
                                 Log.warnOnce "Multiple pre-batches with the same PreBatchId may indicate undesired usage. Only the last submitted deferred pre-batch will be rendered."
-                            item[preBatchId] <- struct (surface, preBatchItems)
+                            item[preBatchId] <- struct (surface, propertiesOverride, preBatchItems)
                         else
                             let item =
                                 match renderTasks.DeferredStaticClippedPreBatches.TryGetValue surface.SurfaceMaterial.PipelineName with
@@ -3079,7 +3108,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                     item
                             if item.ContainsKey preBatchId then
                                 Log.warnOnce "Multiple pre-batches with the same PreBatchId may indicate undesired usage. Only the last submitted deferred pre-batch will be rendered."
-                            item[preBatchId] <- struct (surface, preBatchItems)
+                            item[preBatchId] <- struct (surface, propertiesOverride, preBatchItems)
                     | ForwardRenderType (subsort, sort) ->
                         for i in 0 .. dec preBatchItems.Length do
                             let item = &preBatchItems[i]
@@ -3094,7 +3123,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum false item.Presence item.Bounds
                                 | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter false item.Presence item.Bounds
                             if unculled then
-                                renderTasks.Forward.Add struct (subsort, sort, item.ModelMatrix, item.CastShadow, item.Presence, item.Inset, item.MaterialProperties, ValueNone, surface)
+                                let properties =
+                                    match propertiesOverride with
+                                    | ValueSome materialProperties -> MaterialProperties.overrideProperties item.MaterialProperties materialProperties
+                                    | ValueNone -> item.MaterialProperties
+                                renderTasks.Forward.Add struct (subsort, sort, item.ModelMatrix, item.CastShadow, item.Presence, item.Inset, properties, ValueNone, surface)
             | _ -> ()
         | ValueNone -> ()
 
@@ -3646,12 +3679,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | RenderStaticModelSurfacePreBatch rsmsb ->
                 let renderPass = rsmsb.RenderPass
                 let renderTasks = VulkanRenderer3d.getRenderTasks renderPass renderer
-                VulkanRenderer3d.categorizeStaticModelSurfacePreBatch (rsmsb.StaticModelSurfacePreBatch.PreBatchId, rsmsb.StaticModelSurfacePreBatch.PreBatchItems, rsmsb.StaticModelSurfacePreBatch.Material, rsmsb.StaticModelSurfacePreBatch.StaticModel, rsmsb.StaticModelSurfacePreBatch.SurfaceIndex, rsmsb.StaticModelSurfacePreBatch.RenderType, frustumInterior, frustumExterior, frustumImposter, renderPass, renderTasks, renderer)
+                VulkanRenderer3d.categorizeStaticModelSurfacePreBatch (rsmsb.StaticModelSurfacePreBatch.PreBatchId, rsmsb.StaticModelSurfacePreBatch.PreBatchItems, rsmsb.StaticModelSurfacePreBatch.Material, rsmsb.StaticModelSurfacePreBatch.MaterialPropertiesOverride, rsmsb.StaticModelSurfacePreBatch.StaticModel, rsmsb.StaticModelSurfacePreBatch.SurfaceIndex, rsmsb.StaticModelSurfacePreBatch.RenderType, frustumInterior, frustumExterior, frustumImposter, renderPass, renderTasks, renderer)
             | RenderStaticModelSurfacePreBatches rsmsbs ->
                 let renderPass = rsmsbs.RenderPass
                 let renderTasks = VulkanRenderer3d.getRenderTasks renderPass renderer
                 for preBatch in rsmsbs.StaticModelSurfacePreBatches do
-                    VulkanRenderer3d.categorizeStaticModelSurfacePreBatch (preBatch.PreBatchId, preBatch.PreBatchItems, preBatch.Material, preBatch.StaticModel, preBatch.SurfaceIndex, preBatch.RenderType, frustumInterior, frustumExterior, frustumImposter, renderPass, renderTasks, renderer)
+                    VulkanRenderer3d.categorizeStaticModelSurfacePreBatch (preBatch.PreBatchId, preBatch.PreBatchItems, preBatch.Material, preBatch.MaterialPropertiesOverride, preBatch.StaticModel, preBatch.SurfaceIndex, preBatch.RenderType, frustumInterior, frustumExterior, frustumImposter, renderPass, renderTasks, renderer)
             | RenderStaticModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
                 let renderTasks = VulkanRenderer3d.getRenderTasks rsm.RenderPass renderer
@@ -3864,7 +3897,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         renderer.GeometryInstanced.Add surface.PhysicallyBasedGeometry |> ignore<bool>
 
     static member private renderPhysicallyBasedDeferredSurfacePreBatch
-        frustumInterior frustumExterior frustumImposter renderPass bones (parameters : StaticModelSurfacePreBatchItem array) (surface : PhysicallyBasedSurface)
+        frustumInterior frustumExterior frustumImposter renderPass bones (parameters : StaticModelSurfacePreBatchItem array)
+        (propertiesOverride : MaterialProperties voption) (surface : PhysicallyBasedSurface)
         eyeDescriptorSet samplerDescriptorSet pipeline renderer =
 
         // ensure we have a large enough instance fields array
@@ -3872,6 +3906,26 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         while parameters.Length * Constants.Render.InstanceFieldCount > length do length <- length * 2
         if renderer.InstanceFields.Length < length then
             renderer.InstanceFields <- Array.zeroCreate<single> length
+
+        // extract override material properties once for the whole pre-batch, leaving each unset when there's no override
+        let albedoOverride = match propertiesOverride with ValueSome propertiesOverride -> propertiesOverride.AlbedoOpt | ValueNone -> ValueNone
+        let roughnessOverride = match propertiesOverride with ValueSome propertiesOverride -> propertiesOverride.RoughnessOpt | ValueNone -> ValueNone
+        let metallicOverride = match propertiesOverride with ValueSome propertiesOverride -> propertiesOverride.MetallicOpt | ValueNone -> ValueNone
+        let ambientOcclusionOverride = match propertiesOverride with ValueSome propertiesOverride -> propertiesOverride.AmbientOcclusionOpt | ValueNone -> ValueNone
+        let emissionOverride = match propertiesOverride with ValueSome propertiesOverride -> propertiesOverride.EmissionOpt | ValueNone -> ValueNone
+        let ignoreLightMapsOverride = match propertiesOverride with ValueSome propertiesOverride -> propertiesOverride.IgnoreLightMapsOpt | ValueNone -> ValueNone
+        let finenessOffsetOverride = match propertiesOverride with ValueSome propertiesOverride -> propertiesOverride.FinenessOffsetOpt | ValueNone -> ValueNone
+        let scatterTypeOverride = match propertiesOverride with ValueSome propertiesOverride -> propertiesOverride.ScatterTypeOpt | ValueNone -> ValueNone
+        let clearCoatOverride = match propertiesOverride with ValueSome propertiesOverride -> propertiesOverride.ClearCoatOpt | ValueNone -> ValueNone
+        let clearCoatRoughnessOverride = match propertiesOverride with ValueSome propertiesOverride -> propertiesOverride.ClearCoatRoughnessOpt | ValueNone -> ValueNone
+        let userDefinedSetting0Override = match propertiesOverride with ValueSome propertiesOverride -> propertiesOverride.UserDefinedSetting0Opt | ValueNone -> ValueNone
+        let userDefinedSetting1Override = match propertiesOverride with ValueSome propertiesOverride -> propertiesOverride.UserDefinedSetting1Opt | ValueNone -> ValueNone
+        let userDefinedSetting2Override = match propertiesOverride with ValueSome propertiesOverride -> propertiesOverride.UserDefinedSetting2Opt | ValueNone -> ValueNone
+        let userDefinedSetting3Override = match propertiesOverride with ValueSome propertiesOverride -> propertiesOverride.UserDefinedSetting3Opt | ValueNone -> ValueNone
+        let userDefinedSetting4Override = match propertiesOverride with ValueSome propertiesOverride -> propertiesOverride.UserDefinedSetting4Opt | ValueNone -> ValueNone
+        let userDefinedSetting5Override = match propertiesOverride with ValueSome propertiesOverride -> propertiesOverride.UserDefinedSetting5Opt | ValueNone -> ValueNone
+        let userDefinedSetting6Override = match propertiesOverride with ValueSome propertiesOverride -> propertiesOverride.UserDefinedSetting6Opt | ValueNone -> ValueNone
+        let userDefinedSetting7Override = match propertiesOverride with ValueSome propertiesOverride -> propertiesOverride.UserDefinedSetting7Opt | ValueNone -> ValueNone
 
         // blit parameters to instance fields
         let mutable i = 0
@@ -3891,24 +3945,78 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16 + 1] <- item.Inset.Min.Y
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16 + 2] <- item.Inset.Min.X + item.Inset.Size.X
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16 + 3] <- item.Inset.Min.Y + item.Inset.Size.Y
-                let albedo = match item.MaterialProperties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Albedo
-                let roughness = match item.MaterialProperties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Roughness
-                let metallic = match item.MaterialProperties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Metallic
-                let ambientOcclusion = match item.MaterialProperties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.AmbientOcclusion
-                let emission = match item.MaterialProperties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Emission
-                let ignoreLightMaps = match item.MaterialProperties.IgnoreLightMapsOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.IgnoreLightMaps
-                let finenessOffset = match item.MaterialProperties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
-                let scatterType = match item.MaterialProperties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
-                let clearCoat = match item.MaterialProperties.ClearCoatOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ClearCoat
-                let clearCoatRoughness = match item.MaterialProperties.ClearCoatRoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ClearCoatRoughness
-                let userDefinedSetting0 = match item.MaterialProperties.UserDefinedSetting0Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting0
-                let userDefinedSetting1 = match item.MaterialProperties.UserDefinedSetting1Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting1
-                let userDefinedSetting2 = match item.MaterialProperties.UserDefinedSetting2Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting2
-                let userDefinedSetting3 = match item.MaterialProperties.UserDefinedSetting3Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting3
-                let userDefinedSetting4 = match item.MaterialProperties.UserDefinedSetting4Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting4
-                let userDefinedSetting5 = match item.MaterialProperties.UserDefinedSetting5Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting5
-                let userDefinedSetting6 = match item.MaterialProperties.UserDefinedSetting6Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting6
-                let userDefinedSetting7 = match item.MaterialProperties.UserDefinedSetting7Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting7
+                let albedo =
+                    match albedoOverride with
+                    | ValueSome value -> value
+                    | ValueNone -> match item.MaterialProperties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Albedo
+                let roughness =
+                    match roughnessOverride with
+                    | ValueSome value -> value
+                    | ValueNone -> match item.MaterialProperties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Roughness
+                let metallic =
+                    match metallicOverride with
+                    | ValueSome value -> value
+                    | ValueNone -> match item.MaterialProperties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Metallic
+                let ambientOcclusion =
+                    match ambientOcclusionOverride with
+                    | ValueSome value -> value
+                    | ValueNone -> match item.MaterialProperties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.AmbientOcclusion
+                let emission =
+                    match emissionOverride with
+                    | ValueSome value -> value
+                    | ValueNone -> match item.MaterialProperties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Emission
+                let ignoreLightMaps =
+                    match ignoreLightMapsOverride with
+                    | ValueSome value -> value
+                    | ValueNone -> match item.MaterialProperties.IgnoreLightMapsOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.IgnoreLightMaps
+                let finenessOffset =
+                    match finenessOffsetOverride with
+                    | ValueSome value -> value
+                    | ValueNone -> match item.MaterialProperties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
+                let scatterType =
+                    match scatterTypeOverride with
+                    | ValueSome value -> value
+                    | ValueNone -> match item.MaterialProperties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
+                let clearCoat =
+                    match clearCoatOverride with
+                    | ValueSome value -> value
+                    | ValueNone -> match item.MaterialProperties.ClearCoatOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ClearCoat
+                let clearCoatRoughness =
+                    match clearCoatRoughnessOverride with
+                    | ValueSome value -> value
+                    | ValueNone -> match item.MaterialProperties.ClearCoatRoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ClearCoatRoughness
+                let userDefinedSetting0 =
+                    match userDefinedSetting0Override with
+                    | ValueSome value -> value
+                    | ValueNone -> match item.MaterialProperties.UserDefinedSetting0Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting0
+                let userDefinedSetting1 =
+                    match userDefinedSetting1Override with
+                    | ValueSome value -> value
+                    | ValueNone -> match item.MaterialProperties.UserDefinedSetting1Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting1
+                let userDefinedSetting2 =
+                    match userDefinedSetting2Override with
+                    | ValueSome value -> value
+                    | ValueNone -> match item.MaterialProperties.UserDefinedSetting2Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting2
+                let userDefinedSetting3 =
+                    match userDefinedSetting3Override with
+                    | ValueSome value -> value
+                    | ValueNone -> match item.MaterialProperties.UserDefinedSetting3Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting3
+                let userDefinedSetting4 =
+                    match userDefinedSetting4Override with
+                    | ValueSome value -> value
+                    | ValueNone -> match item.MaterialProperties.UserDefinedSetting4Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting4
+                let userDefinedSetting5 =
+                    match userDefinedSetting5Override with
+                    | ValueSome value -> value
+                    | ValueNone -> match item.MaterialProperties.UserDefinedSetting5Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting5
+                let userDefinedSetting6 =
+                    match userDefinedSetting6Override with
+                    | ValueSome value -> value
+                    | ValueNone -> match item.MaterialProperties.UserDefinedSetting6Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting6
+                let userDefinedSetting7 =
+                    match userDefinedSetting7Override with
+                    | ValueSome value -> value
+                    | ValueNone -> match item.MaterialProperties.UserDefinedSetting7Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting7
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
@@ -4198,12 +4306,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         lightOrigin
         (lightView : Matrix4x4)
         (lightProjection : Matrix4x4)
-        lightFrustum
+        (lightFrustum : Frustum)
         lightType
         lightCutoff
-        resolution
-        colorAttachment
-        depthAttachment
+        (resolution : Vector2i)
+        (colorAttachment : VkImageView)
+        (depthAttachment : Texture)
         renderTasks
         renderer =
 
@@ -4223,32 +4331,44 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                  renderer.PhysicallyBasedPipelines.ShadowAnimatedDirectionalPipeline,
                  renderer.PhysicallyBasedPipelines.ShadowTerrainDirectionalPipeline)
 
+        // clear shadow attachments
+        let shadowClearColor =
+            match lightType with
+            | PointLight _ -> Color (lightCutoff, 0.0f, 0.0f, 0.0f) // TODO: make derived from constant.
+            | SpotLight _ | DirectionalLight _ | CascadedLight -> Color (1.0f, Single.MaxValue, 0.0f, 0.0f) // TODO: make derived from constant.
+        let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
+        Hl.withRenderingInfo [|colorAttachment|] (Some depthAttachment.ImageView) renderArea (ClearAttachments shadowClearColor) $ fun renderingInfo ->
+            let mutable renderingInfo = renderingInfo
+            DeviceApi.vkCmdBeginRendering (renderer.VulkanContext.RenderCommandBuffer, &&renderingInfo)
+        DeviceApi.vkCmdEndRendering renderer.VulkanContext.RenderCommandBuffer
+
+        // deferred render terrain shadows, ahead of other shadows so that it occludes what's behind it early
+        for item in renderTasks.DeferredTerrains.Values do
+            for struct (descriptor, patchDescriptor, geometry) in item do
+                if lightFrustum.Intersects patchDescriptor.PatchBounds then
+                    VulkanRenderer3d.renderPhysicallyBasedTerrain
+                        lightType.ShadowsUseCubeMap lightOrigin lightView lightProjection
+                        renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
+                        descriptor renderer.MaterialSamplers geometry [|colorAttachment|] depthAttachment resolution renderer.RenderPassIndex shadowTerrainPipeline renderer
+
         // begin deferred static surface shadow rendering
         let mutable counted = 0
         let mutable committed = 0
         let mutable uniformsDescriptorSet = Unchecked.defaultof<_>
-        let beginBatch = fun clear ->
-            let loadOperation =
-                if clear then
-                    match lightType with
-                    | PointLight _ ->
-                        ClearAttachments (Color (lightCutoff, 0.0f, 0.0f, 0.0f)) // TODO: make derived from constant.
-                    | SpotLight _ | DirectionalLight _ | CascadedLight ->
-                        ClearAttachments (Color (1.0f, Single.MaxValue, 0.0f, 0.0f)) // TODO: make derived from constant.
-                else LoadAttachments
+        let beginBatch = fun () ->
             uniformsDescriptorSet <-
                 VulkanRenderer3d.beginPhysicallyBasedShadowSurfaces
                     lightType.ShadowsUseCubeMap lightOrigin lightView lightProjection renderer.LightingConfig.LightShadowExponent
-                    loadOperation colorAttachment depthAttachment resolution renderer.RenderPassIndex shadowStaticPipeline renderer
+                    LoadAttachments colorAttachment depthAttachment resolution renderer.RenderPassIndex shadowStaticPipeline renderer
         let endBatch = fun () -> VulkanRenderer3d.endPhysicallyBasedShadowSurfaces shadowStaticPipeline renderer.VulkanContext
         let advanceBatch = fun instances ->
             counted <- counted + instances
             let delta = counted - committed
             if delta >= Constants.Vulkan.ShadowSurfaceInstanceThreshold then
                 endBatch ()
-                beginBatch false
+                beginBatch ()
                 committed <- counted
-        beginBatch true
+        beginBatch ()
 
         // deferred render static surface shadows
         for item in renderTasks.DeferredStatic.Values do
@@ -4259,7 +4379,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // deferred render static surface pre-batches shadows
         for item in renderTasks.DeferredStaticPreBatches.Values do
             for entry in item do
-                let struct (surface, preBatch) = entry.Value
+                let struct (surface, _, preBatch) = entry.Value
                 advanceBatch $ VulkanRenderer3d.renderPhysicallyBasedShadowSurfacePreBatch lightType lightFrustum [||] preBatch surface uniformsDescriptorSet shadowStaticPipeline renderer
 
         // deferred render static surface clipped shadows (TODO: consider implementing clipped shadow rendering.)
@@ -4271,7 +4391,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // deferred render static surface pre-batches clipped shadows (TODO: consider implementing clipped shadow rendering.)
         for item in renderTasks.DeferredStaticClippedPreBatches.Values do
             for entry in item do
-                let struct (surface, preBatch) = entry.Value
+                let struct (surface, _, preBatch) = entry.Value
                 advanceBatch $ VulkanRenderer3d.renderPhysicallyBasedShadowSurfacePreBatch lightType lightFrustum [||] preBatch surface uniformsDescriptorSet shadowStaticPipeline renderer
 
         // end deferred static surface shadow rendering
@@ -4293,15 +4413,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         // end shadow animated pipeline
         VulkanRenderer3d.endPhysicallyBasedShadowSurfaces shadowAnimatedPipeline renderer.VulkanContext
-
-        // attempt to deferred render terrain shadows
-        for item in renderTasks.DeferredTerrains.Values do
-            for struct (descriptor, patchDescriptor, geometry) in item do
-                if lightFrustum.Intersects patchDescriptor.PatchBounds then
-                    VulkanRenderer3d.renderPhysicallyBasedTerrain
-                        lightType.ShadowsUseCubeMap lightOrigin lightView lightProjection
-                        renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
-                        descriptor renderer.MaterialSamplers geometry [|colorAttachment|] depthAttachment resolution renderer.RenderPassIndex shadowTerrainPipeline renderer
 
         // render forward (static and animated) surface shadows
         let mutable counted = 0
@@ -4982,6 +5093,24 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             DeviceApi.vkCmdBeginRendering (renderer.VulkanContext.RenderCommandBuffer, &&renderingInfo)
         DeviceApi.vkCmdEndRendering renderer.VulkanContext.RenderCommandBuffer
 
+        // deferred terrain rendering, ahead of other geometry so that it occludes what's behind it early
+        let pipelineNames = hashSetPlus StringComparer.Ordinal renderTasks.DeferredTerrains.Keys
+        for pipelineName in pipelineNames do
+
+            // compute pipeline
+            let pipeline =
+                match renderer.PhysicallyBasedPipelines.UserDefinedTerrainPipelines.TryGetValue pipelineName with
+                | (true, pipeline) -> pipeline
+                | (false, _) -> renderer.PhysicallyBasedPipelines.DeferredTerrainPipeline
+
+            // render terrains deferred
+            for struct (descriptor, _, geometry) in renderTasks.DeferredTerrains[pipelineName] do
+                VulkanRenderer3d.renderPhysicallyBasedTerrain
+                    false eyeCenter view geometryProjection
+                    renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
+                    descriptor renderer.MaterialSamplers geometry geometryTextureViews depthBufferTexture
+                    geometryResolution renderer.RenderPassIndex pipeline renderer
+
         // deferred static surface rendering
         // TODO: consider getting rid of frame-based allocation here.
         let pipelineNames =
@@ -5035,8 +5164,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             match renderTasks.DeferredStaticPreBatches.TryGetValue pipelineName with
             | (true, item) ->
                 for entry in item do
-                    let struct (surface, preBatch) = entry.Value
-                    advanceBatch $ VulkanRenderer3d.renderPhysicallyBasedDeferredSurfacePreBatch frustumInterior frustumExterior frustumImposter renderPass [||] preBatch surface eyeDescriptorSet samplerDescriptorSet pipeline renderer
+                    let struct (surface, propertiesOverride, preBatch) = entry.Value
+                    advanceBatch $ VulkanRenderer3d.renderPhysicallyBasedDeferredSurfacePreBatch frustumInterior frustumExterior frustumImposter renderPass [||] preBatch propertiesOverride surface eyeDescriptorSet samplerDescriptorSet pipeline renderer
             | (false, _) -> ()
 
             // end deferred static surface rendering
@@ -5095,8 +5224,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             match renderTasks.DeferredStaticClippedPreBatches.TryGetValue pipelineName with
             | (true, item) ->
                 for entry in item do
-                    let struct (surface, preBatch) = entry.Value
-                    advanceBatch $ VulkanRenderer3d.renderPhysicallyBasedDeferredSurfacePreBatch frustumInterior frustumExterior frustumImposter renderPass [||] preBatch surface eyeDescriptorSet samplerDescriptorSet pipeline renderer
+                    let struct (surface, propertiesOverride, preBatch) = entry.Value
+                    advanceBatch $ VulkanRenderer3d.renderPhysicallyBasedDeferredSurfacePreBatch frustumInterior frustumExterior frustumImposter renderPass [||] preBatch propertiesOverride surface eyeDescriptorSet samplerDescriptorSet pipeline renderer
             | (false, _) -> ()
 
             // end deferred static surface clipped rendering
@@ -5134,24 +5263,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             // end deferred animated rendering
             VulkanRenderer3d.endPhysicallyBasedDeferredSurfaces
                 pipeline renderer.VulkanContext
-
-        // deferred terrain rendering
-        let pipelineNames = hashSetPlus StringComparer.Ordinal renderTasks.DeferredTerrains.Keys
-        for pipelineName in pipelineNames do
-
-            // compute pipeline
-            let pipeline =
-                match renderer.PhysicallyBasedPipelines.UserDefinedTerrainPipelines.TryGetValue pipelineName with
-                | (true, pipeline) -> pipeline
-                | (false, _) -> renderer.PhysicallyBasedPipelines.DeferredTerrainPipeline
-
-            // render terrains deferred
-            for struct (descriptor, _, geometry) in renderTasks.DeferredTerrains[pipelineName] do
-                VulkanRenderer3d.renderPhysicallyBasedTerrain
-                    false eyeCenter view geometryProjection
-                    renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
-                    descriptor renderer.MaterialSamplers geometry geometryTextureViews depthBufferTexture
-                    geometryResolution renderer.RenderPassIndex pipeline renderer
 
         // transition geometry textures (except depthBufferTexture) back to reading
         Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead depthTexture renderer.VulkanContext.RenderCommandBuffer

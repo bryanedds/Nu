@@ -340,6 +340,7 @@ module WorldEntityHierarchyExtensions =
                     { PreBatchId = preBatchId
                       PreBatchItems = Seq.toArray preBatch
                       Material = material
+                      MaterialPropertiesOverride = ValueNone
                       StaticModel = staticModel
                       SurfaceIndex = surfaceIndex
                       RenderType = renderType })
