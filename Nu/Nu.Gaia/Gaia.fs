@@ -1544,10 +1544,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         | Some (group, entitiesModified) -> entity.Group = group && entitiesModified.Contains entity
         | None -> false
 
-    let private refreshEntitiesModified world =
-        match Map.tryFind SelectedGroup GroupWorldStates with
-        | Some worldState -> EntityModificationsOpt <- Some (SelectedGroup, World.getEntitiesModified SelectedGroup worldState world)
-        | None -> ()
+    let private tryRefreshEntitiesModified (world : World) =
+        if world.Functional then
+            match Map.tryFind SelectedGroup GroupWorldStates with
+            | Some worldState -> EntityModificationsOpt <- Some (SelectedGroup, World.getEntitiesModified SelectedGroup worldState world)
+            | None -> ()
 
     let private getEntityRevertible (entity : Entity) world =
         entity.GetExists world &&
@@ -1563,7 +1564,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let worldStateOld = world.CurrentState
             try snapshot RevertEntity world
                 World.revertEntity entity GroupWorldStates[entity.Group] world
-                refreshEntitiesModified world // NOTE: keeping the other entities' modifications shown.
+                tryRefreshEntitiesModified world // NOTE: keeping the other entities' modifications shown.
                 selectEntities true (Set.singleton entity) world
                 true
             with exn ->
@@ -2255,7 +2256,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then synchronizeNav world
             elif ImGui.IsKeyPressed ImGuiKey.L && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then rerenderLightMaps world
             elif ImGui.IsKeyPressed ImGuiKey.I && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then tryMoveSelectedEntityToOrigin false world |> ignore<bool>
-            elif ImGui.IsKeyPressed ImGuiKey.M && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () && world.Functional then refreshEntitiesModified world
             elif ImGui.IsKeyPressed ImGuiKey.Escape && SelectedWindowOpt = Some "Edit Property" && not (String.IsNullOrWhiteSpace PropertyValueSearchStr) then
                 PropertyValueSearchStr <- ""
                 PropertyValueSearchIndex <- -1
@@ -2267,6 +2267,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 elif ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlDown () then tryPaste PasteAtLook (Option.map cast NewEntityParentOpt) world |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () then createEntity false false None None world |> ignore<Entity>
                 elif ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity world |> ignore<bool>
+                elif ImGui.IsKeyPressed ImGuiKey.H && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltUp () then tryRefreshEntitiesModified world
                 elif ImGui.IsKeyPressed ImGuiKey.M && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ManipulationWorld <- not ManipulationWorld
                 elif ImGui.IsKeyPressed ImGuiKey.I && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ShowInputsDialog <- true
                 elif ImGui.IsKeyPressed ImGuiKey.Escape then
@@ -3122,7 +3123,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             GroupFilePaths <- Map.remove SelectedGroup GroupFilePaths
                             selectGroup true (Seq.head groupsRemaining)
                         else MessageBoxOpt <- Some "Cannot close protected or only group."
-                    if ImGui.MenuItem ("Highlight Modified Entities", "Ctrl+M", false, world.Functional) then refreshEntitiesModified world
+                    if world.Functional then
+                        if ImGui.MenuItem ("Highlight Modified Entities", "H") then tryRefreshEntitiesModified world
                     ImGui.EndMenu ()
 
                 // entity menu
@@ -3351,7 +3353,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     entityHierarchyFocused <- false
                 if world.Functional then
                     ImGui.SameLine ()
-                    if ImGui.Button "Highlight" then refreshEntitiesModified world
+                    if ImGui.Button "Highlight" then tryRefreshEntitiesModified world
                     if ImGui.IsItemHovered () && ImGui.BeginTooltip () then
                         ImGui.Text "Highlight Modified Entities"
                         ImGui.EndTooltip ()
@@ -4638,6 +4640,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                      ("Ctrl+Enter / Ctrl+Shift+Enter", "Eval / enter, in the interactive window.")|])
                   ("Keyboard Shortcuts",
                    [|("I", "Show or hide this list.")
+                     ("H", "Highlight modified entities.")
                      ("M", "Toggle manipulation between world and object space.")
                      ("Delete", "Delete the selected entity.")
                      ("Escape", "Clear search / deselect.")
