@@ -3353,7 +3353,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if functional then
                     ImGui.SetNextItemWidth (-ImGui.GetFrameHeight () - ImGui.GetStyle().ItemSpacing.X) // leaving room for the checkbox
                 ImGui.InputTextWithHint ("##entityHierarchySearchStr", "[enter search text]", &EntityHierarchySearchStr, 4096u) |> ignore<bool>
-                if ImGui.IsItemFocused () then entityHierarchyFocused <- false
+                if ImGui.IsItemFocused () then
+                    let io = ImGui.GetIO ()
+                    io.SwallowKeyboard ()
+                    entityHierarchyFocused <- false
                 if functional then
                     ImGui.SameLine ()
                     ImGui.Checkbox ("##entityHierarchyShowModified", &EntityHierarchyShowModified) |> ignore<bool>
