@@ -133,7 +133,7 @@ module Gaia =
     let mutable private GroupFileDialogState : ImGuiFileDialogState = null // this will be initialized on start
     let mutable private GroupFilePaths = Map.empty<Group, string>
     let mutable private EntityFileDialogState : ImGuiFileDialogState = null // this will be initialized on start
-    let mutable private EntityFilePaths = Map.empty<Entity Address, string>
+    let mutable private EntityFilePaths = Map.empty<Entity, string>
     let mutable private AssetGraphStr = null // this will be initialized on start
     let mutable private OverlayerStr = null // this will be initialized on start
 
@@ -1217,7 +1217,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         File.Copy (filePath, deploymentPath, true)
                         File.SetAttributes (deploymentPath, FileAttributes.ReadOnly)
                 with exn -> MessageBoxOpt <- Some ("Could not deploy file due to: " + scstring exn)
-                EntityFilePaths <- Map.add entity.EntityAddress EntityFileDialogState.FilePath EntityFilePaths
+                EntityFilePaths <- Map.add entity EntityFileDialogState.FilePath EntityFilePaths
                 true
             with exn ->
                 MessageBoxOpt <- Some ("Could not save file due to: " + scstring exn)
@@ -1277,7 +1277,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         let entity = World.readEntity false true entityDescriptor (Some entity.Name) entity.Parent world
                         inductEntity false entity world
                     SelectedEntities <- Set.singleton entity
-                    EntityFilePaths <- Map.add entity.EntityAddress EntityFileDialogState.FilePath EntityFilePaths
+                    EntityFilePaths <- Map.add entity EntityFileDialogState.FilePath EntityFilePaths
                     EntityFileDialogState.FileName <- ""
                     true
                 else
@@ -2239,7 +2239,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if ImGui.MenuItem ("Save Entity", "Ctrl+Alt+S") then
                     match Seq.tryExactlyOne SelectedEntities with
                     | Some entity when entity.GetExists world ->
-                        match Map.tryFind entity.EntityAddress EntityFilePaths with
+                        match Map.tryFind entity EntityFilePaths with
                         | Some filePath -> EntityFileDialogState.FilePath <- filePath
                         | None -> EntityFileDialogState.FileName <- ""
                         ShowSaveEntityDialog <- true
@@ -3019,7 +3019,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     if ImGui.MenuItem ("Save Entity", "Ctrl+Alt+S", false, SelectedEntities.Count <= 1) then
                         match Seq.tryExactlyOne SelectedEntities with
                         | Some entity when entity.GetExists world ->
-                            match Map.tryFind entity.EntityAddress EntityFilePaths with
+                            match Map.tryFind entity EntityFilePaths with
                             | Some filePath -> EntityFileDialogState.FilePath <- filePath
                             | None -> EntityFileDialogState.FileName <- ""
                             ShowSaveEntityDialog <- true
@@ -4656,7 +4656,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if ImGui.Button "Save Entity" then
                     match Seq.tryExactlyOne SelectedEntities with
                     | Some entity when entity.GetExists world ->
-                        match Map.tryFind entity.EntityAddress EntityFilePaths with
+                        match Map.tryFind entity EntityFilePaths with
                         | Some filePath -> EntityFileDialogState.FilePath <- filePath
                         | None -> EntityFileDialogState.FileName <- ""
                         ShowSaveEntityDialog <- true
