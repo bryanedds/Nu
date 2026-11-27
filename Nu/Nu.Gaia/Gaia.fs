@@ -122,7 +122,7 @@ module Gaia =
     let mutable private PhysicsDebugRenderingHeightMaps3d = false
     let mutable private ImGuiDebugWindow = false
     let mutable private EntityHierarchySearchStr = ""
-    let mutable private EntityHierarchyShowModified = false
+    let mutable private EntityModificationsOpt = Option<Group * Entity HashSet>.None
     let mutable private PropagationSourcesSearchStr = ""
     let mutable private AssetViewerSearchStr = ""
     let mutable private LoadPackageName = ""
@@ -135,11 +135,10 @@ module Gaia =
     let mutable private ProjectEditMode = ""
     let mutable private ProjectImperativeExecution = false
     let mutable private GroupFileDialogState : ImGuiFileDialogState = null // this will be initialized on start
-    let mutable private GroupFilePaths = Map.empty<Group Address, string>
-    let mutable private GroupWorldStates = Map.empty<Group Address, WorldState>
-    let mutable private EntityWorldStatesReverted = Map.empty<Entity, WorldState list> // as just after each revert
+    let mutable private GroupFilePaths = Map.empty<Group, string>
+    let mutable private GroupWorldStates = Map.empty<Group, WorldState>
     let mutable private EntityFileDialogState : ImGuiFileDialogState = null // this will be initialized on start
-    let mutable private EntityFilePaths = Map.empty<Entity Address, string>
+    let mutable private EntityFilePaths = Map.empty<Entity, string>
     let mutable private AssetGraphStr = null // this will be initialized on start
     let mutable private OverlayerStr = null // this will be initialized on start
 
@@ -1112,8 +1111,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
             // forget the group's baseline for change detection
             let group = simulant :?> Group
-            GroupWorldStates <- Map.remove group.GroupAddress GroupWorldStates
-            EntityWorldStatesReverted <- Map.filter (fun entity _ -> entity.Group <> group) EntityWorldStatesReverted
+            GroupWorldStates <- Map.remove group GroupWorldStates
+            match EntityModificationsOpt with
+            | Some (groupModified, _) when group = groupModified -> EntityModificationsOpt <- None
+            | Some _ | None -> ()
 
             // when currently the selected group, make sure we select another group, creating a default "Scene" group
             // when necessary
@@ -1278,7 +1279,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         File.Copy (filePath, deploymentPath, true)
                         File.SetAttributes (deploymentPath, FileAttributes.ReadOnly)
                 with exn -> MessageBoxOpt <- Some ("Could not deploy file due to: " + scstring exn)
-                EntityFilePaths <- Map.add entity.EntityAddress EntityFileDialogState.FilePath EntityFilePaths
+                EntityFilePaths <- Map.add entity EntityFileDialogState.FilePath EntityFilePaths
                 true
             with exn ->
                 MessageBoxOpt <- Some ("Could not save file due to: " + scstring exn)
@@ -1339,7 +1340,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         let entity = World.readEntity false true entityDescriptor (Some entity.Name) entity.Parent world
                         inductEntity false entity world
                     SelectedEntities <- Set.singleton entity
-                    EntityFilePaths <- Map.add entity.EntityAddress EntityFileDialogState.FilePath EntityFilePaths
+                    EntityFilePaths <- Map.add entity EntityFileDialogState.FilePath EntityFilePaths
                     EntityFileDialogState.FileName <- ""
                     true
                 else
@@ -1484,15 +1485,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private trySaveSelectedGroup filePath world =
         try World.writeGroupToFile filePath SelectedGroup world
-            GroupWorldStates <- Map.add SelectedGroup.GroupAddress world.CurrentState GroupWorldStates
-            EntityWorldStatesReverted <- Map.filter (fun entity _ -> entity.Group <> SelectedGroup) EntityWorldStatesReverted
+            GroupWorldStates <- Map.add SelectedGroup world.CurrentState GroupWorldStates
+            EntityModificationsOpt <- None
             try let deploymentPath = PathF.Combine (TargetDir, PathF.GetRelativePath(TargetDir, filePath).Replace("../", ""))
                 if Directory.Exists (PathF.GetDirectoryName deploymentPath) then
                     if File.Exists deploymentPath then File.SetAttributes (deploymentPath, FileAttributes.None)
                     File.Copy (filePath, deploymentPath, true)
                     File.SetAttributes (deploymentPath, FileAttributes.ReadOnly)
             with exn -> MessageBoxOpt <- Some ("Could not deploy file due to: " + scstring exn)
-            GroupFilePaths <- Map.add SelectedGroup.GroupAddress GroupFileDialogState.FilePath GroupFilePaths
+            GroupFilePaths <- Map.add SelectedGroup GroupFileDialogState.FilePath GroupFilePaths
             true
         with exn ->
             MessageBoxOpt <- Some ("Could not save file due to: " + scstring exn)
@@ -1518,10 +1519,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             try if not (group.GetExists world) || group.GetProtection world = Unprotected then
                     if group.GetExists world then World.destroyGroupImmediate SelectedGroup world
                     let group = World.readGroup groupDescriptor None SelectedScreen world
-                    GroupWorldStates <- Map.add group.GroupAddress world.CurrentState GroupWorldStates
+                    GroupWorldStates <- Map.add group world.CurrentState GroupWorldStates
+                    EntityModificationsOpt <- None // NOTE: nothing is modified against the new baseline.
                     selectGroup true group
                     pruneEntitySelection world
-                    GroupFilePaths <- Map.add group.GroupAddress GroupFileDialogState.FilePath GroupFilePaths
+                    GroupFilePaths <- Map.add group GroupFileDialogState.FilePath GroupFilePaths
                     GroupFileDialogState.FileName <- ""
                     true
                 else
@@ -1537,34 +1539,31 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             MessageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
             false
 
-    let private getEntityModified (entity : Entity) world =
-        if entity.GetProtection world <> DeclarativeProtection then // NOTE: a declared entity isn't saved, so isn't tracked.
-            match Map.tryFind entity.Group.GroupAddress GroupWorldStates with
-            | Some worldState ->
-                World.getEntityModified entity worldState world &&
-                (match Map.tryFind entity EntityWorldStatesReverted with // NOTE: as just after a revert is unmodified.
-                 | Some worldStates -> List.forall (fun worldState -> World.getEntityModified entity worldState world) worldStates
-                 | None -> true)
-            | None -> false
-        else false
+    let private getEntityModified (entity : Entity) =
+        match EntityModificationsOpt with
+        | Some (group, entitiesModified) -> entity.Group = group && entitiesModified.Contains entity
+        | None -> false
+
+    let private refreshEntitiesModified world =
+        match Map.tryFind SelectedGroup GroupWorldStates with
+        | Some worldState -> EntityModificationsOpt <- Some (SelectedGroup, World.getEntitiesModified SelectedGroup worldState world)
+        | None -> ()
 
     let private getEntityRevertible (entity : Entity) world =
         entity.GetExists world &&
         entity.GetProtection world = Unprotected &&
-        (match Map.tryFind entity.Group.GroupAddress GroupWorldStates with
+        (match Map.tryFind entity.Group GroupWorldStates with
          | Some worldState -> WorldState.getEntityExists entity worldState
          | None -> false) &&
-        getEntityModified entity world
+        getEntityModified entity
 
     let private tryRevertSelectedEntity world =
         match Seq.tryExactlyOne SelectedEntities with
         | Some entity when getEntityRevertible entity world ->
             let worldStateOld = world.CurrentState
             try snapshot RevertEntity world
-                World.revertEntity entity GroupWorldStates[entity.Group.GroupAddress] world
-                for entity in Seq.append [entity] (entity.GetDescendants world) do
-                    let worldStates = Option.defaultValue [] (Map.tryFind entity EntityWorldStatesReverted)
-                    EntityWorldStatesReverted <- Map.add entity (world.CurrentState :: worldStates) EntityWorldStatesReverted
+                World.revertEntity entity GroupWorldStates[entity.Group] world
+                refreshEntitiesModified world // NOTE: keeping the other entities' modifications shown.
                 selectEntities true (Set.singleton entity) world
                 true
             with exn ->
@@ -2256,6 +2255,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then synchronizeNav world
             elif ImGui.IsKeyPressed ImGuiKey.L && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then rerenderLightMaps world
             elif ImGui.IsKeyPressed ImGuiKey.I && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then tryMoveSelectedEntityToOrigin false world |> ignore<bool>
+            elif ImGui.IsKeyPressed ImGuiKey.M && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () && world.Functional then refreshEntitiesModified world
             elif ImGui.IsKeyPressed ImGuiKey.Escape && SelectedWindowOpt = Some "Edit Property" && not (String.IsNullOrWhiteSpace PropertyValueSearchStr) then
                 PropertyValueSearchStr <- ""
                 PropertyValueSearchIndex <- -1
@@ -2272,9 +2272,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 elif ImGui.IsKeyPressed ImGuiKey.Escape then
                     if not (String.IsNullOrWhiteSpace PropagationSourcesSearchStr) then
                         PropagationSourcesSearchStr <- ""
-                    elif not (String.IsNullOrWhiteSpace EntityHierarchySearchStr) || EntityHierarchyShowModified then
+                    elif not (String.IsNullOrWhiteSpace EntityHierarchySearchStr) then
                         EntityHierarchySearchStr <- ""
-                        EntityHierarchyShowModified <- false
                     elif entityHierarchyFocused then
                         ViewportFocusRequested <- true
                     else
@@ -2313,7 +2312,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         let treeNodeLabel = if filtering then entity.Name + "##" + scstringMemo entity else entity.Name
         ImGui.SetNextItemSelectionUserData (int64 EntityHierarchyIndexed.Count)
         EntityHierarchyIndexed.Add entity
-        let modified = getEntityModified entity world
+        let modified = getEntityModified entity
         if modified then ImGui.PushStyleColor (ImGuiCol.Text, Color.Gold.Abgr)
         let expanded = ImGui.TreeNodeEx (treeNodeLabel, treeNodeFlags)
         if modified then ImGui.PopStyleColor ()
@@ -2354,7 +2353,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if ImGui.MenuItem ("Save Entity", "Ctrl+Alt+S") then
                     match Seq.tryExactlyOne SelectedEntities with
                     | Some entity when entity.GetExists world ->
-                        match Map.tryFind entity.EntityAddress EntityFilePaths with
+                        match Map.tryFind entity EntityFilePaths with
                         | Some filePath -> EntityFileDialogState.FilePath <- filePath
                         | None -> EntityFileDialogState.FileName <- ""
                         ShowSaveEntityDialog <- true
@@ -2465,33 +2464,24 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     ImGui.EndTooltip ()
         expanded
 
-    let rec private imGuiEntityHierarchy (shownOpt : Entity HashSet option) (entity : Entity) world =
+    let rec private imGuiEntityHierarchy (entity : Entity) world =
         if entity.GetExists world then // NOTE: entity may have been moved during this process.
             let filtering =
                 not (String.IsNullOrWhiteSpace EntityHierarchySearchStr)
-            let shown =
-                match shownOpt with
-                | Some shown -> shown.Contains entity
-                | None -> true
             let visible =
-                shown &&
-                (String.IsNullOrWhiteSpace EntityHierarchySearchStr || entity.Name.ToLowerInvariant().Contains (EntityHierarchySearchStr.ToLowerInvariant ()))
+                String.IsNullOrWhiteSpace EntityHierarchySearchStr || entity.Name.ToLowerInvariant().Contains (EntityHierarchySearchStr.ToLowerInvariant ())
             let expanded =
                 if visible then
-                    let branch =
-                        match shownOpt with
-                        | Some shown -> entity.GetChildren world |> Seq.exists shown.Contains
-                        | None -> entity.HasChildren world
-                    if shownOpt.IsSome && not filtering then ImGui.SetNextItemOpen true // the way to each shown entity is open
+                    let branch = entity.HasChildren world
                     imGuiEntity branch filtering entity world
                 else false
-            if filtering && shown || expanded then
+            if filtering || expanded then
                 entity.GetChildren world
                 |> Array.ofSeq
                 |> Array.map (fun entity -> (struct (entity.Surnames.Length, entity.GetOrder world), entity))
                 |> Array.sortBy fst
                 |> Array.map snd
-                |> Array.iter (fun child -> imGuiEntityHierarchy shownOpt child world)
+                |> Array.iter (fun child -> imGuiEntityHierarchy child world)
                 if visible then ImGui.TreePop ()
 
     let private imGuiAppendPropertiesDispatcherExplicit simulant world =
@@ -3118,7 +3108,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     if ImGui.MenuItem ("New Group", "Ctrl+N") then ShowNewGroupDialog <- true
                     if ImGui.MenuItem ("Open Group", "Ctrl+O") then ShowOpenGroupDialog <- true
                     if ImGui.MenuItem ("Save Group", "Ctrl+S") then
-                        match Map.tryFind SelectedGroup.GroupAddress GroupFilePaths with
+                        match Map.tryFind SelectedGroup GroupFilePaths with
                         | Some filePath -> GroupFileDialogState.FilePath <- filePath
                         | None -> GroupFileDialogState.FileName <- ""
                         ShowSaveGroupDialog <- true
@@ -3129,9 +3119,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             let groupsRemaining = Set.remove SelectedGroup groups
                             selectEntities true Set.empty world
                             World.destroyGroupImmediate SelectedGroup world
-                            GroupFilePaths <- Map.remove SelectedGroup.GroupAddress GroupFilePaths
+                            GroupFilePaths <- Map.remove SelectedGroup GroupFilePaths
                             selectGroup true (Seq.head groupsRemaining)
                         else MessageBoxOpt <- Some "Cannot close protected or only group."
+                    if ImGui.MenuItem ("Highlight Modified Entities", "Ctrl+M", false, world.Functional) then refreshEntitiesModified world
                     ImGui.EndMenu ()
 
                 // entity menu
@@ -3149,7 +3140,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     if ImGui.MenuItem ("Save Entity", "Ctrl+Alt+S", false, SelectedEntities.Count <= 1) then
                         match Seq.tryExactlyOne SelectedEntities with
                         | Some entity when entity.GetExists world ->
-                            match Map.tryFind entity.EntityAddress EntityFilePaths with
+                            match Map.tryFind entity EntityFilePaths with
                             | Some filePath -> EntityFileDialogState.FilePath <- filePath
                             | None -> EntityFileDialogState.FileName <- ""
                             ShowSaveEntityDialog <- true
@@ -3352,14 +3343,18 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     EntityHierarchySearchRequested <- false
                 let functional = world.Functional
                 if functional then
-                    ImGui.SetNextItemWidth (-ImGui.GetFrameHeight () - ImGui.GetStyle().ItemSpacing.X) // leaving room for the checkbox
+                    let style = ImGui.GetStyle () // leaving room for the button
+                    ImGui.SetNextItemWidth (-(ImGui.CalcTextSize "Highlight").X - style.FramePadding.X * 2.0f - style.ItemSpacing.X)
                 ImGui.InputTextWithHint ("##entityHierarchySearchStr", "[enter search text]", &EntityHierarchySearchStr, 4096u) |> ignore<bool>
-                if ImGui.IsItemFocused () then entityHierarchyFocused <- false
+                if ImGui.IsItemFocused () then
+                    let io = ImGui.GetIO ()
+                    io.SwallowKeyboard ()
+                    entityHierarchyFocused <- false
                 if functional then
                     ImGui.SameLine ()
-                    ImGui.Checkbox ("##entityHierarchyShowModified", &EntityHierarchyShowModified) |> ignore<bool>
+                    if ImGui.Button "Highlight" then refreshEntitiesModified world
                     if ImGui.IsItemHovered () && ImGui.BeginTooltip () then
-                        ImGui.Text "Show Modified"
+                        ImGui.Text "Hightlight Modified Entities"
                         ImGui.EndTooltip ()
 
                 // creation parent display
@@ -3407,23 +3402,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         | Some _ | None -> ()
                     ImGui.EndDragDropTarget ()
 
-                // entity editing, first taking a baseline for change detection when this group has none, such as when
-                // it was read from a file by the game rather than opened here
-                if not (GroupWorldStates.ContainsKey SelectedGroup.GroupAddress) then
-                    GroupWorldStates <- Map.add SelectedGroup.GroupAddress world.CurrentState GroupWorldStates
+                // entity editing, first 
                 ImGui.BeginChild "Container" |> ignore<bool>
-
-                // when showing modified entities, find them and their ancestors
-                let shownOpt =
-                    if EntityHierarchyShowModified then
-                        let shown = HashSet<Entity> HashIdentity.Structural
-                        for entity in World.getEntities SelectedGroup world do
-                            if getEntityModified entity world then
-                                let mutable ancestorOpt = Some entity
-                                while (match ancestorOpt with Some ancestor -> shown.Add ancestor | None -> false) do
-                                    ancestorOpt <- match ancestorOpt.Value.Parent with :? Entity as parent -> Some parent | _ -> None
-                        Some shown
-                    else None
 
                 // draw the hierarchy
                 let children =
@@ -3436,7 +3416,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 applyEntityHierarchySelectionRequests multiSelectIo world // NOTE: resolves against last frame's items.
                 EntityHierarchyIndexed.Clear ()
                 for child in children do
-                    imGuiEntityHierarchy shownOpt child world
+                    imGuiEntityHierarchy child world
                 let multiSelectIo = ImGui.EndMultiSelect ()
                 applyEntityHierarchySelectionRequests multiSelectIo world
                 ImGui.EndChild ()
@@ -4816,7 +4796,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if ImGui.Button "Save Entity" then
                     match Seq.tryExactlyOne SelectedEntities with
                     | Some entity when entity.GetExists world ->
-                        match Map.tryFind entity.EntityAddress EntityFilePaths with
+                        match Map.tryFind entity EntityFilePaths with
                         | Some filePath -> EntityFileDialogState.FilePath <- filePath
                         | None -> EntityFileDialogState.FileName <- ""
                         ShowSaveEntityDialog <- true
@@ -4924,8 +4904,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiProcess (world : World) =
 
-        // store old world state
+        // reference old world state
         let worldStateOld = world.CurrentState
+
+        // store the world state snapshot for change detection for each group
+        for group in World.getGroups1 world do
+            if not (GroupWorldStates.ContainsKey group) then
+                GroupWorldStates <- Map.add group worldStateOld GroupWorldStates
 
         // detect if eyes were changed somewhere other than in the editor (such as in gameplay code)
         detectEyeChangedElsewhere world

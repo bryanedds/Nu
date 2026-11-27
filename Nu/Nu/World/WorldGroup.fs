@@ -6,6 +6,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.IO
 open Prime
 
@@ -245,6 +246,45 @@ module WorldGroupModule =
             let groupDescriptor = { groupDescriptor with GroupProperties = getGroupProperties }
             let entities = World.getEntitiesSovereign group world
             { groupDescriptor with EntityDescriptors = World.writeEntities false true entities world }
+
+        /// Get the entities of a group whose written descriptors differ from those in the given world state, such as a
+        /// snapshot taken earlier, along with their ancestors. An entity absent from the world state counts as differing,
+        /// as does the parent of one absent from the group. Gives no entities in Imperative mode.
+        static member getEntitiesModified (group : Group) (worldState : WorldState) (world : World) =
+            let entitiesModified = HashSet<Entity> HashIdentity.Structural
+            if world.Functional then
+                let entityDescriptors = World.writeEntities false true (World.getEntitiesSovereign group world) world
+                let entityDescriptorsPrevious =
+                    let worldStateCurrent = world.WorldState
+                    world.WorldState <- worldState // NOTE: in functional mode, entity states are found per world state.
+                    try World.writeEntities false true (World.getEntitiesSovereign group world) world
+                    finally world.WorldState <- worldStateCurrent
+                let rec diff (lineage : Entity list) (parent : Simulant) entityDescriptors entityDescriptorsPrevious =
+                    let mapByName entityDescriptors =
+                        entityDescriptors
+                        |> List.choose (fun descriptor -> EntityDescriptor.getNameOpt descriptor |> Option.map (fun name -> (name, descriptor)))
+                        |> Map.ofList
+                    let descriptors = mapByName entityDescriptors
+                    let descriptorsPrevious = mapByName entityDescriptorsPrevious
+                    for name in Seq.distinct (Seq.append descriptors.Keys descriptorsPrevious.Keys) do
+                        let entity = Entity (Array.add name parent.SimulantAddress.Names)
+                        match (descriptors.TryFind name, descriptorsPrevious.TryFind name) with
+                        | (Some descriptor, Some descriptorPrevious) ->
+                            if { descriptor with EntityDescriptors = [] } <> { descriptorPrevious with EntityDescriptors = [] } then
+                                for entity in entity :: lineage do
+                                    entitiesModified.Add entity |> ignore<bool>
+                            diff (entity :: lineage) entity descriptor.EntityDescriptors descriptorPrevious.EntityDescriptors
+                        | (Some descriptor, None) ->
+                            for entity in entity :: lineage do
+                                entitiesModified.Add entity |> ignore<bool>
+                            diff (entity :: lineage) entity descriptor.EntityDescriptors []
+                        | (None, Some _) ->
+                            for entity in lineage do
+                                entitiesModified.Add entity |> ignore<bool>
+                        | (None, None) -> ()
+                diff [] group entityDescriptors entityDescriptorsPrevious
+            else Log.warn "Comparing entities with a previous world state is unsupported in Imperative mode."
+            entitiesModified
 
         /// Write multiple groups to a screen descriptor.
         static member writeGroups groups world =
