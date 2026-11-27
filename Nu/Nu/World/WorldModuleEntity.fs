@@ -1635,24 +1635,27 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             match entityState.OverlayNameOpt with
             | Some overlayName ->
-                let staticOld = entityState.Static
-                let visibleInViewOld = entityState.VisibleInView
-                let staticInPlayOld = entityState.StaticInPlay
-                let lightProbeOld = entityState.LightProbe
-                let lightOld = entityState.Light
-                let presenceOld = entityState.Presence
-                let presenceInPlayOld = entityState.PresenceInPlay
-                let boundsOld = entityState.Bounds
-                let facetNamesOld = entityState.FacetNames
-                Overlayer.applyOverlayToFacetNames overlayName overlayName entityState overlayerOld overlayer
-                match World.trySynchronizeFacetsToNames facetNamesOld entityState (Some entity) world with
-                | Right () ->
-                    let facetNames = World.getEntityFacetNamesReflectively entityState
-                    Overlayer.applyOverlay6 overlayName overlayName facetNames entityState overlayerOld overlayer
-                    World.updateEntityInEntityTree staticOld visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
-                    if entityState.FacetNames <> facetNamesOld then
-                        World.publishEntityChange Constants.Engine.FacetNamesPropertyName facetNamesOld entityState.FacetNames true entity world
-                | Left error -> Log.info ("There was an issue in applying a reloaded overlay: " + error)
+                let facetNames = World.getEntityFacetNamesReflectively entityState // OPTIMIZATION: an entity whose overlay the reload leaves unchanged is left as it is.
+                if  Overlayer.getOverlaySymbols overlayName Seq.empty overlayerOld <> Overlayer.getOverlaySymbols overlayName Seq.empty overlayer ||
+                    Overlayer.getOverlaySymbols overlayName facetNames overlayerOld <> Overlayer.getOverlaySymbols overlayName facetNames overlayer then
+                    let staticOld = entityState.Static
+                    let visibleInViewOld = entityState.VisibleInView
+                    let staticInPlayOld = entityState.StaticInPlay
+                    let lightProbeOld = entityState.LightProbe
+                    let lightOld = entityState.Light
+                    let presenceOld = entityState.Presence
+                    let presenceInPlayOld = entityState.PresenceInPlay
+                    let boundsOld = entityState.Bounds
+                    let facetNamesOld = entityState.FacetNames
+                    Overlayer.applyOverlayToFacetNames overlayName overlayName entityState overlayerOld overlayer
+                    match World.trySynchronizeFacetsToNames facetNamesOld entityState (Some entity) world with
+                    | Right () ->
+                        let facetNames = World.getEntityFacetNamesReflectively entityState
+                        Overlayer.applyOverlay6 overlayName overlayName facetNames entityState overlayerOld overlayer
+                        World.updateEntityInEntityTree staticOld visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
+                        if entityState.FacetNames <> facetNamesOld then
+                            World.publishEntityChange Constants.Engine.FacetNamesPropertyName facetNamesOld entityState.FacetNames true entity world
+                    | Left error -> Log.info ("There was an issue in applying a reloaded overlay: " + error)
             | None -> ()
 
         static member internal tryGetEntityXtensionProperty (propertyName, entity, world, property : _ outref) =

@@ -131,7 +131,7 @@ module Gaia =
     let mutable private ProjectFileDialogState : ImGuiFileDialogState = null // this will be initialized on start
     let mutable private ProjectEditMode = ""
     let mutable private GroupFileDialogState : ImGuiFileDialogState = null // this will be initialized on start
-    let mutable private GroupFilePaths = Map.empty<Group Address, string>
+    let mutable private GroupFilePaths = Map.empty<Group, string>
     let mutable private EntityFileDialogState : ImGuiFileDialogState = null // this will be initialized on start
     let mutable private EntityFilePaths = Map.empty<Entity Address, string>
     let mutable private AssetGraphStr = null // this will be initialized on start
@@ -1427,7 +1427,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     File.Copy (filePath, deploymentPath, true)
                     File.SetAttributes (deploymentPath, FileAttributes.ReadOnly)
             with exn -> MessageBoxOpt <- Some ("Could not deploy file due to: " + scstring exn)
-            GroupFilePaths <- Map.add SelectedGroup.GroupAddress GroupFileDialogState.FilePath GroupFilePaths
+            GroupFilePaths <- Map.add SelectedGroup GroupFileDialogState.FilePath GroupFilePaths
             true
         with exn ->
             MessageBoxOpt <- Some ("Could not save file due to: " + scstring exn)
@@ -1454,7 +1454,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     let group = World.readGroup groupDescriptor None SelectedScreen world
                     selectGroup true group
                     pruneEntitySelection world
-                    GroupFilePaths <- Map.add group.GroupAddress GroupFileDialogState.FilePath GroupFilePaths
+                    GroupFilePaths <- Map.add group GroupFileDialogState.FilePath GroupFilePaths
                     GroupFileDialogState.FileName <- ""
                     true
                 else
@@ -2988,7 +2988,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     if ImGui.MenuItem ("New Group", "Ctrl+N") then ShowNewGroupDialog <- true
                     if ImGui.MenuItem ("Open Group", "Ctrl+O") then ShowOpenGroupDialog <- true
                     if ImGui.MenuItem ("Save Group", "Ctrl+S") then
-                        match Map.tryFind SelectedGroup.GroupAddress GroupFilePaths with
+                        match Map.tryFind SelectedGroup GroupFilePaths with
                         | Some filePath -> GroupFileDialogState.FilePath <- filePath
                         | None -> GroupFileDialogState.FileName <- ""
                         ShowSaveGroupDialog <- true
@@ -2999,7 +2999,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             let groupsRemaining = Set.remove SelectedGroup groups
                             selectEntities true Set.empty world
                             World.destroyGroupImmediate SelectedGroup world
-                            GroupFilePaths <- Map.remove SelectedGroup.GroupAddress GroupFilePaths
+                            GroupFilePaths <- Map.remove SelectedGroup GroupFilePaths
                             selectGroup true (Seq.head groupsRemaining)
                         else MessageBoxOpt <- Some "Cannot close protected or only group."
                     ImGui.EndMenu ()
@@ -3220,7 +3220,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     EntityHierarchySearchRequested <- false
                 ImGui.SetNextItemWidth -1.0f
                 ImGui.InputTextWithHint ("##entityHierarchySearchStr", "[enter search text]", &EntityHierarchySearchStr, 4096u) |> ignore<bool>
-                if ImGui.IsItemFocused () then entityHierarchyFocused <- false
+                if ImGui.IsItemFocused () then
+                    let io = ImGui.GetIO ()
+                    io.SwallowKeyboard ()
+                    entityHierarchyFocused <- false
 
                 // creation parent display
                 match NewEntityParentOpt with
