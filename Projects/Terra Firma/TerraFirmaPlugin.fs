@@ -17,6 +17,18 @@ type TerraFirmaPlugin () =
                 Simulants.Gameplay.SetGameplayState Playing world
                 Game.SetGameState Gameplay world)]
 
+    // this describes the user-defined rendering pipelines that the game's shaders use.
+    override this.UserDefinedPipeline3dDescriptors =
+        Map.ofList
+            [(Constants.Foliage.PipelineName,
+              { Pipeline3dType = DeferredStaticClippedPipeline
+                PipelineName = Constants.Foliage.PipelineName
+                ShaderPath = Constants.Foliage.ShaderPath
+                UserDefinedImageNames = [|"WindNoise"|]
+                UserDefinedSettingNames =
+                    [|"WindPhase"; "WindStrength"; "GustScrollX"; "GustScrollZ"
+                      "RoughenEnd"; "CollapseStart"; "DrawDistance"; "FlutterStrength"|] })]
+
     // this specifies which packages are automatically loaded at game start-up.
     override this.InitialPackages =
         [Assets.Gui.PackageName]
