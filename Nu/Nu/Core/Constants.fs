@@ -22,7 +22,7 @@ module Runtime =
 [<RequireQualifiedAccess>]
 module Assimp =
 
-    let [<Literal>] PostProcessSteps = Assimp.PostProcessSteps.Triangulate ||| Assimp.PostProcessSteps.GlobalScale
+    let [<Literal>] PostProcessSteps = Assimp.PostProcessSteps.Triangulate ||| Assimp.PostProcessSteps.GlobalScale ||| Assimp.PostProcessSteps.CalculateTangentSpace
     let [<Literal>] RawPropertyPrefix = "$raw."
     let [<Literal>] RenderStylePropertyName = RawPropertyPrefix + "RenderStyle"
     let [<Literal>] PresencePropertyName = RawPropertyPrefix + "Presence"
