@@ -141,11 +141,11 @@
           [FoliageDispatcher
            [[FoliageCellSize 32]
             [FoliageColorVariation 0.5]
-            [FoliageDensity 0.5]
+            [FoliageDensity 0.25]
             [FoliageDrawDistance 96]
             [FoliageHeightRange [0.75 1.25]]
             [FoliageRoughenEnd 0.5]
-            [FoliageWidth 5]
+            [FoliageWidth 4]
             [FoliageWindStrength 1.25]
             [Material
              [[AlbedoImageOpt
