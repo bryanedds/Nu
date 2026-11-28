@@ -21,9 +21,17 @@ type TerraFirmaPlugin () =
     override this.UserDefinedPipeline3dDescriptors =
         Map.ofList
             [(Constants.Foliage.PipelineName,
-              { Pipeline3dType = DeferredStaticClippedPipeline
+              { Pipeline3dType = DeferredStaticPipeline
                 PipelineName = Constants.Foliage.PipelineName
                 ShaderPath = Constants.Foliage.ShaderPath
+                UserDefinedImageNames = [|"WindNoise"|]
+                UserDefinedSettingNames =
+                    [|"WindPhase"; "WindStrength"; "GustScrollX"; "GustScrollZ"
+                      "RoughenEnd"; "CollapseStart"; "DrawDistance"; "FlutterStrength"|] })
+             (Constants.Foliage.ClippedPipelineName,
+              { Pipeline3dType = DeferredStaticClippedPipeline
+                PipelineName = Constants.Foliage.ClippedPipelineName
+                ShaderPath = Constants.Foliage.ClippedShaderPath
                 UserDefinedImageNames = [|"WindNoise"|]
                 UserDefinedSettingNames =
                     [|"WindPhase"; "WindStrength"; "GustScrollX"; "GustScrollZ"

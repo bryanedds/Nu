@@ -440,7 +440,7 @@ type FoliageDispatcher () =
                 AlbedoImageOpt = ValueSome Assets.Gameplay.GrassTuftAlbedoImage
                 UserDefinedImage0Opt = ValueSome Assets.Gameplay.FoliageWindNoiseImage
                 CullModeOpt = ValueSome CullBack // the default grass tuft is double-sided
-                ClippedOpt = ValueSome true
+                ClippedOpt = ValueSome false // the default grass tuft's geometry gives its shape
                 PipelineNameOpt = ValueSome Constants.Foliage.PipelineName }
          define Entity.MaterialProperties { MaterialProperties.empty with ScatterTypeOpt = ValueSome FoliageScatter }
          define Entity.FoliageControlImageOpt None

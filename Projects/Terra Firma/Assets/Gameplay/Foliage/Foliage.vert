@@ -16,6 +16,8 @@
 // belongs in its normals and vertex colors, where vertex color multiplies albedo and its brightness multiplies
 // ambient occlusion (a model without vertex colors is left unshaded).
 
+// NOTE: FoliageClipped.vert must be an exact copy of this shader since a pipeline's shaders share one path.
+
 const float TAU = 6.28318530718;
 const float GUST_BACKSWING = 0.3; // gust noise below this bends tufts slightly against the wind
 const float GUST_SCALE = 1.0 / 24.0; // gust noise tiles per meter (must match Constants.Foliage.GustTileSize)

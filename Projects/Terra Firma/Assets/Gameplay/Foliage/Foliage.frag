@@ -2,10 +2,14 @@
 
 // Terra Firma foliage fragment shader, derived from PhysicallyBasedDeferredStaticClipped.frag. Unlike the original,
 // vertex color tints albedo and its brightness scales ambient occlusion, and surfaces approach full roughness as they
-// near the draw distance.
+// near the draw distance. For speed, it samples only the albedo, normal, and roughness textures, taking the engine's
+// default values for the rest (no metallic, emission, or clear coat, full ambient occlusion and fineness, and the
+// default subdermal and scatter colors), so foliage materials that need those textures aren't supported.
+// NOTE: FoliageClipped.frag is this shader with an alpha test, for foliage whose shape comes from its albedo alpha
+// (such as the tree's leaf cards). Lacking the alpha test lets the GPU test and write depth before shading, so prefer
+// this shader where the geometry gives the shape. Keep the two in sync.
 
 const float GAMMA = 2.2;
-const float ALBEDO_ALPHA_MIN = 0.3;
 const float SAA_VARIANCE = 0.1; // TODO: consider exposing as lighting config property.
 const float SAA_THRESHOLD = 0.1; // TODO: consider exposing as lighting config property.
 
@@ -122,7 +126,6 @@ void main()
 
     // compute albedo
     vec4 albedoSample = texture(sampler2D(albedoTexture, materialRepeatSampler), texCoords);
-    if (albedoSample.a < ALBEDO_ALPHA_MIN) discard;
     albedoOut = pow(albedoSample.rgb, vec3(GAMMA)) * albedo.rgb * tint;
 
     // compute normal and ignore local light maps
@@ -143,29 +146,20 @@ void main()
     roughness = mix(roughness, 1.0, roughen);
 
     // compute remaining material properties
-    float metallic = texture(sampler2D(metallicTexture, materialRepeatSampler), texCoords).g * material.g;
-    float ambientOcclusion = texture(sampler2D(ambientOcclusionTexture, materialRepeatSampler), texCoords).b * material.b;
-    ambientOcclusion *= (tint.r + tint.g + tint.b) / 3.0;
-    float emission = texture(sampler2D(emissionTexture, materialRepeatSampler), texCoords).r * material.a;
-    float emissionEncoded = max(emission, 0.0) / (1.0 + max(emission, 0.0)); // NOTE: maps [0, inf) to [0, 1) for the 8-bit buffer.
-    materialOut = vec4(roughness, metallic, ambientOcclusion, emissionEncoded);
+    float ambientOcclusion = material.b * (tint.r + tint.g + tint.b) / 3.0;
+    materialOut = vec4(roughness, 0.0, ambientOcclusion, 0.0);
 
     // compute subsurface scattering properties
     float scatterType = subsurfacePlus.g;
     if (scatterType != 0.0) // not no scatter
     {
-        vec4 subdermal = texture(sampler2D(subdermalTexture, materialRepeatSampler), texCoords);
         float finenessOffset = subsurfacePlus.r;
-        float fineness = texture(sampler2D(finenessTexture, materialRepeatSampler), texCoords).r;
-        subdermalPlusOut.rgb = subdermal.a == 0.0 ? saturate(albedoOut, 1.5) : subdermal.rgb;
-        subdermalPlusOut.a = clamp(fineness + finenessOffset, 0.0, 1.5);
-        vec4 scatter = texture(sampler2D(scatterTexture, materialRepeatSampler), texCoords);
-        if (scatter.a == 0.0)
-            scatterPlusOut.rgb =
-                scatterType > 0.09 && scatterType < 0.11 ?
-                vec3(1, 0.25, 0.04) : // skin scatter
-                vec3(0.6, 1, 0.06); // foliage scatter
-        else scatterPlusOut.rgb = scatter.rgb;
+        subdermalPlusOut.rgb = saturate(albedoOut, 1.5);
+        subdermalPlusOut.a = clamp(1.0 + finenessOffset, 0.0, 1.5);
+        scatterPlusOut.rgb =
+            scatterType > 0.09 && scatterType < 0.11 ?
+            vec3(1, 0.25, 0.04) : // skin scatter
+            vec3(0.6, 1, 0.06); // foliage scatter
         scatterPlusOut.a = scatterType;
     }
     else
@@ -174,17 +168,8 @@ void main()
         scatterPlusOut = vec4(0.0);
     }
 
-    // compute clear coat properties
-    float clearCoat = texture(sampler2D(clearCoatTexture, materialRepeatSampler), texCoords).r * clearCoatPlus.r;
-    if (clearCoat > 0.0)
-    {
-        float clearCoatRoughness = clamp(texture(sampler2D(clearCoatRoughnessTexture, materialRepeatSampler), texCoords).r * clearCoatPlus.g, 0.0, 1.0);
-        vec3 clearCoatNormal = normalize(toWorld * decodeNormal(texture(sampler2D(clearCoatNormalTexture, materialRepeatSampler), texCoords).rg));
-        clearCoatPlusOut.r = clearCoat;
-        clearCoatPlusOut.g = clearCoatRoughness;
-        clearCoatPlusOut.ba = encodeOctahedral(clearCoatNormal);
-    }
-    else clearCoatPlusOut = vec4(0.0);
+    // write zero to clear coat buffer
+    clearCoatPlusOut = vec4(0.0);
 
     // write zero to user-defined buffer
     userDefinedBufferOut = vec4(0.0);
