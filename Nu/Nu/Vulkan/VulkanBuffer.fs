@@ -23,12 +23,14 @@ type BufferType =
 
 /// Wraps a vulkan buffer and its metadata.
 /// OPTIMIZATION: this is a struct to avoid reduce GC presence.
+/// OPTIMIZATION: staleness tracking allows skipping the copy of existing contents during buffer growth.
 type [<Struct>] BufferWrapper =
     private
         { mutable VkBuffer_ : VkBuffer
           VmaAllocation_ : VmaAllocation
           Mapping_ : voidptr
           Size_ : int
+          mutable Stale_ : bool
           UploadEnabled_ : bool }
 
     /// The underlying vulkan buffer.
@@ -45,7 +47,7 @@ type [<Struct>] BufferWrapper =
         info
 
     /// Create buffer wrapper.
-    static member createPlus (uploadEnabled, bufferUsage, bufferInfo : VkBufferCreateInfo byref, context : VulkanContext) =
+    static member createPlus (uploadEnabled, bufferUsage, stale, bufferInfo : VkBufferCreateInfo byref, context : VulkanContext) =
 
         // allocation create info
         let mutable allocInfo = VmaAllocationCreateInfo ()
@@ -68,13 +70,14 @@ type [<Struct>] BufferWrapper =
               VmaAllocation_ = vmaAllocation
               Mapping_ = vmaAllocationInfo.pMappedData
               Size_ = int bufferInfo.size
+              Stale_ = stale
               UploadEnabled_ = uploadEnabled }
 
         // fin
         bufferWrapper
 
     /// Create buffer wrapper.
-    static member create bufferType bufferSize context =
+    static member create bufferType bufferSize stale context =
 
         // compute uploadability
         let struct (uploadEnabled, bufferUsage) =
@@ -117,10 +120,11 @@ type [<Struct>] BufferWrapper =
                 BufferWrapper.makeCreateInfo usage bufferSize
 
         // make buffer
-        BufferWrapper.createPlus (uploadEnabled, bufferUsage, &createInfo, context)
+        BufferWrapper.createPlus (uploadEnabled, bufferUsage, stale, &createInfo, context)
 
     /// Write data to buffer if upload is enabled.
-    static member write (offset, alignment, size, count, data, bufferWrapper : BufferWrapper inref, _ : VulkanContext) =
+    static member write (offset, alignment, size, count, data, bufferWrapper : BufferWrapper byref, _ : VulkanContext) =
+        bufferWrapper.Stale_ <- false
         if bufferWrapper.UploadEnabled_ then
             if size > 0 then
                 let stride = Math.Stride (alignment, size)
@@ -181,10 +185,10 @@ type VulkanBuffer =
 
     static member private ensureHeight (buffer : VulkanBuffer) context =
         while buffer.BufferWrappersCursor_ >= buffer.BufferWrappers_.Length do
-            let bufferWrappers = Array.init buffer.BufferWrappers_.Length (fun _ -> BufferWrapper.create buffer.BufferType_ buffer.BufferSize_ context)
+            let bufferWrappers = Array.init buffer.BufferWrappers_.Length (fun _ -> BufferWrapper.create buffer.BufferType_ buffer.BufferSize_ true context)
             buffer.BufferWrappers_ <- Array.append buffer.BufferWrappers_ bufferWrappers
 
-    /// Expand current buffer width as necessary.
+    /// Expand current buffer width as necessary, preserving the contents of a widened buffer unless they're stale.
     /// OPTIMIZATION: this may swap unutilized buffers around to best utilize existing buffers.
     static member ensureWidth size (buffer : VulkanBuffer) context =
 
@@ -220,10 +224,11 @@ type VulkanBuffer =
             // otherwise when no fit is found...
             else
 
-                // increase the width of the largest buffer found
+                // increase the width of the largest buffer found, copying its contents only when they may be needed
                 let mutable bufferWrapperOld = &buffer.BufferWrappers_[largestIndex]
-                let mutable bufferWrapperNew = BufferWrapper.create buffer.BufferType_ size context
-                VulkanBuffer.copyData bufferWrapperOld.Size bufferWrapperOld.VkBuffer bufferWrapperNew.VkBuffer context
+                let mutable bufferWrapperNew = BufferWrapper.create buffer.BufferType_ size bufferWrapperOld.Stale_ context
+                if not bufferWrapperOld.Stale_ then
+                    VulkanBuffer.copyData bufferWrapperOld.Size bufferWrapperOld.VkBuffer bufferWrapperNew.VkBuffer context
                 BufferWrapper.destroy (&bufferWrapperOld, context)
                 buffer.BufferWrappers_[largestIndex] <- bufferWrapperNew
 
@@ -240,18 +245,22 @@ type VulkanBuffer =
         DeviceApi.vkCmdCopyBuffer (commandBuffer, source, destination, 1u, &&region)
         ConcurrentCommandQueue.runTransient commandBuffer context.TransientCommandPool context.TransientFence context.RenderQueue
 
-    /// Begin use of this buffer for the current frame.
+    /// Begin use of this buffer for the current frame, marking the contents of its underlying buffers as stale since
+    /// each frame writes what it uses.
     static member beginFrame buffer =
         buffer.BufferWrappersCursor_ <- 0
+        for i in 0 .. dec buffer.BufferWrappers_.Length do
+            buffer.BufferWrappers_[i].Stale_ <- true
 
     /// Advance the cursor.
     static member advance buffer =
         buffer.BufferWrappersCursor_ <- inc buffer.BufferWrappersCursor_
 
     /// Create a new buffer.
+    /// NOTE: its initial underlying buffer isn't known to be stale since data may be copied in rather than written.
     static member create (bufferType : BufferType) bufferSize context =
         { BufferWrappersCursor_ = 0
-          BufferWrappers_ = [|BufferWrapper.create bufferType bufferSize context|]
+          BufferWrappers_ = [|BufferWrapper.create bufferType bufferSize false context|]
           BufferType_ = bufferType
           BufferSize_ = bufferSize }
 
