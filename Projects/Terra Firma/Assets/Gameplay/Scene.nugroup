@@ -67,7 +67,7 @@
         [FoliageDensityVariation 0.5]
         [FoliageDrawDistance 192]
         [FoliageFlutterStrength 0.01]
-        [FoliageHeightRange [5 15]]
+        [FoliageHeightRange [2.5 12.5]]
         [FoliageRoughenEnd 0.5]
         [FoliageTerrainLean 0.5]
         [FoliageWindSpeed 1]
@@ -107,7 +107,7 @@
         [FoliageDrawDistance 96]
         [FoliageHeightRange [0.75 1.25]]
         [FoliageRoughenEnd 0.5]
-        [FoliageWidth 5]
+        [FoliageWidth 4]
         [FoliageWindStrength 1.25]
         [Material
          [[AlbedoImageOpt
@@ -185,7 +185,7 @@
         [FoliageHeightRange [0.75 1.25]]
         [FoliageRoughenEnd 0.5]
         [FoliageSeed 123456789]
-        [FoliageWidth 5]
+        [FoliageWidth 3]
         [FoliageWindStrength 1.25]
         [Material
          [[AlbedoImageOpt
