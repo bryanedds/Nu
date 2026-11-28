@@ -24,7 +24,7 @@ type [<ReferenceEquality>] FoliageField =
       Cells : FoliageCell array }
 
 [<AutoOpen>]
-module FoliageExtensions =
+module FoliageFacetExtensions =
     type Entity with
         member this.GetFoliageControlImageOpt world : Image AssetTag option = this.Get (nameof this.FoliageControlImageOpt) world
         member this.SetFoliageControlImageOpt (value : Image AssetTag option) world = this.Set (nameof this.FoliageControlImageOpt) value world
@@ -96,13 +96,12 @@ module FoliageExtensions =
         member this.SetFoliageFieldOpt (value : FoliageField option) world = this.Set (nameof this.FoliageFieldOpt) value world
         member this.FoliageFieldOpt = lens (nameof this.FoliageFieldOpt) this this.GetFoliageFieldOpt this.SetFoliageFieldOpt
 
-/// Covers a terrain with wind-blown tufts of foliage, finding the terrain by its FoliageTerrain address (its parent
-/// by default).
+/// Augments an entity with wind-blown foliage covering a terrain.
 /// NOTE: the optional control image is sampled across the terrain with its first row at the terrain's minimum z and
 /// its first column at the terrain's minimum x. Its RG channels are a lean in x and z encoded like a normal map, B is
 /// density, and A is height. It should be uncompressed, such as by giving its name a _u suffix.
-type FoliageDispatcher () =
-    inherit Entity3dDispatcher (false, false, false)
+type FoliageFacet () =
+    inherit Facet (false, false, false)
 
     // attempt to get the terrain that this foliage covers
     static let tryGetTerrain (entity : Entity) world =
@@ -408,31 +407,43 @@ type FoliageDispatcher () =
             | ValueNone -> Log.infoOnce ("Could not find foliage model '" + scstring staticModel + "'."); None
         | ValueNone -> None
 
-    // discard the generated field so that the next update regenerates it from its changed inputs
+    // discard the generated field so that the next render regenerates it from its changed inputs
     static let handleGenerationChange (evt : Event<ChangeData, Entity>) (world : World) =
         evt.Subscriber.SetFoliageFieldOpt None world
         Cascade
 
     // watch the terrain's inputs to generation
-    static let monitorTerrain (entity : Entity) world =
+    // NOTE: using manual unsubscription (in Unregister, which also runs when the facet is removed, and when the terrain
+    // address changes) since the terrain can change during the life of the facet.
+    static let subscribeTerrain (entity : Entity) world =
         match tryGetTerrain entity world with
         | Some terrain ->
-            World.monitor (nameof handleGenerationChange) (terrain.ChangeEvent (nameof terrain.Transform)) entity world
-            World.monitor (nameof handleGenerationChange) terrain.HeightMap.ChangeEvent entity world
-            World.monitor (nameof handleGenerationChange) terrain.NormalImageOpt.ChangeEvent entity world
+            World.subscribeFacetPlus Gen.id64 (nameof handleGenerationChange) (terrain.ChangeEvent (nameof terrain.Transform)) entity (nameof FoliageFacet) world |> ignore
+            World.subscribeFacetPlus Gen.id64 (nameof handleGenerationChange) terrain.HeightMap.ChangeEvent entity (nameof FoliageFacet) world |> ignore
+            World.subscribeFacetPlus Gen.id64 (nameof handleGenerationChange) terrain.NormalImageOpt.ChangeEvent entity (nameof FoliageFacet) world |> ignore
         | None -> ()
 
-    // watch a newly addressed terrain and discard the field generated for the old one
+    // stop watching the terrain at the given address, which may no longer exist
+    static let unsubscribeTerrain (terrainAddress : Entity Address) (entity : Entity) world =
+        match tryResolve terrainAddress entity with
+        | Some terrain ->
+            World.unsubscribeFacet5 (nameof handleGenerationChange) (terrain.ChangeEvent (nameof terrain.Transform)) entity (nameof FoliageFacet) world
+            World.unsubscribeFacet5 (nameof handleGenerationChange) terrain.HeightMap.ChangeEvent entity (nameof FoliageFacet) world
+            World.unsubscribeFacet5 (nameof handleGenerationChange) terrain.NormalImageOpt.ChangeEvent entity (nameof FoliageFacet) world
+        | None -> ()
+
+    // move the terrain subscriptions from the previously addressed terrain to the newly addressed one and discard the
+    // field generated for the old one
     static let handleTerrainChange (evt : Event<ChangeData, Entity>) (world : World) =
         let entity = evt.Subscriber
-        monitorTerrain entity world
+        unsubscribeTerrain (evt.Data.Previous :?> Entity Address) entity world
+        subscribeTerrain entity world
         entity.SetFoliageFieldOpt None world
         Cascade
 
     static member Properties =
         [define Entity.Presence Omnipresent
          define Entity.Static true
-         define Entity.AlwaysUpdate true
          define Entity.CastShadow false
          define Entity.StaticModel Assets.Gameplay.GrassTuftModel
          define Entity.Material
@@ -442,7 +453,9 @@ type FoliageDispatcher () =
                 CullModeOpt = ValueSome CullBack // the default grass tuft is double-sided
                 ClippedOpt = ValueSome false // the default grass tuft's geometry gives its shape
                 PipelineNameOpt = ValueSome Constants.Foliage.PipelineName }
-         define Entity.MaterialProperties { MaterialProperties.empty with ScatterTypeOpt = ValueSome FoliageScatter }
+         define Entity.MaterialProperties
+            { MaterialProperties.empty with
+                ScatterTypeOpt = ValueSome FoliageScatter }
          define Entity.FoliageControlImageOpt None
          define Entity.FoliageTerrain Address.parent
          define Entity.FoliageDensity 2.5f // tufts per square meter at full density
@@ -468,26 +481,32 @@ type FoliageDispatcher () =
          nonPersistent Entity.FoliageFieldOpt None]
 
     override this.Register (entity, world) =
-        World.monitor (nameof handleTerrainChange) entity.FoliageTerrain.ChangeEvent entity world
-        World.monitor (nameof handleGenerationChange) entity.FoliageControlImageOpt.ChangeEvent entity world
-        World.monitor (nameof handleGenerationChange) entity.StaticModel.ChangeEvent entity world
-        World.monitor (nameof handleGenerationChange) entity.MaterialProperties.ChangeEvent entity world
-        World.monitor (nameof handleGenerationChange) entity.CastShadow.ChangeEvent entity world
-        World.monitor (nameof handleGenerationChange) entity.FoliageDensity.ChangeEvent entity world
-        World.monitor (nameof handleGenerationChange) entity.FoliageCellSize.ChangeEvent entity world
-        World.monitor (nameof handleGenerationChange) entity.FoliageHeightRange.ChangeEvent entity world
-        World.monitor (nameof handleGenerationChange) entity.FoliageWidth.ChangeEvent entity world
-        World.monitor (nameof handleGenerationChange) entity.FoliageLeanMax.ChangeEvent entity world
-        World.monitor (nameof handleGenerationChange) entity.FoliageTerrainLean.ChangeEvent entity world
-        World.monitor (nameof handleGenerationChange) entity.FoliageSlopeFade.ChangeEvent entity world
-        World.monitor (nameof handleGenerationChange) entity.FoliageVariationTileSize.ChangeEvent entity world
-        World.monitor (nameof handleGenerationChange) entity.FoliageDensityVariation.ChangeEvent entity world
-        World.monitor (nameof handleGenerationChange) entity.FoliageHeightVariation.ChangeEvent entity world
-        World.monitor (nameof handleGenerationChange) entity.FoliageColorVariation.ChangeEvent entity world
-        World.monitor (nameof handleGenerationChange) entity.FoliageSeed.ChangeEvent entity world
-        monitorTerrain entity world
+        World.sense (nameof handleTerrainChange) entity.FoliageTerrain.ChangeEvent entity (nameof FoliageFacet) world
+        World.sense (nameof handleGenerationChange) entity.FoliageControlImageOpt.ChangeEvent entity (nameof FoliageFacet) world
+        World.sense (nameof handleGenerationChange) entity.StaticModel.ChangeEvent entity (nameof FoliageFacet) world
+        World.sense (nameof handleGenerationChange) entity.MaterialProperties.ChangeEvent entity (nameof FoliageFacet) world
+        World.sense (nameof handleGenerationChange) entity.CastShadow.ChangeEvent entity (nameof FoliageFacet) world
+        World.sense (nameof handleGenerationChange) entity.FoliageDensity.ChangeEvent entity (nameof FoliageFacet) world
+        World.sense (nameof handleGenerationChange) entity.FoliageCellSize.ChangeEvent entity (nameof FoliageFacet) world
+        World.sense (nameof handleGenerationChange) entity.FoliageHeightRange.ChangeEvent entity (nameof FoliageFacet) world
+        World.sense (nameof handleGenerationChange) entity.FoliageWidth.ChangeEvent entity (nameof FoliageFacet) world
+        World.sense (nameof handleGenerationChange) entity.FoliageLeanMax.ChangeEvent entity (nameof FoliageFacet) world
+        World.sense (nameof handleGenerationChange) entity.FoliageTerrainLean.ChangeEvent entity (nameof FoliageFacet) world
+        World.sense (nameof handleGenerationChange) entity.FoliageSlopeFade.ChangeEvent entity (nameof FoliageFacet) world
+        World.sense (nameof handleGenerationChange) entity.FoliageVariationTileSize.ChangeEvent entity (nameof FoliageFacet) world
+        World.sense (nameof handleGenerationChange) entity.FoliageDensityVariation.ChangeEvent entity (nameof FoliageFacet) world
+        World.sense (nameof handleGenerationChange) entity.FoliageHeightVariation.ChangeEvent entity (nameof FoliageFacet) world
+        World.sense (nameof handleGenerationChange) entity.FoliageColorVariation.ChangeEvent entity (nameof FoliageFacet) world
+        World.sense (nameof handleGenerationChange) entity.FoliageSeed.ChangeEvent entity (nameof FoliageFacet) world
+        subscribeTerrain entity world
 
-    override this.Update (entity, world) =
+    override this.Unregister (entity, world) =
+        unsubscribeTerrain (entity.GetFoliageTerrain world) entity world
+
+    override this.Render (renderPass, entity, world) =
+
+        // generate the field if it was discarded, doing so when rendering rather than updating so that foliage can be
+        // static, and so that it's generated only when it's rendered
         if (entity.GetFoliageFieldOpt world).IsNone then
             match tryGetTerrain entity world with
             | Some terrain ->
@@ -496,26 +515,38 @@ type FoliageDispatcher () =
                 | None -> ()
             | None -> ()
 
-    override this.Render (renderPass, entity, world) =
+        // render the field
         match entity.GetFoliageFieldOpt world with
         | Some field when field.Cells.Length > 0 ->
 
-            // determine the frustum to render in, if any. Shadows are rendered with the engine's static shadow
-            // pipeline, so they're not animated by wind, collapsed, or alpha clipped.
-            let frustumOpt =
+            // determine which cells to render in the render pass, if any, and the point to render them nearest first
+            // from. Shadows are rendered with the engine's static shadow pipeline, so they're not animated by wind,
+            // collapsed, or alpha clipped. Light maps are rendered from their light probe's origin, which isn't known
+            // here, so their cells are found by the light map's bounds alone, leaving the shader to collapse the tufts
+            // beyond the draw distance from that origin.
+            let drawDistance = max (entity.GetFoliageDrawDistance world) 0.0f
+            let eyeCenter = World.getEye3dCenter world
+            let withinDrawDistance (cell : FoliageCell) =
+                let dx = max (max (cell.Bounds.Min.X - eyeCenter.X) (eyeCenter.X - cell.Bounds.Max.X)) 0.0f
+                let dz = max (max (cell.Bounds.Min.Z - eyeCenter.Z) (eyeCenter.Z - cell.Bounds.Max.Z)) 0.0f
+                dx * dx + dz * dz <= drawDistance * drawDistance
+            let cullingOpt =
                 match renderPass with
-                | NormalPass -> Some (World.getEye3dFrustumView world)
+                | NormalPass ->
+                    let frustum = World.getEye3dFrustumView world
+                    Some (eyeCenter, fun (cell : FoliageCell) -> withinDrawDistance cell && frustum.Intersects cell.Bounds)
                 | ShadowPass (_, _, _, _, _, shadowFrustum) ->
                     if entity.GetCastShadow world && (World.getRenderer3dConfig world).LightShadowingEnabled
-                    then Some shadowFrustum
+                    then Some (eyeCenter, fun (cell : FoliageCell) -> withinDrawDistance cell && shadowFrustum.Intersects cell.Bounds)
                     else None
-                | LightMapPass (_, _) | ReflectionPass (_, _) -> None
-            match frustumOpt with
-            | Some frustum ->
+                | LightMapPass (_, lightMapBounds) ->
+                    Some (lightMapBounds.Center, fun (cell : FoliageCell) -> lightMapBounds.Intersects cell.Bounds)
+                | ReflectionPass (_, _) -> None
+            match cullingOpt with
+            | Some (sortCenter, cellVisible) ->
 
                 // compute wind, collapse, and roughening settings as an override of the items' user-defined settings,
                 // rounding the scrolls made over a cycle to whole numbers so that the cycle wraps seamlessly
-                let drawDistance = max (entity.GetFoliageDrawDistance world) 0.0f
                 let cycle = max (entity.GetFoliageWindCycle world) 0.001f
                 let windDirection = entity.GetFoliageWindDirection world
                 let phase = single ((world.ScaledTime.Seconds / float cycle) % 1.0)
@@ -533,16 +564,11 @@ type FoliageDispatcher () =
                         UserDefinedSetting6Opt = ValueSome drawDistance
                         UserDefinedSetting7Opt = ValueSome (entity.GetFoliageFlutterStrength world) }
 
-                // collect the cells that are in the frustum and within the draw distance, nearest first so that they
-                // render first and occlude what's behind them
-                let eyeCenter = World.getEye3dCenter world
+                // collect the visible cells, nearest first so that they render first and occlude what's behind them
                 let cellsVisible =
                     field.Cells
-                    |> Array.filter (fun cell ->
-                        let dx = max (max (cell.Bounds.Min.X - eyeCenter.X) (eyeCenter.X - cell.Bounds.Max.X)) 0.0f
-                        let dz = max (max (cell.Bounds.Min.Z - eyeCenter.Z) (eyeCenter.Z - cell.Bounds.Max.Z)) 0.0f
-                        dx * dx + dz * dz <= drawDistance * drawDistance && frustum.Intersects cell.Bounds)
-                    |> Array.sortBy (fun cell -> Vector3.DistanceSquared (cell.Bounds.Center, eyeCenter))
+                    |> Array.filter cellVisible
+                    |> Array.sortBy (fun cell -> Vector3.DistanceSquared (cell.Bounds.Center, sortCenter))
 
                 // build pre-batches of the visible cells from their cached items
                 let material = entity.GetMaterial world
@@ -569,3 +595,10 @@ type FoliageDispatcher () =
 
             | None -> ()
         | Some _ | None -> ()
+
+/// Gives an entity the base behavior of wind-blown foliage covering a terrain.
+type FoliageDispatcher () =
+    inherit Entity3dDispatcher (false, false, false)
+
+    static member Facets =
+        [typeof<FoliageFacet>]
