@@ -4158,9 +4158,9 @@ module FoliageFacetExtensions =
         member this.GetFoliageDrawDistance world : single = this.Get (nameof this.FoliageDrawDistance) world
         member this.SetFoliageDrawDistance (value : single) world = this.Set (nameof this.FoliageDrawDistance) value world
         member this.FoliageDrawDistance = lens (nameof this.FoliageDrawDistance) this this.GetFoliageDrawDistance this.SetFoliageDrawDistance
-        member this.GetFoliageCollapseStart world : single = this.Get (nameof this.FoliageCollapseStart) world
-        member this.SetFoliageCollapseStart (value : single) world = this.Set (nameof this.FoliageCollapseStart) value world
-        member this.FoliageCollapseStart = lens (nameof this.FoliageCollapseStart) this this.GetFoliageCollapseStart this.SetFoliageCollapseStart
+        member this.GetFoliageCollapseBegin world : single = this.Get (nameof this.FoliageCollapseBegin) world
+        member this.SetFoliageCollapseBegin (value : single) world = this.Set (nameof this.FoliageCollapseBegin) value world
+        member this.FoliageCollapseBegin = lens (nameof this.FoliageCollapseBegin) this this.GetFoliageCollapseBegin this.SetFoliageCollapseBegin
         member this.GetFoliageRoughenEnd world : single = this.Get (nameof this.FoliageRoughenEnd) world
         member this.SetFoliageRoughenEnd (value : single) world = this.Set (nameof this.FoliageRoughenEnd) value world
         member this.FoliageRoughenEnd = lens (nameof this.FoliageRoughenEnd) this this.GetFoliageRoughenEnd this.SetFoliageRoughenEnd
@@ -4333,7 +4333,7 @@ type FoliageFacet () =
     static let sampleControl (field : FoliageField) (x : single) (z : single) =
         match field.ControlOpt with
         | Some (resolution, pixels) ->
-            let bounds = field.TerrainBounds
+            let bounds = field.Bounds
             let u = Math.Clamp ((x - bounds.Min.X) / bounds.Size.X, 0.0f, 1.0f) * single (dec resolution.X)
             let v = Math.Clamp ((z - bounds.Min.Z) / bounds.Size.Z, 0.0f, 1.0f) * single (dec resolution.Y)
             let u0 = min (int u) (resolution.X - 2 |> max 0)
@@ -4349,7 +4349,7 @@ type FoliageFacet () =
     // sample the terrain's height and interpolated normal at a world position, interpolating within the same
     // triangles that the renderer splits each quad into
     static let sampleTerrain (field : FoliageField) (x : single) (z : single) =
-        let bounds = field.TerrainBounds
+        let bounds = field.Bounds
         let resolution = field.Resolution
         let gx = (x - bounds.Min.X) / bounds.Size.X * single (dec resolution.X)
         let gz = (z - bounds.Min.Z) / bounds.Size.Z * single (dec resolution.Y)
@@ -4401,7 +4401,7 @@ type FoliageFacet () =
                 let resolution = heightMapMetadata.Resolution
                 let positions = Array.map fst' heightMapMetadata.PositionsAndTexCoordses
                 let field =
-                    { TerrainBounds = terrainBounds
+                    { Bounds = terrainBounds
                       Resolution = resolution
                       Positions = positions
                       Normals = computeTerrainNormals resolution positions normalImageOpt
@@ -4574,7 +4574,7 @@ type FoliageFacet () =
          define Entity.FoliageDensity 2.5f // instances per square meter at full density
          define Entity.FoliageCellSize 16.0f // edge length in meters of the square cells that instances generate in
          define Entity.FoliageDrawDistance 64.0f // distance at which instances are fully collapsed into their roots
-         define Entity.FoliageCollapseStart 0.75f // fraction of the draw distance at which instances begin collapsing
+         define Entity.FoliageCollapseBegin 0.75f // fraction of the draw distance at which instances begin collapsing
          define Entity.FoliageRoughenEnd 1.0f // fraction of the draw distance at which instances become fully rough
          define Entity.FoliageHeightRange (v2 0.5f 0.9f) // range of instance heights in meters before height variation
          define Entity.FoliageWidth 1.0f // horizontal scale of instances relative to their height
@@ -4674,7 +4674,7 @@ type FoliageFacet () =
                         SharedSetting2Opt = ValueSome (round gustScroll.X)
                         SharedSetting3Opt = ValueSome (round gustScroll.Y)
                         SharedSetting4Opt = ValueSome (drawDistance * Math.Clamp (entity.GetFoliageRoughenEnd world, 0.0f, 1.0f))
-                        SharedSetting5Opt = ValueSome (drawDistance * Math.Clamp (entity.GetFoliageCollapseStart world, 0.0f, 1.0f))
+                        SharedSetting5Opt = ValueSome (drawDistance * Math.Clamp (entity.GetFoliageCollapseBegin world, 0.0f, 1.0f))
                         SharedSetting6Opt = ValueSome drawDistance
                         SharedSetting7Opt = ValueSome (entity.GetFoliageFlutterStrength world) }
 

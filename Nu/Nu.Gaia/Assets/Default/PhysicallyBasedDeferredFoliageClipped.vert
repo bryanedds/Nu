@@ -111,7 +111,7 @@ void main()
     float strength = sharedSettings[0].y;
     vec2 gustScroll = sharedSettings[0].zw;
     float roughenEnd = sharedSettings[1].x;
-    float collapseStart = sharedSettings[1].y;
+    float collapseBegin = sharedSettings[1].y;
     float drawDistance = sharedSettings[1].z;
     float flutterStrength = sharedSettings[1].w;
     vec2 windDirection = dot(gustScroll, gustScroll) > 0.0 ? normalize(gustScroll) : vec2(1.0, 0.0);
@@ -139,7 +139,7 @@ void main()
 
     // collapse the instance toward its root as it nears the draw distance
     float rootDistance = distance(root.xyz, eye.center);
-    float collapse = 1.0 - smoothstep(collapseStart, max(drawDistance, collapseStart + 0.001), rootDistance);
+    float collapse = 1.0 - smoothstep(collapseBegin, max(drawDistance, collapseBegin + 0.001), rootDistance);
     positionOut.xyz = root.xyz + (positionOut.xyz - root.xyz) * collapse;
 
     // compute remaining outputs

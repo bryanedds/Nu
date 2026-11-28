@@ -230,7 +230,7 @@ type [<ReferenceEquality>] FoliageCell =
 
 /// The generated state of a foliage layer, covering its entire terrain.
 type [<ReferenceEquality>] FoliageField =
-    { TerrainBounds : Box3
+    { Bounds : Box3
       Resolution : Vector2i
       Positions : Vector3 array
       Normals : Vector3 array
