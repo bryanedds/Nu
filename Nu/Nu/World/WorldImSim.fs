@@ -848,6 +848,12 @@ module WorldImSim =
             (world.DeclaredEntity.GetBodyId world, results)
 
         /// <summary>
+        /// ImSim declare foliage with the given arguments.
+        /// See <see cref="FoliageDispatcher" />.
+        /// </summary>
+        static member doFoliage name args world = World.doEntity<FoliageDispatcher> name args world
+
+        /// <summary>
         /// ImSim declare a 3d nav config with the given arguments.
         /// See <see cref="Nav3dConfigDispatcher" />.
         /// </summary>

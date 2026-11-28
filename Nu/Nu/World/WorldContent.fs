@@ -661,6 +661,12 @@ module Content =
     let terrain entityName definitions = entity<TerrainDispatcher> entityName definitions
 
     /// <summary>
+    /// Describe foliage with the given definitions.
+    /// See <see cref="FoliageDispatcher"/>.
+    /// </summary>
+    let foliage entityName definitions = entity<FoliageDispatcher> entityName definitions
+
+    /// <summary>
     /// Describe a 3d navigation configuration.
     /// See <see cref="Nav3dConfigDispatcher"/>.
     /// </summary>

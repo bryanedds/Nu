@@ -240,9 +240,9 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
       SubdermalTexture : Texture
       FinenessTexture : Texture
       ScatterTexture : Texture
-      ClearCoatTexture : Texture
-      ClearCoatRoughnessTexture : Texture
-      ClearCoatNormalTexture : Texture
+      SharedImage0Texture : Texture
+      SharedImage1Texture : Texture
+      SharedImage2Texture : Texture
       UserDefinedImage0Texture : Texture
       UserDefinedImage1Texture : Texture
       UserDefinedImage2Texture : Texture
@@ -265,9 +265,9 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
           SubdermalTexture = Texture.EmptyTexture
           FinenessTexture = Texture.EmptyTexture
           ScatterTexture = Texture.EmptyTexture
-          ClearCoatTexture = Texture.EmptyTexture
-          ClearCoatRoughnessTexture = Texture.EmptyTexture
-          ClearCoatNormalTexture = Texture.EmptyTexture
+          SharedImage0Texture = Texture.EmptyTexture
+          SharedImage1Texture = Texture.EmptyTexture
+          SharedImage2Texture = Texture.EmptyTexture
           UserDefinedImage0Texture = Texture.EmptyTexture
           UserDefinedImage1Texture = Texture.EmptyTexture
           UserDefinedImage2Texture = Texture.EmptyTexture
@@ -290,9 +290,9 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
         (hash material.SubdermalTexture <<<             06) ^^^
         (hash material.FinenessTexture <<<              07) ^^^
         (hash material.ScatterTexture <<<               08) ^^^
-        (hash material.ClearCoatTexture <<<             09) ^^^
-        (hash material.ClearCoatRoughnessTexture <<<    10) ^^^
-        (hash material.ClearCoatNormalTexture <<<       11) ^^^
+        (hash material.SharedImage0Texture <<<          09) ^^^
+        (hash material.SharedImage1Texture <<<          10) ^^^
+        (hash material.SharedImage2Texture <<<          11) ^^^
         (hash material.UserDefinedImage0Texture <<<     12) ^^^
         (hash material.UserDefinedImage1Texture <<<     13) ^^^
         (hash material.UserDefinedImage2Texture <<<     14) ^^^
@@ -316,9 +316,9 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
         left.SubdermalTexture = right.SubdermalTexture &&
         left.FinenessTexture = right.FinenessTexture &&
         left.ScatterTexture = right.ScatterTexture &&
-        left.ClearCoatTexture = right.ClearCoatTexture &&
-        left.ClearCoatRoughnessTexture = right.ClearCoatRoughnessTexture &&
-        left.ClearCoatNormalTexture = right.ClearCoatNormalTexture &&
+        left.SharedImage0Texture = right.SharedImage0Texture &&
+        left.SharedImage1Texture = right.SharedImage1Texture &&
+        left.SharedImage2Texture = right.SharedImage2Texture &&
         left.UserDefinedImage0Texture = right.UserDefinedImage0Texture &&
         left.UserDefinedImage1Texture = right.UserDefinedImage1Texture &&
         left.UserDefinedImage2Texture = right.UserDefinedImage2Texture &&
@@ -354,9 +354,14 @@ type PhysicallyBasedMaterialProperties =
       SubsurfaceCutoff : single
       SubsurfaceCutoffMargin : single
       RefractiveIndex : single
-      ClearCoat : single
-      ClearCoatRoughness : single
-      // NOTE: 6 fields here are reserved for engine use.
+      SharedSetting0 : single
+      SharedSetting1 : single
+      SharedSetting2 : single
+      SharedSetting3 : single
+      SharedSetting4 : single
+      SharedSetting5 : single
+      SharedSetting6 : single
+      SharedSetting7 : single
       UserDefinedSetting0 : single
       UserDefinedSetting1 : single
       UserDefinedSetting2 : single
@@ -382,8 +387,14 @@ type PhysicallyBasedMaterialProperties =
           SubsurfaceCutoff = 0.0f
           SubsurfaceCutoffMargin = 0.0f
           RefractiveIndex = 0.0f
-          ClearCoat = 0.0f
-          ClearCoatRoughness = 0.0f
+          SharedSetting0 = 0.0f
+          SharedSetting1 = 0.0f
+          SharedSetting2 = 0.0f
+          SharedSetting3 = 0.0f
+          SharedSetting4 = 0.0f
+          SharedSetting5 = 0.0f
+          SharedSetting6 = 0.0f
+          SharedSetting7 = 0.0f
           UserDefinedSetting0 = 0.0f
           UserDefinedSetting1 = 0.0f
           UserDefinedSetting2 = 0.0f
@@ -555,24 +566,29 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
             | Some _ | None -> refractiveIndexDefault
         | ValueSome refractiveIndex -> refractiveIndex
 
-    static member extractClearCoat clearCoatDefault (sceneOpt : Assimp.Scene option) surface =
+    static member extractSharedSetting0 sharedSettingDefault (sceneOpt : Assimp.Scene option) surface =
+
+        // NOTE: currently just looks for clear coat, but could be used for other shared settings in the future.
         match surface.SurfaceNode.ClearCoatOpt with
         | ValueNone ->
             match sceneOpt with
             | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
                 let material = scene.Materials[surface.SurfaceMaterialIndex]
-                ValueOption.defaultValue clearCoatDefault material.ClearCoatOpt
-            | Some _ | None -> clearCoatDefault
+                ValueOption.defaultValue sharedSettingDefault material.ClearCoatOpt
+            | Some _ | None -> sharedSettingDefault
         | ValueSome clearCoat -> clearCoat
 
-    static member extractClearCoatRoughness clearCoatRoughnessDefault (sceneOpt : Assimp.Scene option) surface =
+    static member extractSharedSetting1 sharedSettingDefault (sceneOpt : Assimp.Scene option) surface =
+
+        // NOTE: currently just looks for clear coat roughness, but could be used for other shared settings in the
+        // future.
         match surface.SurfaceNode.ClearCoatRoughnessOpt with
         | ValueNone ->
             match sceneOpt with
             | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
                 let material = scene.Materials[surface.SurfaceMaterialIndex]
-                ValueOption.defaultValue clearCoatRoughnessDefault material.ClearCoatRoughnessOpt
-            | Some _ | None -> clearCoatRoughnessDefault
+                ValueOption.defaultValue sharedSettingDefault material.ClearCoatRoughnessOpt
+            | Some _ | None -> sharedSettingDefault
         | ValueSome clearCoatRoughness -> clearCoatRoughness
 
     static member extractUserDefinedSetting index userDefinedSettingDefault (sceneOpt : Assimp.Scene option) surface =
@@ -636,8 +652,8 @@ module PhysicallyBasedSurfaceFns =
     let extractSubsurfaceCutoff = PhysicallyBasedSurface.extractSubsurfaceCutoff
     let extractSubsurfaceCutoffMargin = PhysicallyBasedSurface.extractSubsurfaceCutoffMargin
     let extractRefractiveIndex = PhysicallyBasedSurface.extractRefractiveIndex
-    let extractClearCoat = PhysicallyBasedSurface.extractClearCoat
-    let extractClearCoatRoughness = PhysicallyBasedSurface.extractClearCoatRoughness
+    let extractSharedSetting0 = PhysicallyBasedSurface.extractSharedSetting0
+    let extractSharedSetting1 = PhysicallyBasedSurface.extractSharedSetting1
     let extractUserDefinedSetting = PhysicallyBasedSurface.extractUserDefinedSetting
     let extractNavShape = PhysicallyBasedSurface.extractNavShape
     let hash = PhysicallyBasedSurface.hash
@@ -863,6 +879,8 @@ type PhysicallyBasedPipelines =
       DeferredStaticPipeline : PhysicallyBasedPipeline
       DeferredStaticClippedPipeline : PhysicallyBasedPipeline
       DeferredAnimatedPipeline : PhysicallyBasedPipeline
+      DeferredFoliagePipeline : PhysicallyBasedPipeline
+      DeferredFoliageClippedPipeline : PhysicallyBasedPipeline
       DeferredTerrainPipeline : PhysicallyBasedDeferredTerrainPipeline
       DeferredLighting3dPipeline : PhysicallyBasedDeferredLighting3dPipeline
       DeferredFogging3dPipeline : PhysicallyBasedDeferredFogging3dPipeline
@@ -878,6 +896,8 @@ type PhysicallyBasedPipelines =
       UserDefinedDeferredStaticPipelines : Dictionary<string, PhysicallyBasedPipeline>
       UserDefinedDeferredStaticClippedPipelines : Dictionary<string, PhysicallyBasedPipeline>
       UserDefinedDeferredAnimatedPipelines : Dictionary<string, PhysicallyBasedPipeline>
+      UserDefinedFoliagePipelines : Dictionary<string, PhysicallyBasedPipeline>
+      UserDefinedFoliageClippedPipelines : Dictionary<string, PhysicallyBasedPipeline>
       UserDefinedForwardStaticPipelines : Dictionary<string, PhysicallyBasedPipeline>
       UserDefinedForwardAnimatedPipelines : Dictionary<string, PhysicallyBasedPipeline>
       UserDefinedTerrainPipelines : Dictionary<string, PhysicallyBasedDeferredTerrainPipeline> }
@@ -1549,34 +1569,39 @@ module PhysicallyBased =
             | ValueSome refractiveIndex -> refractiveIndex
             | ValueNone -> Constants.Render.RefractiveIndexDefault
 
-        // attempt to load clear coat info
-        let clearCoat = Constants.Render.ClearCoatDefault
-        let clearCoatTexture =
+        // attempt to load clear coat info into the shared settings and images that the default deferred pipelines
+        // read it from. A clear coat scalar is 1 when its texture is found so that the texture applies as is, and 0
+        // otherwise so that the default shared image doesn't apply.
+        // NOTE: currently just looks for clear coat info, but could find other shared resource info in the future.
+        let struct (sharedSetting0, sharedImage0Texture) =
             match contextOpt with
             | Some context ->
                 match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression clearCoatTextureFilePath) (dirPrefix + clearCoatTextureFilePath) RenderThread context with
-                | Right texture -> texture
+                | Right texture -> struct (1.0f, texture)
                 | Left _ ->
                     match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression clearCoatTextureFilePath') (dirPrefix + clearCoatTextureFilePath') RenderThread context with
-                    | Right texture -> texture
-                    | Left _ -> defaultMaterial.ClearCoatTexture
-            | None -> defaultMaterial.ClearCoatTexture
+                    | Right texture -> struct (1.0f, texture)
+                    | Left _ -> struct (0.0f, defaultMaterial.SharedImage0Texture)
+            | None -> struct (0.0f, defaultMaterial.SharedImage0Texture)
 
         // attempt to load clear coat roughness info
-        let clearCoatRoughness = Constants.Render.ClearCoatRoughnessDefault
-        let clearCoatRoughnessTexture =
+        // NOTE: currently just looks for clear coat roughness info, but could find other shared resource info in the
+        // future.
+        let struct (sharedSetting1, sharedImage1Texture) =
             match contextOpt with
             | Some context ->
                 match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression clearCoatRoughnessTextureFilePath) (dirPrefix + clearCoatRoughnessTextureFilePath) RenderThread context with
-                | Right texture -> texture
+                | Right texture -> struct (1.0f, texture)
                 | Left _ ->
                     match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression clearCoatRoughnessTextureFilePath') (dirPrefix + clearCoatRoughnessTextureFilePath') RenderThread context with
-                    | Right texture -> texture
-                    | Left _ -> defaultMaterial.ClearCoatRoughnessTexture
-            | None -> defaultMaterial.ClearCoatRoughnessTexture
+                    | Right texture -> struct (1.0f, texture)
+                    | Left _ -> struct (0.0f, defaultMaterial.SharedImage1Texture)
+            | None -> struct (0.0f, defaultMaterial.SharedImage1Texture)
 
         // attempt to load clear coat normal info
-        let clearCoatNormalTexture =
+        // NOTE: currently just looks for clear coat normal info, but could find other shared resource info in the
+        // future.
+        let sharedImage2Texture =
             match contextOpt with
             | Some context ->
                 match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression clearCoatNormalTextureFilePath) (dirPrefix + clearCoatNormalTextureFilePath) RenderThread context with
@@ -1584,8 +1609,8 @@ module PhysicallyBased =
                 | Left _ ->
                     match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression clearCoatNormalTextureFilePath') (dirPrefix + clearCoatNormalTextureFilePath') RenderThread context with
                     | Right texture -> texture
-                    | Left _ -> defaultMaterial.ClearCoatNormalTexture
-            | None -> defaultMaterial.ClearCoatNormalTexture
+                    | Left _ -> defaultMaterial.SharedImage2Texture
+            | None -> defaultMaterial.SharedImage2Texture
 
         // attempt to load user-defined settings
         let userDefinedSettings =
@@ -1684,9 +1709,9 @@ module PhysicallyBased =
               SubdermalTexture = subdermalTexture
               FinenessTexture = finenessTexture
               ScatterTexture = scatterTexture
-              ClearCoatTexture = clearCoatTexture
-              ClearCoatRoughnessTexture = clearCoatRoughnessTexture
-              ClearCoatNormalTexture = clearCoatNormalTexture
+              SharedImage0Texture = sharedImage0Texture
+              SharedImage1Texture = sharedImage1Texture
+              SharedImage2Texture = sharedImage2Texture
               UserDefinedImage0Texture = userDefinedImage0Texture
               UserDefinedImage1Texture = userDefinedImage1Texture
               UserDefinedImage2Texture = userDefinedImage2Texture
@@ -1714,8 +1739,14 @@ module PhysicallyBased =
               SubsurfaceCutoffMargin = subsurfaceCutoffMargin
               SpecularScalar = specularScalar
               RefractiveIndex = refractiveIndex
-              ClearCoat = clearCoat
-              ClearCoatRoughness = clearCoatRoughness
+              SharedSetting0 = sharedSetting0
+              SharedSetting1 = sharedSetting1
+              SharedSetting2 = 0.0f
+              SharedSetting3 = 0.0f
+              SharedSetting4 = 0.0f
+              SharedSetting5 = 0.0f
+              SharedSetting6 = 0.0f
+              SharedSetting7 = 0.0f
               UserDefinedSetting0 = userDefinedSettings[0]
               UserDefinedSetting1 = userDefinedSettings[1]
               UserDefinedSetting2 = userDefinedSettings[2]
@@ -3849,9 +3880,9 @@ module PhysicallyBased =
                       Pipeline.descriptor 6 SampledImage FragmentStage 1 // subdermalTexture
                       Pipeline.descriptor 7 SampledImage FragmentStage 1 // finenessTexture
                       Pipeline.descriptor 8 SampledImage FragmentStage 1 // scatterTexture
-                      Pipeline.descriptor 9 SampledImage FragmentStage 1 // clearCoatTexture
-                      Pipeline.descriptor 10 SampledImage FragmentStage 1 // clearCoatRoughnessTexture
-                      Pipeline.descriptor 11 SampledImage FragmentStage 1 // clearCoatNormalTexture
+                      Pipeline.descriptor 9 SampledImage VertexAndFragmentStage 1 // sharedImage0Texture
+                      Pipeline.descriptor 10 SampledImage VertexAndFragmentStage 1 // sharedImage1Texture
+                      Pipeline.descriptor 11 SampledImage VertexAndFragmentStage 1 // sharedImage2Texture
                       Pipeline.descriptor 12 SampledImage VertexAndFragmentStage 1 // userDefinedImage0Texture
                       Pipeline.descriptor 13 SampledImage VertexAndFragmentStage 1 // userDefinedImage1Texture
                       Pipeline.descriptor 14 SampledImage VertexAndFragmentStage 1|] // userDefinedImage2Texture
@@ -3986,9 +4017,9 @@ module PhysicallyBased =
                     Pipeline.writeDescriptorSampledTexture 6 0 material.SubdermalTexture vkSet
                     Pipeline.writeDescriptorSampledTexture 7 0 material.FinenessTexture vkSet
                     Pipeline.writeDescriptorSampledTexture 8 0 material.ScatterTexture vkSet
-                    Pipeline.writeDescriptorSampledTexture 9 0 material.ClearCoatTexture vkSet
-                    Pipeline.writeDescriptorSampledTexture 10 0 material.ClearCoatRoughnessTexture vkSet
-                    Pipeline.writeDescriptorSampledTexture 11 0 material.ClearCoatNormalTexture vkSet
+                    Pipeline.writeDescriptorSampledTexture 9 0 material.SharedImage0Texture vkSet
+                    Pipeline.writeDescriptorSampledTexture 10 0 material.SharedImage1Texture vkSet
+                    Pipeline.writeDescriptorSampledTexture 11 0 material.SharedImage2Texture vkSet
                     Pipeline.writeDescriptorSampledTexture 12 0 material.UserDefinedImage0Texture vkSet
                     Pipeline.writeDescriptorSampledTexture 13 0 material.UserDefinedImage1Texture vkSet
                     Pipeline.writeDescriptorSampledTexture 14 0 material.UserDefinedImage2Texture vkSet
@@ -6190,6 +6221,32 @@ module PhysicallyBased =
                 depthBuffer.ImageFormat
                 context
 
+        // create deferred foliage pipeline
+        let deferredFoliagePipeline =
+            createPhysicallyBasedPipeline
+                lightMapsMax
+                lightsMax
+                Constants.Paths.PhysicallyBasedDeferredFoliageShaderFilePath
+                [|VulkanUnblended|]
+                [|CullNone; CullBack; CullFront|]
+                StaticVertices
+                deferredColorAttachmentFormats
+                depthBuffer.ImageFormat
+                context
+
+        // create deferred foliage clipped pipeline
+        let deferredFoliageClippedPipeline =
+            createPhysicallyBasedPipeline
+                lightMapsMax
+                lightsMax
+                Constants.Paths.PhysicallyBasedDeferredFoliageClippedShaderFilePath
+                [|VulkanUnblended|]
+                [|CullNone; CullBack; CullFront|]
+                StaticVertices
+                deferredColorAttachmentFormats
+                depthBuffer.ImageFormat
+                context
+
         // create deferred terrain pipeline
         let deferredTerrainPipeline =
             createPhysicallyBasedTerrainPipeline
@@ -6264,6 +6321,8 @@ module PhysicallyBased =
               DeferredStaticPipeline = deferredStaticPipeline
               DeferredStaticClippedPipeline = deferredStaticClippedPipeline
               DeferredAnimatedPipeline = deferredAnimatedPipeline
+              DeferredFoliagePipeline = deferredFoliagePipeline
+              DeferredFoliageClippedPipeline = deferredFoliageClippedPipeline
               DeferredTerrainPipeline = deferredTerrainPipeline
               DeferredLighting3dPipeline = deferredLightingPipeline
               DeferredFogging3dPipeline = deferredFoggingPipeline
@@ -6279,6 +6338,8 @@ module PhysicallyBased =
               UserDefinedDeferredStaticPipelines = dictPlus StringComparer.Ordinal []
               UserDefinedDeferredStaticClippedPipelines = dictPlus StringComparer.Ordinal []
               UserDefinedDeferredAnimatedPipelines = dictPlus StringComparer.Ordinal []
+              UserDefinedFoliagePipelines = dictPlus StringComparer.Ordinal []
+              UserDefinedFoliageClippedPipelines = dictPlus StringComparer.Ordinal []
               UserDefinedForwardStaticPipelines = dictPlus StringComparer.Ordinal []
               UserDefinedForwardAnimatedPipelines = dictPlus StringComparer.Ordinal []
               UserDefinedTerrainPipelines = dictPlus StringComparer.Ordinal [] }
@@ -6313,6 +6374,8 @@ module PhysicallyBased =
         Pipeline.beginFrame physicallyBasedPipelines.DeferredStaticPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredStaticClippedPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredAnimatedPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.DeferredFoliagePipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.DeferredFoliageClippedPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredTerrainPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredLighting3dPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredFogging3dPipeline.Pipeline
@@ -6328,6 +6391,8 @@ module PhysicallyBased =
         for pipeline in physicallyBasedPipelines.UserDefinedDeferredStaticPipelines.Values do Pipeline.beginFrame pipeline.Pipeline
         for pipeline in physicallyBasedPipelines.UserDefinedDeferredStaticClippedPipelines.Values do Pipeline.beginFrame pipeline.Pipeline
         for pipeline in physicallyBasedPipelines.UserDefinedDeferredAnimatedPipelines.Values do Pipeline.beginFrame pipeline.Pipeline
+        for pipeline in physicallyBasedPipelines.UserDefinedFoliagePipelines.Values do Pipeline.beginFrame pipeline.Pipeline
+        for pipeline in physicallyBasedPipelines.UserDefinedFoliageClippedPipelines.Values do Pipeline.beginFrame pipeline.Pipeline
         for pipeline in physicallyBasedPipelines.UserDefinedForwardStaticPipelines.Values do Pipeline.beginFrame pipeline.Pipeline
         for pipeline in physicallyBasedPipelines.UserDefinedForwardAnimatedPipelines.Values do Pipeline.beginFrame pipeline.Pipeline
         for pipeline in physicallyBasedPipelines.UserDefinedTerrainPipelines.Values do Pipeline.beginFrame pipeline.Pipeline
@@ -6359,6 +6424,8 @@ module PhysicallyBased =
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredStaticPipeline context
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredStaticClippedPipeline context
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredAnimatedPipeline context
+        destroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredFoliagePipeline context
+        destroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredFoliageClippedPipeline context
         destroyPhysicallyBasedDeferredTerrainPipeline physicallyBasedPipelines.DeferredTerrainPipeline context
         destroyPhysicallyBasedDeferredLighting3dPipeline physicallyBasedPipelines.DeferredLighting3dPipeline context
         destroyPhysicallyBasedDeferredFogging3dPipeline physicallyBasedPipelines.DeferredFogging3dPipeline context
@@ -6374,6 +6441,8 @@ module PhysicallyBased =
         for pipeline in physicallyBasedPipelines.UserDefinedDeferredStaticPipelines.Values do destroyPhysicallyBasedPipeline pipeline context
         for pipeline in physicallyBasedPipelines.UserDefinedDeferredStaticClippedPipelines.Values do destroyPhysicallyBasedPipeline pipeline context
         for pipeline in physicallyBasedPipelines.UserDefinedDeferredAnimatedPipelines.Values do destroyPhysicallyBasedPipeline pipeline context
+        for pipeline in physicallyBasedPipelines.UserDefinedFoliagePipelines.Values do destroyPhysicallyBasedPipeline pipeline context
+        for pipeline in physicallyBasedPipelines.UserDefinedFoliageClippedPipelines.Values do destroyPhysicallyBasedPipeline pipeline context
         for pipeline in physicallyBasedPipelines.UserDefinedForwardStaticPipelines.Values do destroyPhysicallyBasedPipeline pipeline context
         for pipeline in physicallyBasedPipelines.UserDefinedForwardAnimatedPipelines.Values do destroyPhysicallyBasedPipeline pipeline context
         for pipeline in physicallyBasedPipelines.UserDefinedTerrainPipelines.Values do destroyPhysicallyBasedDeferredTerrainPipeline pipeline context
@@ -6405,6 +6474,8 @@ module PhysicallyBased =
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredStaticPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredStaticClippedPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredAnimatedPipeline.Pipeline context
+        Pipeline.reloadShaders physicallyBasedPipelines.DeferredFoliagePipeline.Pipeline context
+        Pipeline.reloadShaders physicallyBasedPipelines.DeferredFoliageClippedPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredTerrainPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredLighting3dPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredFogging3dPipeline.Pipeline context
@@ -6420,6 +6491,8 @@ module PhysicallyBased =
         for pipeline in physicallyBasedPipelines.UserDefinedDeferredStaticPipelines.Values do Pipeline.reloadShaders pipeline.Pipeline context
         for pipeline in physicallyBasedPipelines.UserDefinedDeferredStaticClippedPipelines.Values do Pipeline.reloadShaders pipeline.Pipeline context
         for pipeline in physicallyBasedPipelines.UserDefinedDeferredAnimatedPipelines.Values do Pipeline.reloadShaders pipeline.Pipeline context
+        for pipeline in physicallyBasedPipelines.UserDefinedFoliagePipelines.Values do Pipeline.reloadShaders pipeline.Pipeline context
+        for pipeline in physicallyBasedPipelines.UserDefinedFoliageClippedPipelines.Values do Pipeline.reloadShaders pipeline.Pipeline context
         for pipeline in physicallyBasedPipelines.UserDefinedForwardStaticPipelines.Values do Pipeline.reloadShaders pipeline.Pipeline context
         for pipeline in physicallyBasedPipelines.UserDefinedForwardAnimatedPipelines.Values do Pipeline.reloadShaders pipeline.Pipeline context
         for pipeline in physicallyBasedPipelines.UserDefinedTerrainPipelines.Values do Pipeline.reloadShaders pipeline.Pipeline context

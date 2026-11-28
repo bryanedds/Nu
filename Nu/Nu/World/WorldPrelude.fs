@@ -222,6 +222,24 @@ type [<SymbolicExpansion>] NavBuilderResultData =
           NavInteriorEdges = interiorEdges
           NavExteriorEdges = exteriorEdges }
 
+/// A cell of generated foliage instances.
+type [<ReferenceEquality>] FoliageCell =
+    { Bounds : Box3
+      Items : StaticModelSurfacePreBatchItem array
+      PreBatchIds : Guid array } // by surface index
+
+/// The generated state of a foliage layer, covering its entire terrain.
+type [<ReferenceEquality>] FoliageField =
+    { TerrainBounds : Box3
+      Resolution : Vector2i
+      Positions : Vector3 array
+      Normals : Vector3 array
+      Variation : Vector4 array // tileable variation texture - RG = lean, B = density, A = height
+      ControlOpt : (Vector2i * Vector4 array) option // control map - RG = lean, B = density, A = height
+      ModelBounds : Box3
+      SurfaceCount : int
+      Cells : FoliageCell array }
+
 /// The manner in which a gui entity may be docked by a parent entity.
 type DockType =
 

@@ -1939,6 +1939,8 @@ type Pipeline3dType =
     | DeferredAnimatedPipeline
     | ForwardStaticPipeline
     | ForwardAnimatedPipeline
+    | FoliagePipeline
+    | FoliageClippedPipeline
     | TerrainPipeline
 
 /// Describes a user-defined 3d rendering pipeline.

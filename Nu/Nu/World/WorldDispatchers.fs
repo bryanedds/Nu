@@ -867,6 +867,13 @@ type TerrainDispatcher () =
     static member Facets =
         [typeof<TerrainFacet>]
 
+/// Gives an entity the base behavior of wind-blown foliage covering a terrain.
+type FoliageDispatcher () =
+    inherit Entity3dDispatcher (false, false, false)
+
+    static member Facets =
+        [typeof<FoliageFacet>]
+
 [<AutoOpen>]
 module Nav3dConfigDispatcherExtensions =
     type Entity with

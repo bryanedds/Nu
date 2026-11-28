@@ -45,8 +45,7 @@ layout(location = 12) in vec4 albedo;
 layout(location = 13) in vec4 material;
 layout(location = 14) in vec4 material2;
 layout(location = 15) in vec4 subsurfacePlus;
-layout(location = 16) in vec4 clearCoatPlus; // NOTE: z and w are reserved for additional engine parameters.
-layout(location = 17) in vec4 reservedSettings;
+layout(location = 16) in vec4 sharedSettings[2];
 layout(location = 18) in vec4 userDefinedSettings[2];
 
 layout(location = 0) out vec4 positionOut;
@@ -57,8 +56,8 @@ layout(location = 4) flat out vec4 albedoOut;
 layout(location = 5) flat out vec4 materialOut;
 layout(location = 6) flat out vec4 material2Out;
 layout(location = 7) flat out vec4 subsurfacePlusOut;
-layout(location = 8) flat out vec4 clearCoatPlusOut;
-layout(location = 9) flat out vec4 userDefinedSettingsOut[2];
+layout(location = 8) flat out vec4 sharedSettingsOut[2];
+layout(location = 10) flat out vec4 userDefinedSettingsOut[2];
 
 void main()
 {
@@ -73,7 +72,7 @@ void main()
     materialOut = material;
     material2Out = material2;
     subsurfacePlusOut = subsurfacePlus;
-    clearCoatPlusOut = clearCoatPlus;
+    sharedSettingsOut = sharedSettings;
     userDefinedSettingsOut = userDefinedSettings;
     gl_Position = eye.viewProjection * positionOut;
 }

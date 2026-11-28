@@ -639,7 +639,9 @@ module Metadata =
         | ValueNone -> ValueNone
 
     /// Thread-safe.
-    let private tryGetModelClearCoatImage materialIndex model =
+    let private tryGetModelSharedImage0 materialIndex model =
+
+        // NOTE: currently just looks for clear coat, but could be used for other shared images in the future.
         match tryGetModelMetadata model with
         | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
@@ -662,7 +664,9 @@ module Metadata =
         | ValueNone -> ValueNone
 
     /// Thread-safe.
-    let private tryGetModelClearCoatRoughnessImage materialIndex model =
+    let private tryGetModelSharedImage1 materialIndex model =
+
+        // NOTE: currently just looks for clear coat roughness, but could be used for other shared images in the future.
         match tryGetModelMetadata model with
         | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
@@ -685,7 +689,9 @@ module Metadata =
         | ValueNone -> ValueNone
 
     /// Thread-safe.
-    let private tryGetModelClearCoatNormalImage materialIndex model =
+    let private tryGetModelSharedImage2 materialIndex model =
+
+        // NOTE: currently just looks for clear coat normal, but could be used for other shared images in the future.
         match tryGetModelMetadata model with
         | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
@@ -917,20 +923,20 @@ module Metadata =
     let tryGetStaticModelFinenessImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelFinenessImage materialIndex staticModel
 
-    /// Attempt to get the clear coat asset for the given material index and static model.
+    /// Attempt to get the shared image 0 asset for the given material index and static model.
     /// Thread-safe.
-    let tryGetStaticModelClearCoatImage materialIndex (staticModel : StaticModel AssetTag) =
-        tryGetModelClearCoatImage materialIndex staticModel
+    let tryGetStaticModelSharedImage0 materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelSharedImage0 materialIndex staticModel
 
-    /// Attempt to get the clear coat roughness asset for the given material index and static model.
+    /// Attempt to get the shared image 1 asset for the given material index and static model.
     /// Thread-safe.
-    let tryGetStaticModelClearCoatRoughnessImage materialIndex (staticModel : StaticModel AssetTag) =
-        tryGetModelClearCoatRoughnessImage materialIndex staticModel
+    let tryGetStaticModelSharedImage1 materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelSharedImage1 materialIndex staticModel
 
-    /// Attempt to get the clear coat normal asset for the given material index and static model.
+    /// Attempt to get the shared image 2 asset for the given material index and static model.
     /// Thread-safe.
-    let tryGetStaticModelClearCoatNormalImage materialIndex (staticModel : StaticModel AssetTag) =
-        tryGetModelClearCoatNormalImage materialIndex staticModel
+    let tryGetStaticModelSharedImage2 materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelSharedImage2 materialIndex staticModel
 
     /// Attempt to get the user-defined image 0 asset for the given material index and static model.
     /// Thread-safe.
@@ -1044,20 +1050,20 @@ module Metadata =
     let tryGetAnimatedModelScatterImage materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelScatterImage materialIndex animatedModel
 
-    /// Attempt to get the clear coat asset for the given material index and animated model.
+    /// Attempt to get the shared image 0 asset for the given material index and animated model.
     /// Thread-safe.
-    let tryGetAnimatedModelClearCoatImage materialIndex (animatedModel : AnimatedModel AssetTag) =
-        tryGetModelClearCoatImage materialIndex animatedModel
+    let tryGetAnimatedModelSharedImage0 materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelSharedImage0 materialIndex animatedModel
 
-    /// Attempt to get the clear coat roughness asset for the given material index and animated model.
+    /// Attempt to get the shared image 1 asset for the given material index and animated model.
     /// Thread-safe.
-    let tryGetAnimatedModelClearCoatRoughnessImage materialIndex (animatedModel : AnimatedModel AssetTag) =
-        tryGetModelClearCoatRoughnessImage materialIndex animatedModel
+    let tryGetAnimatedModelSharedImage1 materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelSharedImage1 materialIndex animatedModel
 
-    /// Attempt to get the clear coat normal asset for the given material index and animated model.
+    /// Attempt to get the shared image 2 asset for the given material index and animated model.
     /// Thread-safe.
-    let tryGetAnimatedModelClearCoatNormalImage materialIndex (animatedModel : AnimatedModel AssetTag) =
-        tryGetModelClearCoatNormalImage materialIndex animatedModel
+    let tryGetAnimatedModelSharedImage2 materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelSharedImage2 materialIndex animatedModel
 
     /// Attempt to get the user-defined image 0 asset for the given material index and animated model.
     /// Thread-safe.

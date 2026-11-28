@@ -26,9 +26,9 @@ layout(set = 1, binding = 5) uniform texture2D normalTexture;
 layout(set = 1, binding = 6) uniform texture2D subdermalTexture;
 layout(set = 1, binding = 7) uniform texture2D finenessTexture;
 layout(set = 1, binding = 8) uniform texture2D scatterTexture;
-layout(set = 1, binding = 9) uniform texture2D clearCoatTexture;
-layout(set = 1, binding = 10) uniform texture2D clearCoatRoughnessTexture;
-layout(set = 1, binding = 11) uniform texture2D clearCoatNormalTexture;
+layout(set = 1, binding = 9) uniform texture2D sharedImage0Texture;
+layout(set = 1, binding = 10) uniform texture2D sharedImage1Texture;
+layout(set = 1, binding = 11) uniform texture2D sharedImage2Texture;
 layout(set = 1, binding = 12) uniform texture2D userDefinedImage0Texture;
 layout(set = 1, binding = 13) uniform texture2D userDefinedImage1Texture;
 layout(set = 1, binding = 14) uniform texture2D userDefinedImage2Texture;
@@ -48,8 +48,8 @@ layout(location = 4) flat in vec4 albedo;
 layout(location = 5) flat in vec4 material;
 layout(location = 6) flat in vec4 material2;
 layout(location = 7) flat in vec4 subsurfacePlus;
-layout(location = 8) flat in vec4 clearCoatPlus;
-layout(location = 9) flat in vec4 userDefinedSettings[2];
+layout(location = 8) flat in vec4 sharedSettings[2];
+layout(location = 10) flat in vec4 userDefinedSettings[2];
 
 layout(location = 0) out float depthOut;
 layout(location = 1) out vec3 albedoOut;
@@ -167,11 +167,12 @@ void main()
     }
 
     // compute clear coat properties
-    float clearCoat = texture(sampler2D(clearCoatTexture, materialRepeatSampler), texCoords).r * clearCoatPlus.r;
+    // NOTE: clear coat is read from the shared images and the first two shared settings.
+    float clearCoat = texture(sampler2D(sharedImage0Texture, materialRepeatSampler), texCoords).r * sharedSettings[0].r;
     if (clearCoat > 0.0)
     {
-        float clearCoatRoughness = clamp(texture(sampler2D(clearCoatRoughnessTexture, materialRepeatSampler), texCoords).r * clearCoatPlus.g, 0.0, 1.0);
-        vec3 clearCoatNormal = normalize(toWorld * decodeNormal(texture(sampler2D(clearCoatNormalTexture, materialRepeatSampler), texCoords).rg));
+        float clearCoatRoughness = clamp(texture(sampler2D(sharedImage1Texture, materialRepeatSampler), texCoords).r * sharedSettings[0].g, 0.0, 1.0);
+        vec3 clearCoatNormal = normalize(toWorld * decodeNormal(texture(sampler2D(sharedImage2Texture, materialRepeatSampler), texCoords).rg));
         clearCoatPlusOut.r = clearCoat;
         clearCoatPlusOut.g = clearCoatRoughness;
         clearCoatPlusOut.ba = encodeOctahedral(clearCoatNormal);

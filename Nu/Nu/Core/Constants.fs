@@ -238,7 +238,7 @@ module Render =
     let [<Literal>] AnimatedModelRateScalar = 30.0f // some arbitrary scale that mixamo fbx exported from blender seems to like...
     let [<Literal>] AnimatedModelMessagesPrealloc = 128
     let [<Literal>] AnimatedModelSurfaceMessagesPrealloc = 128
-    let [<Literal>] InstanceFieldCount = 52 // NOTE: up to 43 is reserved for engine use, 38 - 43 are free for engine use, and 44 - 51 are user-defined.
+    let [<Literal>] InstanceFieldCount = 52 // NOTE: up to 35 is reserved for engine use, 36 - 43 are shared, and 44 - 51 are user-defined.
     let [<Literal>] InstanceBatchPrealloc = 256
     let [<Literal>] TerrainLayersMax = 6
     let [<Literal>] BrdfResolution = 256 // NOTE: half typical resolution because we use 32-bit floats instead of 16-bit.
@@ -376,8 +376,6 @@ module Render =
     let [<Literal>] SubsurfaceCutoffDefault = 8.0f
     let [<Literal>] SubsurfaceCutoffMarginDefault = 0.2f
     let [<Literal>] RefractiveIndexDefault = 1.0f
-    let [<Literal>] ClearCoatDefault = 1.0f
-    let [<Literal>] ClearCoatRoughnessDefault = 1.0f
     let [<Literal>] FontSizeDefault = 14.0f
     let [<Literal>] Body3dSegmentRenderMagnitudeMax = 48.0f
     let [<Literal>] Body3dSegmentRenderDistanceMax = 40.0f
@@ -499,6 +497,14 @@ module Particles =
     let [<Literal>] RestitutionDefault = 0.9f
 
 [<RequireQualifiedAccess>]
+module Foliage =
+
+    let [<Literal>] GustTileSize = 24.0f // meters per gust noise tile (must match GUST_SCALE in foliage shaders)
+    let [<Literal>] VariationResolution = 128
+    let [<Literal>] VariationPeriod = 8 // noise lattice cells across the variation texture
+    let [<Literal>] VariationOctaveRatio = 2.37f // non-integer so that the two octaves don't repeat together
+
+[<RequireQualifiedAccess>]
 module Effects =
 
     let [<Literal>] EffectHistoryMaxDefault = 60 // 1 second of effect history @ 60 fps
@@ -526,6 +532,8 @@ module Paths =
     let [<Literal>] PhysicallyBasedDeferredStaticShaderFilePath = "Assets/Default/PhysicallyBasedDeferredStatic"
     let [<Literal>] PhysicallyBasedDeferredStaticClippedShaderFilePath = "Assets/Default/PhysicallyBasedDeferredStaticClipped"
     let [<Literal>] PhysicallyBasedDeferredAnimatedShaderFilePath = "Assets/Default/PhysicallyBasedDeferredAnimated"
+    let [<Literal>] PhysicallyBasedDeferredFoliageShaderFilePath = "Assets/Default/PhysicallyBasedDeferredFoliage"
+    let [<Literal>] PhysicallyBasedDeferredFoliageClippedShaderFilePath = "Assets/Default/PhysicallyBasedDeferredFoliageClipped"
     let [<Literal>] PhysicallyBasedDeferredTerrainShaderFilePath = "Assets/Default/PhysicallyBasedDeferredTerrain"
     let [<Literal>] PhysicallyBasedDeferredLighting3dShaderFilePath = "Assets/Default/PhysicallyBasedDeferredLighting3d"
     let [<Literal>] PhysicallyBasedDeferredFogging3dShaderFilePath = "Assets/Default/PhysicallyBasedDeferredFogging3d"
