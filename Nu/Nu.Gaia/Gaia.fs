@@ -4981,20 +4981,16 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         let simulantPropertiesFocused = gamePropertiesFocused || screenPropertiesFocused || groupPropertiesFocused || entityPropertiesFocused
                         (entityHierarchyFocused, simulantPropertiesFocused)
 
-                // HACK: keep the arrow keys from navigating a focused property window, leaving them to eye travel
-                // while tab still navigates, or to the text field being edited there
+                // HACK: keep the arrow keys from navigating a focused property window while tab still navigates,
+                // leaving them to the text field being edited there, or otherwise to eye travel or the advancing game
                 if simulantPropertiesFocused then
-                    let arrowOwnerIdOpt =
-                        if canEditWithKeyboard world then Some keyOwnerId
-                        elif io.WantTextInput then
+                    let arrowOwnerId =
+                        if io.WantTextInput then
                             let activeId = ImGuiInternal.getActiveId ()
-                            if activeId <> 0u then Some activeId else None // 0 is any owner, which imgui disallows
-                        else None
-                    match arrowOwnerIdOpt with
-                    | Some arrowOwnerId ->
-                        for key in [ImGuiKey.UpArrow; ImGuiKey.DownArrow; ImGuiKey.LeftArrow; ImGuiKey.RightArrow] do
-                            ImGuiInternal.setKeyOwner key arrowOwnerId
-                    | None -> ()
+                            if activeId <> 0u then activeId else keyOwnerId // 0 is any owner, which imgui disallows
+                        else keyOwnerId
+                    for key in [ImGuiKey.UpArrow; ImGuiKey.DownArrow; ImGuiKey.LeftArrow; ImGuiKey.RightArrow] do
+                        ImGuiInternal.setKeyOwner key arrowOwnerId
 
                 // prompt dialogs
                 match MessageBoxOpt with
