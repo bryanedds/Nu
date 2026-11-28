@@ -381,9 +381,6 @@ module Permafreezer3dDispatcherExtensions =
         member this.GetPermafrozenShapes world : (Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape * Affine * BodyShape) array = this.Get (nameof this.PermafrozenShapes) world
         member this.SetPermafrozenShapes (value : (Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape * Affine * BodyShape) array) world = this.Set (nameof this.PermafrozenShapes) value world
         member this.PermafrozenShapes = lens (nameof this.PermafrozenShapes) this this.GetPermafrozenShapes this.SetPermafrozenShapes
-        member this.GetPresenceConferred world : Presence = this.Get (nameof this.PresenceConferred) world
-        member this.SetPresenceConferred (value : Presence) world = this.Set (nameof this.PresenceConferred) value world
-        member this.PresenceConferred = lens (nameof this.PresenceConferred) this this.GetPresenceConferred this.SetPresenceConferred
 
         member internal this.RegisterFrozenShapesNav getFrozenShapes world =
             let mutable index = 0

@@ -4143,6 +4143,9 @@ type TerrainFacet () =
 [<AutoOpen>]
 module FoliageFacetExtensions =
     type Entity with
+        member this.GetPresenceConferred world : Presence = this.Get (nameof this.PresenceConferred) world
+        member this.SetPresenceConferred (value : Presence) world = this.Set (nameof this.PresenceConferred) value world
+        member this.PresenceConferred = lens (nameof this.PresenceConferred) this this.GetPresenceConferred this.SetPresenceConferred
         member this.GetFoliageControlImageOpt world : Image AssetTag option = this.Get (nameof this.FoliageControlImageOpt) world
         member this.SetFoliageControlImageOpt (value : Image AssetTag option) world = this.Set (nameof this.FoliageControlImageOpt) value world
         member this.FoliageControlImageOpt = lens (nameof this.FoliageControlImageOpt) this this.GetFoliageControlImageOpt this.SetFoliageControlImageOpt
@@ -4188,9 +4191,15 @@ module FoliageFacetExtensions =
         member this.GetFoliageHeightVariation world : single = this.Get (nameof this.FoliageHeightVariation) world
         member this.SetFoliageHeightVariation (value : single) world = this.Set (nameof this.FoliageHeightVariation) value world
         member this.FoliageHeightVariation = lens (nameof this.FoliageHeightVariation) this this.GetFoliageHeightVariation this.SetFoliageHeightVariation
-        member this.GetFoliageColorVariation world : single = this.Get (nameof this.FoliageColorVariation) world
-        member this.SetFoliageColorVariation (value : single) world = this.Set (nameof this.FoliageColorVariation) value world
-        member this.FoliageColorVariation = lens (nameof this.FoliageColorVariation) this this.GetFoliageColorVariation this.SetFoliageColorVariation
+        member this.GetFoliageBrightnessVariation world : single = this.Get (nameof this.FoliageBrightnessVariation) world
+        member this.SetFoliageBrightnessVariation (value : single) world = this.Set (nameof this.FoliageBrightnessVariation) value world
+        member this.FoliageBrightnessVariation = lens (nameof this.FoliageBrightnessVariation) this this.GetFoliageBrightnessVariation this.SetFoliageBrightnessVariation
+        member this.GetFoliageTint world : Color = this.Get (nameof this.FoliageTint) world
+        member this.SetFoliageTint (value : Color) world = this.Set (nameof this.FoliageTint) value world
+        member this.FoliageTint = lens (nameof this.FoliageTint) this this.GetFoliageTint this.SetFoliageTint
+        member this.GetFoliageTintVariation world : single = this.Get (nameof this.FoliageTintVariation) world
+        member this.SetFoliageTintVariation (value : single) world = this.Set (nameof this.FoliageTintVariation) value world
+        member this.FoliageTintVariation = lens (nameof this.FoliageTintVariation) this this.GetFoliageTintVariation this.SetFoliageTintVariation
         member this.GetFoliageSeed world : int = this.Get (nameof this.FoliageSeed) world
         member this.SetFoliageSeed (value : int) world = this.Set (nameof this.FoliageSeed) value world
         member this.FoliageSeed = lens (nameof this.FoliageSeed) this this.GetFoliageSeed this.SetFoliageSeed
@@ -4206,9 +4215,6 @@ module FoliageFacetExtensions =
         member this.GetFoliageFlutterStrength world : single = this.Get (nameof this.FoliageFlutterStrength) world
         member this.SetFoliageFlutterStrength (value : single) world = this.Set (nameof this.FoliageFlutterStrength) value world
         member this.FoliageFlutterStrength = lens (nameof this.FoliageFlutterStrength) this this.GetFoliageFlutterStrength this.SetFoliageFlutterStrength
-        member this.GetFoliageWindCycle world : single = this.Get (nameof this.FoliageWindCycle) world
-        member this.SetFoliageWindCycle (value : single) world = this.Set (nameof this.FoliageWindCycle) value world
-        member this.FoliageWindCycle = lens (nameof this.FoliageWindCycle) this this.GetFoliageWindCycle this.SetFoliageWindCycle
         member this.GetFoliageFieldOpt world : FoliageField option = this.Get (nameof this.FoliageFieldOpt) world
         member this.SetFoliageFieldOpt (value : FoliageField option) world = this.Set (nameof this.FoliageFieldOpt) value world
         member this.FoliageFieldOpt = lens (nameof this.FoliageFieldOpt) this this.GetFoliageFieldOpt this.SetFoliageFieldOpt
@@ -4380,6 +4386,7 @@ type FoliageFacet () =
         let staticModel = entity.GetStaticModel world
         let materialProperties = entity.GetMaterialProperties world
         let castShadow = entity.GetCastShadow world
+        let presenceConferred = entity.GetPresenceConferred world
         let density = entity.GetFoliageDensity world
         let cellSize = max (entity.GetFoliageCellSize world) 1.0f
         let heightRange = entity.GetFoliageHeightRange world
@@ -4390,7 +4397,9 @@ type FoliageFacet () =
         let variationTileSize = entity.GetFoliageVariationTileSize world
         let densityVariation = entity.GetFoliageDensityVariation world
         let heightVariation = entity.GetFoliageHeightVariation world
-        let colorVariation = entity.GetFoliageColorVariation world
+        let brightnessVariation = entity.GetFoliageBrightnessVariation world
+        let tint = entity.GetFoliageTint world
+        let tintVariation = entity.GetFoliageTintVariation world
         let seed = entity.GetFoliageSeed world
 
         // attempt to create field
@@ -4491,18 +4500,23 @@ type FoliageFacet () =
                                     let radius = modelRadius * scale.X + height * 0.75f
                                     let instanceBounds = box3 (position - v3 radius (height * 0.25f) radius) (v3 (radius * 2.0f) (height * 1.25f) (radius * 2.0f))
 
-                                    // compute material properties, varying the entity's albedo
-                                    let colorVariation = Math.Clamp (colorVariation, 0.0f, 1.0f)
-                                    let brightness = 1.0f - colorVariation * colorRandom.X
-                                    let yellowing = colorVariation * colorRandom.Y
-                                    let albedoVariation = color (brightness * (1.0f + yellowing * 0.35f)) brightness (brightness * (1.0f - yellowing * 0.6f)) 1.0f
+                                    // compute material properties, varying the entity's albedo by darkening it and
+                                    // tinting it toward the tint color by random amounts
+                                    let brightness = 1.0f - Math.Clamp (brightnessVariation, 0.0f, 1.0f) * colorRandom.X
+                                    let tintAmount = Math.Clamp (tintVariation, 0.0f, 1.0f) * colorRandom.Y
+                                    let albedoVariation =
+                                        color
+                                            (brightness * Math.Lerp (1.0f, tint.R, tintAmount))
+                                            (brightness * Math.Lerp (1.0f, tint.G, tintAmount))
+                                            (brightness * Math.Lerp (1.0f, tint.B, tintAmount))
+                                            1.0f
                                     let properties = { materialProperties with AlbedoOpt = ValueSome (albedo * albedoVariation) }
 
                                     // add instance
                                     items.Add
                                         { ModelMatrix = modelMatrix
                                           CastShadow = castShadow
-                                          Presence = Exterior
+                                          Presence = presenceConferred
                                           Inset = box2Zero
                                           MaterialProperties = properties
                                           Bounds = instanceBounds }
@@ -4560,6 +4574,7 @@ type FoliageFacet () =
 
     static member Properties =
         [define Entity.Presence Omnipresent
+         define Entity.PresenceConferred Exterior
          define Entity.Static true
          define Entity.CastShadow false
          define Entity.StaticModel Assets.Default.FoliageModel
@@ -4584,13 +4599,14 @@ type FoliageFacet () =
          define Entity.FoliageVariationTileSize 48.0f // meters covered by one tile of the generated variation texture
          define Entity.FoliageDensityVariation 0.75f // how much the variation texture thins density, from 0 to 1
          define Entity.FoliageHeightVariation 0.5f // how much the variation texture scales height, from 0 to 1
-         define Entity.FoliageColorVariation 0.2f // how much instance albedo varies at random, from 0 to 1
+         define Entity.FoliageBrightnessVariation 0.2f // how much instances darken at random, from 0 to 1
+         define Entity.FoliageTint (color 1.0f 0.8f 0.35f 1.0f) // color that instances are tinted toward at random
+         define Entity.FoliageTintVariation 0.2f // how far instances are tinted toward the tint at most, from 0 to 1
          define Entity.FoliageSeed 0 // seed of instance placement and of the generated variation texture
          define Entity.FoliageWindDirection (v2 1.0f 0.35f) // horizontal direction (x, z) that the wind blows toward
          define Entity.FoliageWindStrength 0.35f // how far gusts bend instances
          define Entity.FoliageWindSpeed 6.0f // meters per second that gusts travel
          define Entity.FoliageFlutterStrength 0.06f // how far flutter shakes instances
-         define Entity.FoliageWindCycle 60.0f // seconds after which the wind's motion repeats
          nonPersistent Entity.FoliageFieldOpt None]
 
     override this.Register (entity, world) =
@@ -4599,6 +4615,7 @@ type FoliageFacet () =
         World.sense (nameof handleGenerationChange) entity.StaticModel.ChangeEvent entity (nameof FoliageFacet) world
         World.sense (nameof handleGenerationChange) entity.MaterialProperties.ChangeEvent entity (nameof FoliageFacet) world
         World.sense (nameof handleGenerationChange) entity.CastShadow.ChangeEvent entity (nameof FoliageFacet) world
+        World.sense (nameof handleGenerationChange) entity.PresenceConferred.ChangeEvent entity (nameof FoliageFacet) world
         World.sense (nameof handleGenerationChange) entity.FoliageDensity.ChangeEvent entity (nameof FoliageFacet) world
         World.sense (nameof handleGenerationChange) entity.FoliageCellSize.ChangeEvent entity (nameof FoliageFacet) world
         World.sense (nameof handleGenerationChange) entity.FoliageHeightRange.ChangeEvent entity (nameof FoliageFacet) world
@@ -4609,7 +4626,9 @@ type FoliageFacet () =
         World.sense (nameof handleGenerationChange) entity.FoliageVariationTileSize.ChangeEvent entity (nameof FoliageFacet) world
         World.sense (nameof handleGenerationChange) entity.FoliageDensityVariation.ChangeEvent entity (nameof FoliageFacet) world
         World.sense (nameof handleGenerationChange) entity.FoliageHeightVariation.ChangeEvent entity (nameof FoliageFacet) world
-        World.sense (nameof handleGenerationChange) entity.FoliageColorVariation.ChangeEvent entity (nameof FoliageFacet) world
+        World.sense (nameof handleGenerationChange) entity.FoliageBrightnessVariation.ChangeEvent entity (nameof FoliageFacet) world
+        World.sense (nameof handleGenerationChange) entity.FoliageTint.ChangeEvent entity (nameof FoliageFacet) world
+        World.sense (nameof handleGenerationChange) entity.FoliageTintVariation.ChangeEvent entity (nameof FoliageFacet) world
         World.sense (nameof handleGenerationChange) entity.FoliageSeed.ChangeEvent entity (nameof FoliageFacet) world
         subscribeTerrain entity world
 
@@ -4646,8 +4665,12 @@ type FoliageFacet () =
             let cullingOpt =
                 match renderPass with
                 | NormalPass ->
-                    let frustum = World.getEye3dFrustumView world
-                    Some (eyeCenter, fun (cell : FoliageCell) -> withinDrawDistance cell && frustum.Intersects cell.Bounds)
+                    let presenceConferred = entity.GetPresenceConferred world
+                    let interiorOpt = ValueSome (World.getEye3dFrustumInterior world)
+                    let exterior = World.getEye3dFrustumExterior world
+                    let imposter = World.getEye3dFrustumImposter world
+                    let intersects (cell : FoliageCell) = Presence.intersects3d interiorOpt exterior imposter false presenceConferred cell.Bounds
+                    Some (eyeCenter, fun (cell : FoliageCell) -> withinDrawDistance cell && intersects cell)
                 | ShadowPass (_, _, _, _, _, shadowFrustum) ->
                     if entity.GetCastShadow world && (World.getRenderer3dConfig world).LightShadowingEnabled
                     then Some (eyeCenter, fun (cell : FoliageCell) -> withinDrawDistance cell && shadowFrustum.Intersects cell.Bounds)
@@ -4660,7 +4683,7 @@ type FoliageFacet () =
 
                 // compute wind, collapse, and roughening settings as an override of the items' shared settings,
                 // rounding the scrolls made over a cycle to whole numbers so that the cycle wraps seamlessly
-                let cycle = max (entity.GetFoliageWindCycle world) 0.001f
+                let cycle = Constants.Foliage.WindCycle
                 let windDirection = entity.GetFoliageWindDirection world
                 let time = world.ScaledTime
                 let phase = single ((time.Seconds / float cycle) % 1.0)

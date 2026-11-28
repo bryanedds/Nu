@@ -499,6 +499,7 @@ module Particles =
 [<RequireQualifiedAccess>]
 module Foliage =
 
+    let [<Literal>] WindCycle = 60.0f // seconds after which wind motion repeats, keeping its phase precise
     let [<Literal>] GustTileSize = 24.0f // meters per gust noise tile (must match GUST_SCALE in foliage shaders)
     let [<Literal>] VariationResolution = 128
     let [<Literal>] VariationPeriod = 8 // noise lattice cells across the variation texture

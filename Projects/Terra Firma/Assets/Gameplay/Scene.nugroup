@@ -62,7 +62,8 @@
      [[FoliageDispatcher
        [[CastShadow True]
         [FoliageCellSize 32]
-        [FoliageColorVariation 0.5]
+        [FoliageBrightnessVariation 0.5]
+        [FoliageTintVariation 0.5]
         [FoliageDensity 0.01]
         [FoliageDensityVariation 0.5]
         [FoliageDrawDistance 192]
@@ -102,7 +103,8 @@
        []]
       [FoliageDispatcher
        [[FoliageCellSize 32]
-        [FoliageColorVariation 0.5]
+        [FoliageBrightnessVariation 0.5]
+        [FoliageTintVariation 0.5]
         [FoliageDensity 0.75]
         [FoliageDensityVariation 0.5]
         [FoliageDrawDistance 48]
@@ -144,7 +146,8 @@
        []]
       [FoliageDispatcher
        [[FoliageCellSize 32]
-        [FoliageColorVariation 0.5]
+        [FoliageBrightnessVariation 0.5]
+        [FoliageTintVariation 0.5]
         [FoliageDensity 0.25]
         [FoliageDrawDistance 96]
         [FoliageHeightRange [0.75 1.25]]
@@ -182,7 +185,8 @@
          [Some
           [FoliageDispatcher
            [[FoliageCellSize 32]
-            [FoliageColorVariation 0.5]
+            [FoliageBrightnessVariation 0.5]
+            [FoliageTintVariation 0.5]
             [FoliageDensity 0.25]
             [FoliageDrawDistance 96]
             [FoliageHeightRange [0.75 1.25]]
