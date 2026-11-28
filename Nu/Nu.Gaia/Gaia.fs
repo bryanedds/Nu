@@ -1558,20 +1558,26 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
          | None -> false) &&
         getEntityModified entity
 
+    let private getSelectedEntitiesRevertible world =
+        world
+        |> getSelectedEntityRoots false
+        |> List.filter (fun entity -> getEntityRevertible entity world)
+
     let private tryRevertSelectedEntity world =
-        match Seq.tryExactlyOne SelectedEntities with
-        | Some entity when getEntityRevertible entity world ->
+        match getSelectedEntitiesRevertible world with
+        | [] -> false
+        | entities ->
             let worldStateOld = world.CurrentState
             try snapshot RevertEntity world
-                World.revertEntity entity GroupWorldStates[entity.Group] world
+                for entity in entities do World.revertEntity entity GroupWorldStates[entity.Group] world
                 tryRefreshEntitiesModified world // NOTE: keeping the other entities' modifications shown.
-                selectEntities true (Set.singleton entity) world
+                let entitiesSelected = Set.filter (fun (entity : Entity) -> entity.GetExists world) SelectedEntities
+                selectEntities true entitiesSelected world
                 true
             with exn ->
                 MessageBoxOpt <- Some ("Could not revert entity due to: " + scstring exn)
                 World.switch worldStateOld world
                 false
-        | Some _ | None -> false
 
     let private tryReloadAssets world =
         let assetSourceDir = TargetDir + "/../../.."
@@ -2360,9 +2366,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         | None -> EntityFileDialogState.FileName <- ""
                         ShowSaveEntityDialog <- true
                     | Some _ | None -> ()
-                if getEntityRevertible entity world then
-                    if ImGui.MenuItem "Revert Entity" then
-                        tryRevertSelectedEntity world |> ignore<bool>
+            if List.notEmpty (getSelectedEntitiesRevertible world) then
+                if ImGui.MenuItem "Revert Entity" then
+                    tryRevertSelectedEntity world |> ignore<bool>
             ImGui.Separator ()
             if singular then
                 if NewEntityParentOpt = Some entity then
@@ -3149,7 +3155,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             | None -> EntityFileDialogState.FileName <- ""
                             ShowSaveEntityDialog <- true
                         | Some _ | None -> ()
-                    let revertible = (match Seq.tryExactlyOne SelectedEntities with Some entity -> getEntityRevertible entity world | None -> false)
+                    let revertible = List.notEmpty (getSelectedEntitiesRevertible world)
                     if ImGui.MenuItem ("Revert Entity", null, false, revertible) then tryRevertSelectedEntity world |> ignore<bool>
                     ImGui.Separator ()
                     if (Seq.tryExactlyOne SelectedEntities).IsSome && NewEntityParentOpt = Seq.tryExactlyOne SelectedEntities then
